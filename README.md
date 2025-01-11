@@ -43,4 +43,10 @@ You can use `go get -u github.com/wangzhione/sbpkg@master` to get or update `sbp
 
 欢迎喜欢用的朋友, 补充常用 package 代码集, 或者发评论提思路, 主动帮忙添加.
 
+## 扩展阅读
+
+- [Effective Go](https://golang.org/doc/effective_go)
+- [Pingcap General advice](https://pingcap.github.io/style-guide/general.html)
+- [Uber Go Style Guide](https://github.com/uber-go/guide/blob/master/style.md)
+
 ![](god.webp)
