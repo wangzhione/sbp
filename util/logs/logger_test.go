@@ -1,12 +1,13 @@
 package logs
 
 import (
-	"context"
 	"testing"
+
+	"sbpkg/util/idx"
 )
 
 func TestSetLevel(t *testing.T) {
-	var ctx = SetTraceID(context.Background())
+	var ctx = idx.Context()
 
 	Debug(ctx, "debug")
 	Info(ctx, "%s 重要信息", "8964")

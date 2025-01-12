@@ -1,4 +1,4 @@
-package ids
+package idx
 
 import (
 	"context"
@@ -21,4 +21,8 @@ func WithTraceID(c *context.Context) string {
 func GetTraceID(c context.Context) string {
 	traceID, _ := c.Value(TraceIDKey).(string)
 	return traceID
+}
+
+func Context() context.Context {
+	return context.WithValue(context.Background(), TraceIDKey, UUID())
 }

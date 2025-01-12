@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/google/uuid"
+	"sbpkg/util/idx"
 )
 
 var _ Logger = (*localLogger)(nil)
@@ -17,18 +17,6 @@ func SetDefaultLogger(s Logger) {
 	if s != nil {
 		defaultLogger = s
 	}
-}
-
-var LogsTraceID = any("__sbpkg_logs_trace_id")
-
-func SetTraceID(ctx context.Context) context.Context {
-	return context.WithValue(ctx, LogsTraceID, uuid.New().String())
-}
-
-// GetTraceID get trace id
-func GetTraceID(ctx context.Context) (traceID string) {
-	traceID, _ = ctx.Value(LogsTraceID).(string)
-	return
 }
 
 var defaultLogger Logger = &localLogger{
@@ -44,29 +32,29 @@ func (l *localLogger) logf(format string, a ...any) {
 }
 
 func (l *localLogger) Fatal(ctx context.Context, format string, a ...any) {
-	l.logf(GetTraceID(ctx)+" [Fatal] "+format, a...)
+	l.logf(idx.GetTraceID(ctx)+" [Fatal] "+format, a...)
 }
 
 func (l *localLogger) Error(ctx context.Context, format string, a ...any) {
-	l.logf(GetTraceID(ctx)+" [Error] "+format, a...)
+	l.logf(idx.GetTraceID(ctx)+" [Error] "+format, a...)
 }
 
 func (l *localLogger) Warn(ctx context.Context, format string, a ...any) {
-	l.logf(GetTraceID(ctx)+" [Warn] "+format, a...)
+	l.logf(idx.GetTraceID(ctx)+" [Warn] "+format, a...)
 }
 
 func (l *localLogger) Notice(ctx context.Context, format string, a ...any) {
-	l.logf(GetTraceID(ctx)+" [Notice] "+format, a...)
+	l.logf(idx.GetTraceID(ctx)+" [Notice] "+format, a...)
 }
 
 func (l *localLogger) Info(ctx context.Context, format string, a ...any) {
-	l.logf(GetTraceID(ctx)+" [Info] "+format, a...)
+	l.logf(idx.GetTraceID(ctx)+" [Info] "+format, a...)
 }
 
 func (l *localLogger) Debug(ctx context.Context, format string, a ...any) {
-	l.logf(GetTraceID(ctx)+" [Debug] "+format, a...)
+	l.logf(idx.GetTraceID(ctx)+" [Debug] "+format, a...)
 }
 
 func (l *localLogger) Trace(ctx context.Context, format string, a ...any) {
-	l.logf("[Trace] "+format, a...)
+	l.logf(idx.GetTraceID(ctx)+" [Trace] "+format, a...)
 }
