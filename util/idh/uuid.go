@@ -1,4 +1,4 @@
-package idx
+package idh
 
 import (
 	"encoding/hex"
@@ -11,7 +11,7 @@ import (
 func UUID() (id string) {
 	defer func() {
 		if r := recover(); r != nil {
-			slog.Error("sbpkg id UUID() panic", "recover", r, "stack", debug.Stack())
+			slog.Error("sbp id UUID() panic", "recover", r, "stack", debug.Stack())
 			// 填充默认的 id
 			id = "00000000000000000000000000000000"
 			return

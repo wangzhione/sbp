@@ -4,7 +4,8 @@ import (
 	"context"
 	"log/slog"
 	"os"
-	"sbpkg/util/idx"
+
+	"sbp/util/idh"
 )
 
 type ContextHandler struct {
@@ -12,9 +13,10 @@ type ContextHandler struct {
 }
 
 func (h ContextHandler) Handle(ctx context.Context, r slog.Record) error {
-	traceID := idx.GetTraceID(ctx)
+	// context 需要在首次出现地方 注入 idh.WithTraceID(&ctx) trace id
+	traceID := idh.GetTraceID(ctx)
 	if len(traceID) > 0 {
-		r.AddAttrs(slog.String(idx.TraceIDKey, traceID))
+		r.AddAttrs(slog.String(idh.TraceIDKey, traceID))
 	}
 
 	return h.Handler.Handle(ctx, r)
