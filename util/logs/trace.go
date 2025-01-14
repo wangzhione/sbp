@@ -1,11 +1,12 @@
-package idh
+package logs
 
 import (
 	"context"
+	"sbp/util/idh"
 )
 
 // TraceIDKey 默认所有链条 trace id 的 key
-const TraceIDKey = "__key_trace_id"
+const TraceIDKey = "__key_log_trace_id"
 
 var traceIDKey = any(TraceIDKey)
 
@@ -13,7 +14,7 @@ var traceIDKey = any(TraceIDKey)
 func WithTraceID(c *context.Context) string {
 	traceID, _ := (*c).Value(traceIDKey).(string)
 	if len(traceID) == 0 {
-		traceID = UUID()
+		traceID = idh.UUID()
 		*c = context.WithValue(*c, traceIDKey, traceID)
 	}
 	return traceID
@@ -26,5 +27,5 @@ func GetTraceID(c context.Context) string {
 }
 
 func Context() context.Context {
-	return context.WithValue(context.Background(), traceIDKey, UUID())
+	return context.WithValue(context.Background(), traceIDKey, idh.UUID())
 }

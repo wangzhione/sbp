@@ -3,25 +3,20 @@ package idh
 import (
 	"encoding/hex"
 	"log/slog"
-	"runtime/debug"
 
 	"github.com/google/uuid"
 )
 
-func UUID() (id string) {
-	defer func() {
-		if r := recover(); r != nil {
-			slog.Error("sbp id UUID() panic", "recover", r, "stack", debug.Stack())
-			// 填充默认的 id
-			id = "00000000000000000000000000000000"
-			return
-		}
-	}()
+func UUID() string {
+	// 依赖 google uuid random uuid v4 算法构建
+	v4, err := uuid.NewRandom()
+	if err != nil {
+		slog.Error("sbp id uuid.NewRandom() error", "error", err)
+		// 这个分支理论走不到的, 为了兜底 用默认 uuid 串返回
+		return "00000000000000000000000000000000"
+	}
 
-	var v4 = uuid.New()
-	// 依赖 google uuid random uuid v4 算法构建, 其算法内部存在 panic, 默认会屏蔽吃掉 panic
 	var dst [32]byte
-
 	// "00000000-0000-0000-0000-000000000000" {8}-{4}-{4}-{4}-{12}
 	hex.Encode(dst[:], v4[:4])
 	hex.Encode(dst[8:12], v4[4:6])
