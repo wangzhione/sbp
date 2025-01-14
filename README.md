@@ -22,7 +22,7 @@ We depend on the same code(this repo) in our production environment.
 
 * [cache](https://github.com/wangzhione/sbp/tree/master/cache): Caching Mechanism
 * [cloud](https://github.com/wangzhione/sbp/tree/master/cloud): Cloud Computing Design Patterns
-* [collection](https://github.com/wangzhione/sbp/tree/master/collection): Data Structures
+* [struct](https://github.com/wangzhione/sbp/tree/master/struct): Data Structures or Collection
 * [lang](https://github.com/wangzhione/sbp/tree/master/lang): Enhanced Standard Libraries
 * [util](https://github.com/wangzhione/sbp/tree/master/util): Utilities Useful across Domains
 
