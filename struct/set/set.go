@@ -5,7 +5,7 @@ import (
 	"slices"
 )
 
-// Set is the primary interface provided by the mapset package.  It
+// ISet is the primary interface provided by the mapset package.  It
 // represents an unordered set of data and a large number of
 // operations that can be applied to that set.
 type ISet[T comparable] interface {
@@ -51,7 +51,7 @@ type ISet[T comparable] interface {
 
 // Sorted returns a sorted slice of a set of any ordered type in ascending order.
 // When sorting floating-point numbers, NaNs are ordered before other values.
-func Sorted[T cmp.Ordered](s Set[T]) []T {
+func Sorted[T cmp.Ordered](s ISet[T]) []T {
 	keys := s.ToSlice()
 	slices.Sort(keys)
 	return keys

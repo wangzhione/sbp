@@ -124,11 +124,28 @@ func (s Set[T]) ToSlice() []T {
 }
 
 func (s Set[T]) String() string {
-	items := make([]string, 0, len(s))
-	for elem := range s {
-		items = append(items, fmt.Sprintf("%v", elem))
+	if len(s) == 0 {
+		return "Set{}"
 	}
-	return fmt.Sprintf("Set{%s}", strings.Join(items, ", "))
+	if len(s) == 1 {
+		for elem := range s {
+			return fmt.Sprintf("Set{%v}", elem)
+		}
+	}
+
+	var buf strings.Builder
+	buf.WriteString("Set{")
+	n := 0
+	for elem := range s {
+		if n++; n != 1 {
+			buf.WriteString(fmt.Sprintf(", %v", elem))
+		} else {
+			buf.WriteString(fmt.Sprintf("%v", elem))
+		}
+	}
+	buf.WriteString("}")
+
+	return buf.String()
 }
 
 func (s Set[T]) MarshalJSON() ([]byte, error) {
