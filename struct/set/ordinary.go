@@ -3,7 +3,6 @@ package set
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 )
 
 type Set[T comparable] map[T]struct{}
@@ -133,19 +132,13 @@ func (s Set[T]) String() string {
 		}
 	}
 
-	var buf strings.Builder
-	buf.WriteString("Set{")
-	n := 0
+	var buf []byte
+	buf = append(buf, "Set{"...)
 	for elem := range s {
-		if n++; n != 1 {
-			buf.WriteString(fmt.Sprintf(", %v", elem))
-		} else {
-			buf.WriteString(fmt.Sprintf("%v", elem))
-		}
+		buf = append(buf, fmt.Sprintf("%v,", elem)...)
 	}
-	buf.WriteString("}")
-
-	return buf.String()
+	buf[len(buf)-1] = '}'
+	return string(buf)
 }
 
 func (s Set[T]) MarshalJSON() ([]byte, error) {

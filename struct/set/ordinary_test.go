@@ -138,3 +138,14 @@ func (t *testStruct) UnmarshalJSON(b []byte) error {
 
 	return nil
 }
+
+func TestSet_String(t *testing.T) {
+	expected := NewSetWithValue[int64](1, 2, 3)
+	var actual Set[int64]
+
+	t.Log(expected.String())
+	t.Log(actual.String())
+
+	expectedData, err := expected.MarshalJSON()
+	t.Log(string(expectedData), err)
+}
