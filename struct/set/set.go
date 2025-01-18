@@ -56,3 +56,35 @@ func Sorted[T cmp.Ordered](s ISet[T]) []T {
 	slices.Sort(keys)
 	return keys
 }
+
+func NewSetFromSlice[T comparable](keys []T) Set[T] {
+	s := NewSetWithSize[T](len(keys))
+
+	for _, key := range keys {
+		s.Add(key)
+	}
+
+	return s
+}
+
+// NewSetFromMapKey creates and returns a new set with the given keys of the map.
+// Operations on the resulting set are not thread-safe.
+func NewSetFromMapKey[T comparable, V any](m map[T]V) Set[T] {
+	s := NewSetWithSize[T](len(m))
+
+	for key := range m {
+		s.Add(key)
+	}
+
+	return s
+}
+
+func NewSetFromMapValue[T comparable, V comparable](m map[T]V) Set[V] {
+	s := NewSetWithSize[V](len(m))
+
+	for _, value := range m {
+		s.Add(value)
+	}
+
+	return s
+}

@@ -5,6 +5,20 @@ import (
 	"sync"
 )
 
+// TSet[T] thread safe map set
+// 如果你需要去使用, 需要区分对 set 的 read 和 write 操作
+//
+// var r *TSet[T]
+//
+// read step
+// r.Lock()
+// defer r.Unlock()
+// read r.S
+//
+// write step
+// r.RLock()
+// defer r.RUnlock()
+// write r.S
 type TSet[T comparable] struct {
 	sync.RWMutex
 	S Set[T]
@@ -16,6 +30,10 @@ var _ ISet[string] = (*TSet[string])(nil)
 func NewTSet[T comparable]() *TSet[T] { return &TSet[T]{S: NewSet[T]()} }
 
 func NewTSetWithSize[T comparable](size int) *TSet[T] { return &TSet[T]{S: NewSetWithSize[T](size)} }
+
+func NewTSetWithValue[T comparable](vals ...T) *TSet[T] {
+	return &TSet[T]{S: NewSetFromSlice[T](vals)}
+}
 
 func (r *TSet[T]) Add(v T) {
 	r.Lock()
@@ -33,6 +51,12 @@ func (r *TSet[T]) AddSet(other Set[T]) {
 	r.Lock()
 	defer r.Unlock()
 	r.S.AddSet(other)
+}
+
+func (r *TSet[T]) Clear() {
+	r.Lock()
+	defer r.Unlock()
+	r.S = NewSet[T]()
 }
 
 func (r *TSet[T]) Len() int {
@@ -71,16 +95,24 @@ func (r *TSet[T]) Remove(vals ...T) {
 	r.S.Remove(vals...)
 }
 
-func (r *TSet[T]) RemoveSet(other Set[T]) Set[T] {
+func (r *TSet[T]) RemoveSet(other *TSet[T]) Set[T] {
 	r.Lock()
 	defer r.Unlock()
-	return r.S.RemoveSet(other)
+
+	other.RLock()
+	defer other.RUnlock()
+
+	return r.S.RemoveSet(other.S)
 }
 
-func (r *TSet[T]) EQual(other Set[T]) bool {
+func (r *TSet[T]) EQual(other *TSet[T]) bool {
 	r.RLock()
 	defer r.RUnlock()
-	return r.S.EQual(other)
+
+	other.RLock()
+	defer other.RUnlock()
+
+	return r.S.EQual(other.S)
 }
 
 func (r *TSet[T]) Clone() Set[T] {

@@ -148,4 +148,7 @@ func TestSet_String(t *testing.T) {
 
 	expectedData, err := expected.MarshalJSON()
 	t.Log(string(expectedData), err)
+
+	mySet := NewSet[any]()
+	t.Log(mySet.String())
 }

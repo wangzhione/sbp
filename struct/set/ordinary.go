@@ -5,6 +5,7 @@ import (
 	"fmt"
 )
 
+// Set[T] map set
 type Set[T comparable] map[T]struct{}
 
 // Assert concrete type:Set adheres to ISet interface.
