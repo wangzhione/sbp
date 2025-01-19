@@ -59,7 +59,7 @@ func (s Set[T]) Exists(vals ...T) bool {
 	return true
 }
 
-func (s Set[T]) Contain(v T) bool {
+func (s Set[T]) Contains(v T) bool {
 	_, ok := s[v]
 	return ok
 }
@@ -87,7 +87,7 @@ func (s Set[T]) Remove(vals ...T) {
 
 func (s Set[T]) RemoveSet(other Set[T]) Set[T] {
 	for key := range other {
-		if s.Contain(key) {
+		if s.Contains(key) {
 			delete(s, key)
 		}
 	}
@@ -100,7 +100,7 @@ func (s Set[T]) EQual(other Set[T]) bool {
 	}
 
 	for key := range s {
-		if !other.Contain(key) {
+		if !other.Contains(key) {
 			return false
 		}
 	}

@@ -71,10 +71,10 @@ func (r *TSet[T]) Exists(vals ...T) bool {
 	return r.S.Exists(vals...)
 }
 
-func (r *TSet[T]) Contain(v T) bool {
+func (r *TSet[T]) Contains(v T) bool {
 	r.RLock()
 	defer r.RUnlock()
-	return r.S.Contain(v)
+	return r.S.Contains(v)
 }
 
 func (r *TSet[T]) ContainSet(other Set[T]) bool {

@@ -22,11 +22,11 @@ type ISet[T comparable] interface {
 	// are all in the set.
 	Exists(vals ...T) bool
 
-	// Contain returns whether the given item
+	// Contains returns whether the given item
 	// is in the set.
 	//
 	// maybe Exists may cause the argument to escape to the heap.
-	Contain(v T) bool
+	Contains(v T) bool
 
 	// Delete removes a single element from the set.
 	Delete(v T)
