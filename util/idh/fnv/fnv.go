@@ -1,4 +1,4 @@
-package idh
+package fnv
 
 import (
 	"hash/fnv"
