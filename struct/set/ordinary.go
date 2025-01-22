@@ -9,7 +9,7 @@ import (
 type Set[T comparable] map[T]struct{}
 
 // Assert concrete type:Set adheres to ISet interface.
-var _ ISet[string] = (*Set[string])(nil)
+var _ Seter[string] = (*Set[string])(nil)
 
 func NewSet[T comparable]() Set[T] { return make(Set[T]) }
 

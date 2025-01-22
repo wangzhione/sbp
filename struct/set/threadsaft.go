@@ -25,7 +25,7 @@ type TSet[T comparable] struct {
 }
 
 // Assert concrete type:TSet adheres to ISet interface.
-var _ ISet[string] = (*TSet[string])(nil)
+var _ Seter[string] = (*TSet[string])(nil)
 
 func NewTSet[T comparable]() *TSet[T] { return &TSet[T]{S: NewSet[T]()} }
 
