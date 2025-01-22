@@ -2,7 +2,8 @@ package trace
 
 import (
 	"context"
-	"sbp/util/idh"
+
+	"sbp/util/idhash"
 )
 
 var key = any(Key)
@@ -14,7 +15,7 @@ const Key = "__key_log_trace_id"
 func WithTraceID(c *context.Context) string {
 	traceID, _ := (*c).Value(key).(string)
 	if len(traceID) == 0 {
-		traceID = idh.UUID()
+		traceID = idhash.UUID()
 		*c = context.WithValue(*c, key, traceID)
 	}
 	return traceID
@@ -27,5 +28,5 @@ func GetTraceID(c context.Context) string {
 }
 
 func Context() context.Context {
-	return context.WithValue(context.Background(), key, idh.UUID())
+	return context.WithValue(context.Background(), key, idhash.UUID())
 }

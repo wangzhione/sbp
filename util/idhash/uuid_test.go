@@ -1,4 +1,4 @@
-package idh
+package idhash
 
 import "testing"
 
