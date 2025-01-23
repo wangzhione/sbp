@@ -10,13 +10,13 @@ func TestRingBuf(t *testing.T) {
 		rb.Write([]byte("fghibbbbccccddde"))
 		rb.Write([]byte("fghibbbbc"))
 		rb.Resize(16)
-		off := rb.Evacuate(9, 3)
+		off := rb.Evacuate(3, 9)
 		t.Log(string(rb.Dump()))
 		if off != rb.End()-3 {
 			t.Log(string(rb.Dump()), rb.End())
 			t.Fatalf("off got %v", off)
 		}
-		off = rb.Evacuate(15, 5)
+		off = rb.Evacuate(5, 15)
 		t.Log(string(rb.Dump()))
 		if off != rb.End()-5 {
 			t.Fatalf("off got %v", off)
@@ -29,7 +29,7 @@ func TestRingBuf(t *testing.T) {
 			t.Fatalf("read at should be efghi, got %v", string(data))
 		}
 
-		off = rb.Evacuate(0, 10)
+		off = rb.Evacuate(10, 0)
 		if off != -1 {
 			t.Fatal("evacutate out of range offset should return error")
 		}
