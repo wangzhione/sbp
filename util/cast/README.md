@@ -40,7 +40,7 @@ string := strconv.FormatInt(int64, 10)
 
 ```Go
 str := "2025-03-09T01:28:12.946770726Z"
-time, error :=time.Parse(time.RFC3339Nano, str)
+time, error := time.Parse(time.RFC3339Nano, str)
 
 result, error := time.ParseInLocation(time.RFC3339Nano, str, time.UTC)
 
@@ -52,7 +52,7 @@ timeLayout := "2006-01-02 15:04:05"                 // 转化所需模板
 loc, _ := time.LoadLocation("Asia/Shanghai")        // 设置上海时区
 ```
 
-复杂的可以使用 `spf13/cast.ToTime` 用于转换为 `go time` 类型
+复杂的 RPC 业务 可以使用 `spf13/cast.ToTime` 用于转换为 `go time` 类型. 普通业务流畅和安全可控简单用原生 api 就可以. 
 
 ## 补充
  
