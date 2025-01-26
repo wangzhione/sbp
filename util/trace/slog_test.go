@@ -14,12 +14,5 @@ func TestContextHandler_Handle(t *testing.T) {
 }
 
 func TestEnableDebug(t *testing.T) {
-	b := slog.Default().Enabled(Background, slog.LevelDebug)
-	t.Log(b)
-
-	x := slog.Default().Enabled(Background, slog.LevelInfo)
-	t.Log(x)
-
-	Options.Level = slog.LevelDebug
-	t.Log(slog.Default().Enabled(Background, slog.LevelDebug))
+	t.Log(EnableLevel)
 }
