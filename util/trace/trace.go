@@ -6,6 +6,8 @@ import (
 	"sbp/util/idhash"
 )
 
+var Background = Context()
+
 var key = any(Key)
 
 // Key 默认所有链条 trace id 的 key

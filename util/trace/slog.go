@@ -20,17 +20,12 @@ func (h ContextHandler) Handle(ctx context.Context, r slog.Record) error {
 	return h.Handler.Handle(ctx, r)
 }
 
-// EnableLevel 默认开启 slog.LevelDebug, 具体业务可以 init 通过配置日志等级
-var EnableLevel slog.Level = slog.LevelDebug
-
-func init() {
-	opts := slog.HandlerOptions{
-		Level: EnableLevel,
-	}
-	logs := slog.New(&ContextHandler{slog.NewJSONHandler(os.Stdout, &opts)})
-	slog.SetDefault(logs)
+var Options = slog.HandlerOptions{
+	AddSource: true,
+	Level:     slog.LevelInfo, // 默认开启 slog.LevelInfo, 具体业务可以 init 通过配置日志等级
 }
 
-func EnableDebug() bool {
-	return slog.Default().Enabled(context.Background(), slog.LevelDebug)
+func init() {
+	logs := slog.New(&ContextHandler{slog.NewTextHandler(os.Stdout, &Options)})
+	slog.SetDefault(logs)
 }

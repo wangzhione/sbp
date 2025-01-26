@@ -5,10 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
-	"net/url"
 	"sbp/util/trace"
-	"strings"
-	"time"
 
 	_ "github.com/go-sql-driver/mysql" // 导入 MySQL 驱动
 )
@@ -30,10 +27,10 @@ type MySQLConfig struct {
 	// 每个实例的最大连接数 = 数据库最大连接数 / 实例数量
 	// 如果设置太小：并发请求多时，连接池耗尽，导致请求排队。
 	// 如果设置太大：数据库可能被连接耗尽，出现性能瓶颈。
-	MaxOpenConns    int
-	MaxIdleConns    int           // 控制空闲连接数，优化连接复用。默认 2 最多 2 个空闲连接
-	ConnMaxIdleTime time.Duration // 控制每个空闲连接的最大生命周期
-	ConnLifetime    time.Duration // 控制每个连接的最大生命周期，确保连接池中的连接健康。默认 0, 直到 MySQL 主动关闭
+	MaxOpenConns *int
+	MaxIdleConns *int // 控制空闲连接数，优化连接复用。默认 2 最多 2 个空闲连接
+
+	// 对于连接相关最大生命周期, 默认是 0 表示永久, 随自行 close 或 mysql 主动关闭
 }
 
 func (config *MySQLConfig) DataSourceName() string {
@@ -60,32 +57,10 @@ func (config *MySQLConfig) DataSourceName() string {
 	)
 }
 
-func DSNToMySQLCommand(dsn string) string {
-	// 解析 DSN 字符串
-	u, err := url.Parse(dsn)
-	if err != nil {
-		slog.Error("dsn to mysql command error", "dsn", dsn, "reason", err)
-		return ""
-	}
-
-	// 提取用户名和密码
-	user := u.User.Username()
-	password, _ := u.User.Password()
-
-	// 提取主机地址和端口
-	host := u.Hostname()
-	port := u.Port()
-
-	// 提取数据库名称
-	dbname := strings.TrimPrefix(u.Path, "/")
-
-	// 提取字符集
-	q := u.Query()
-	charset := q.Get("charset")
-
+func (config *MySQLConfig) Command() string {
 	// 生成 MySQL 命令行连接字符串
-	return fmt.Sprintf("mysql -u %s -p%s -h %s -P %s --default-character-set=%s %s",
-		user, password, host, port, charset, dbname)
+	return fmt.Sprintf("mysql -u %s -p%s -h %s -P %d --default-character-set=utf8mb4 %s",
+		config.Username, config.Password, config.Host, config.Port, config.Database)
 }
 
 // MySQLHelper 是操作 MySQL 的帮助类
@@ -98,7 +73,7 @@ func NewMySQLHelper(ctx context.Context, config MySQLConfig) (*MySQLHelper, erro
 	// 构建 DSN（Data Source Name）
 	dsn := config.DataSourceName()
 	if trace.EnableDebug() {
-		slog.DebugContext(ctx, "dsn and mysql cmd", "mysql", dsn, "command", DSNToMySQLCommand(dsn))
+		slog.DebugContext(ctx, "dsn and mysql cmd", "mysql", dsn, "command", config.Command())
 	}
 
 	// 初始化数据库连接
@@ -109,10 +84,18 @@ func NewMySQLHelper(ctx context.Context, config MySQLConfig) (*MySQLHelper, erro
 	}
 
 	// 配置连接池
-	db.SetMaxOpenConns(config.MaxOpenConns)
-	db.SetMaxIdleConns(config.MaxIdleConns)
-	db.SetConnMaxIdleTime(config.ConnMaxIdleTime)
-	db.SetConnMaxLifetime(config.ConnLifetime)
+	if config.MaxIdleConns != nil {
+		db.SetMaxOpenConns(*config.MaxOpenConns)
+	} else {
+		// 默认有 3 个空闲连接, 库本身默认 2 个, 这边多一个, 尝试用于 goroutine chan Exec
+		db.SetMaxOpenConns(3)
+	}
+	if config.MaxIdleConns != nil {
+		db.SetMaxIdleConns(*config.MaxIdleConns)
+	} else {
+		// 单个连接消耗系统资源接近 4MB, 256 个连接差不多 1G, 而且这只是单台机器. 高并发请求 MySQL 本身存在瓶颈
+		db.SetMaxIdleConns(128)
+	}
 
 	// 测试连接
 	if err := db.Ping(); err != nil {
