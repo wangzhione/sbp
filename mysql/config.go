@@ -56,7 +56,7 @@ func (config *MySQLConfig) DataSourceName() string {
 func (config *MySQLConfig) Command() string {
 	// 生成 MySQL 命令行连接字符串
 	// mysql -u <用户名> -p<密码> -h <主机名> -P <端口号> --default-character-set=utf8mb4 <数据库名>
-	return fmt.Sprintf("mysql -u %s -p%s -h %s -P %d --default-character-set=utf8mb4 %s",
+	return fmt.Sprintf("mysql -u %s -p%s -h %s -P %d %s --default-character-set=utf8mb4",
 		config.Username, config.Password, config.Host, config.Port, config.Database)
 }
 
@@ -121,4 +121,59 @@ func ParseCommand(command string) (*MySQLConfig, error) {
 	}
 
 	return config, nil
+}
+
+// ConvertDSNToCommand 将 DataSourceName 转换为 mysql 命令行格式
+func ConvertDSNToCommand(dsn string) (string, error) {
+	// 分割 DSN 为主连接部分和查询参数部分
+	parts := strings.Split(dsn, "?")
+	connPart := parts[0]
+
+	// 校验格式是否包含 "@"
+	userInfoAndAddr := strings.SplitN(connPart, "@", 2)
+	if len(userInfoAndAddr) < 2 {
+		return "", fmt.Errorf("invalid DSN: missing '@' separator")
+	}
+
+	// 提取用户信息
+	userInfo := userInfoAndAddr[0]
+	protocolAndAddr := userInfoAndAddr[1]
+
+	// 分割用户名和密码
+	userAndPass := strings.SplitN(userInfo, ":", 2)
+	username := userAndPass[0]
+	password := ""
+	if len(userAndPass) > 1 {
+		password = userAndPass[1]
+	}
+
+	// 校验地址是否包含 "("
+	protocolAndAddress := strings.SplitN(protocolAndAddr, "(", 2)
+	if len(protocolAndAddress) < 2 {
+		return "", fmt.Errorf("invalid DSN: missing '(' separator for address")
+	}
+
+	// 提取地址和数据库名
+	addressAndDb := strings.SplitN(protocolAndAddress[1], ")/", 2)
+	if len(addressAndDb) < 2 {
+		return "", fmt.Errorf("invalid DSN: missing database name")
+	}
+	address := strings.TrimRight(addressAndDb[0], ")")
+	dbName := addressAndDb[1]
+
+	// 分割地址为主机名和端口
+	hostAndPort := strings.SplitN(address, ":", 2)
+	host := hostAndPort[0]
+	port := "3306" // 默认端口
+	if len(hostAndPort) > 1 {
+		port = hostAndPort[1]
+	}
+
+	// 构造 mysql 命令行格式
+	command := fmt.Sprintf(
+		"mysql -u %s -p%s -h %s -P %s %s --default-character-set=utf8mb4",
+		username, password, host, port, dbName,
+	)
+
+	return command, nil
 }

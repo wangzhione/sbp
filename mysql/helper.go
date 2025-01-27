@@ -5,12 +5,15 @@ import (
 	"database/sql"
 	"log/slog"
 	"sbp/util/trace"
+	"time"
 
-	_ "github.com/go-sql-driver/mysql" // 导入 MySQL 驱动
+	_ "github.com/go-sql-driver/mysql" // init MySQL 驱动
 )
 
+type DB = *sql.DB
+
 // NewMySQLHelper 创建一个新的 MySQLHelper 实例
-func NewMySQLHelper(ctx context.Context, config MySQLConfig) (db *sql.DB, err error) {
+func NewMySQLHelper(ctx context.Context, config MySQLConfig) (db DB, err error) {
 	// 构建 DSN（Data Source Name）
 	dsn := config.DataSourceName()
 	if trace.EnableLevel == slog.LevelDebug {
@@ -38,8 +41,10 @@ func NewMySQLHelper(ctx context.Context, config MySQLConfig) (db *sql.DB, err er
 		db.SetMaxIdleConns(128)
 	}
 
-	// 测试连接
-	if err = db.Ping(); err != nil {
+	// 测试连接 默认 2s 内如果链接, 不成功, 认为失败
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	if err = db.PingContext(ctx); err != nil {
 		slog.ErrorContext(ctx, "failed to ping MySQL", "dsn", dsn, "reason", err)
 		return
 	}
