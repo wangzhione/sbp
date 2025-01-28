@@ -12,6 +12,8 @@ import (
 	_ "github.com/go-sql-driver/mysql" // init MySQL 驱动
 )
 
+var MySQLDriverName = "mysql"
+
 // SQLHelper 数据库帮助结构体
 type SQLHelper struct {
 	DB *sql.DB
@@ -26,7 +28,7 @@ func NewMySQLHelper(ctx context.Context, config MySQLConfig) (helper *SQLHelper,
 	}
 
 	// 初始化数据库连接
-	db, err := sql.Open("mysql", dsn)
+	db, err := sql.Open(MySQLDriverName, dsn)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to connect to MySQL", "dsn", dsn, "reason", err)
 		return
@@ -35,14 +37,12 @@ func NewMySQLHelper(ctx context.Context, config MySQLConfig) (helper *SQLHelper,
 	// 配置连接池
 	if config.MaxIdleConns != nil {
 		db.SetMaxOpenConns(*config.MaxOpenConns)
-	} else {
-		// 默认有 3 个空闲连接, 库本身默认 2 个, 这边多一个, 尝试用于 goroutine chan Exec
-		db.SetMaxOpenConns(3)
 	}
 	if config.MaxIdleConns != nil {
 		db.SetMaxIdleConns(*config.MaxIdleConns)
 	} else {
 		// 单个连接消耗系统资源接近 4MB, 256 个连接差不多 1G, 而且这只是单台机器. 高并发请求 MySQL 本身存在瓶颈
+		// 当然如果真的跑满了 128 , 哪怕此刻设置为 0, 在横向服务器组中, 对 MySQL 压力巨大的, 可能会让其拒绝服务(处理不过来)
 		db.SetMaxIdleConns(128)
 	}
 
@@ -118,7 +118,7 @@ func (helper *SQLHelper) QueryCallBack(ctx context.Context, callback func(contex
 }
 
 /*
- QueryRow template
+ QueryRow (FindOne) template
 
 	err := helper.DB.QueryRowContext(ctx, query, args...).Scan(dest...)
 	switch err {
