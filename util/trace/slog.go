@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"os"
+	"time"
 )
 
 type ContextHandler struct {
@@ -30,4 +31,17 @@ func init() {
 	}
 	logs := slog.New(&ContextHandler{slog.NewTextHandler(os.Stdout, &Options)})
 	slog.SetDefault(logs)
+}
+
+// LogStartEnd Wrapper function to log start and end times, and measure duration
+func LogStartEnd(ctx context.Context, name string, fn func(context.Context)) {
+	start := time.Now()
+	slog.InfoContext(ctx, "["+name+"] - Start", "time", start.Format("2006-01-02 15:04:05.000000"))
+
+	// Execute the wrapped function with context
+	fn(ctx)
+
+	end := time.Now()
+	elapsed := end.Sub(start)
+	slog.InfoContext(ctx, "["+name+"] - End", "elapsed", elapsed, "time", end.Format("2006-01-02 15:04:05.000000"))
 }

@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"log/slog"
 	"runtime/debug"
-	"sbp/util/trace"
 	"time"
+
+	"sbp/util/trace"
 
 	_ "github.com/go-sql-driver/mysql" // init MySQL 驱动
 )
@@ -64,8 +65,29 @@ func (helper *SQLHelper) Close() error {
 	return helper.DB.Close()
 }
 
+// Before hook will print the query with it's args and return the context with the timestamp
+func Before(ctx context.Context, query string, args []any) time.Time {
+	begin := time.Now()
+	slog.InfoContext(ctx, "MySQL before", "begin", begin, "query", query, "args", args)
+	return begin
+}
+
+// After hook will get the timestamp registered on the Before hook and print the elapsed time
+func After(ctx context.Context, begin time.Time) {
+	end := time.Now()
+	elapsed := end.Sub(begin)
+	if elapsed >= time.Second {
+		slog.WarnContext(ctx, "MySQL After Warn slow", "elapsed", elapsed, "end", end)
+	} else {
+		slog.InfoContext(ctx, "MySQL After", "elapsed", elapsed, "end", end)
+	}
+}
+
 // Exec 执行无返回的 SQL 语句等 例如（INSERT, UPDATE, DELETE）
 func (helper *SQLHelper) Exec(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	// 主动注入日志模块
+	defer After(ctx, Before(ctx, query, args))
+
 	result, err := helper.DB.ExecContext(ctx, query, args...)
 	if err != nil {
 		slog.ErrorContext(ctx, "SQLHelper Exec error", "query", query, "args", args, "reason", err)
@@ -75,6 +97,8 @@ func (helper *SQLHelper) Exec(ctx context.Context, query string, args ...any) (s
 
 // Query 执行查询，返回多行数据
 func (helper *SQLHelper) Query(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
+	defer After(ctx, Before(ctx, query, args))
+
 	rows, err := helper.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		slog.ErrorContext(ctx, "SQLHelper Query error", "query", query, "args", args, "reason", err)
@@ -85,6 +109,8 @@ func (helper *SQLHelper) Query(ctx context.Context, query string, args ...any) (
 // QueryCallBack 执行查询, 内部自行通过闭包来完成参数传递和返回值获取
 // callback is for rows.Next() {}
 func (helper *SQLHelper) QueryCallBack(ctx context.Context, callback func(context.Context, *sql.Rows) error, query string, args ...any) error {
+	defer After(ctx, Before(ctx, query, args))
+
 	rows, err := helper.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		slog.ErrorContext(ctx, "SQLHelper QueryCallBack error", "query", query, "args", args, "reason", err)
@@ -117,22 +143,23 @@ func (helper *SQLHelper) QueryCallBack(ctx context.Context, callback func(contex
 	return nil
 }
 
-/*
- QueryRow (FindOne) template
+// QueryRow FindOne
+func (helper *SQLHelper) QueryRow(ctx context.Context, query string, args []any, dest ...any) error {
+	defer After(ctx, Before(ctx, query, args))
 
 	err := helper.DB.QueryRowContext(ctx, query, args...).Scan(dest...)
 	switch err {
 	case nil:
 		// success
-		return nil;
+		return nil
 	case sql.ErrNoRows: // 没有记录，返回空值
 		slog.InfoContext(ctx, "SQLHelper QueryRow sql.ErrNoRows")
-		return err; // or empty 业务逻辑处理
+		return err // or empty 业务逻辑处理
 	default:
 		slog.ErrorContext(ctx, "SQLHelper QueryRow error", "query", query, "args", args, "reason", err)
-		return nil;
+		return err
 	}
-*/
+}
 
 // BeginTransaction 开启事务
 func (helper *SQLHelper) BeginTransaction(ctx context.Context, transaction func(context.Context, *sql.Tx) error) (err error) {
