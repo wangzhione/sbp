@@ -66,7 +66,7 @@ func (helper *SQLHelper) Close() error {
 }
 
 // Before hook will print the query with it's args and return the context with the timestamp
-func Before(ctx context.Context, query string, args []any) time.Time {
+func Before(ctx context.Context, query string, args ...any) time.Time {
 	begin := time.Now()
 	slog.InfoContext(ctx, "MySQL before", "begin", begin, "query", query, "args", args)
 	return begin
@@ -163,6 +163,8 @@ func (helper *SQLHelper) QueryRow(ctx context.Context, query string, args []any,
 
 // BeginTransaction 开启事务
 func (helper *SQLHelper) BeginTransaction(ctx context.Context, transaction func(context.Context, *sql.Tx) error) (err error) {
+	defer After(ctx, Before(ctx, "BeginTransaction"))
+
 	// opts *sql.TxOptions 用于指定事务的隔离级别和是否为只读事务。可选参数，可以传 nil 使用 mysql 默认配置。
 	tx, err := helper.DB.BeginTx(ctx, nil)
 	if err != nil {
@@ -205,3 +207,5 @@ func (helper *SQLHelper) BeginTransaction(ctx context.Context, transaction func(
 
 	return nil
 }
+
+// TODO : 封装 tx 等逻辑
