@@ -49,3 +49,27 @@ You can use `go get -u github.com/wangzhione/sbp@master` to get or update `sbp`.
 - [Uber Go Style Guide](https://github.com/uber-go/guide/blob/master/style.md)
 
 ![](god.webp)
+
+## 拓展配置
+
+我本身用的是 Visual Studio Code 简单说一下, 用这个 IDE 开发 Golang 基础配置
+
+在全局 settings.json 加入, 用于控制 go import 和 go test 相关行为
+
+```JSON
+    "go.testFlags": [
+        "-v"
+    ],
+    "gopls": {
+        "ui.importShortcut": "both",
+        "formatting.gofumpt": true,
+        "ui.semanticTokens": true,
+        "experimental.postfixCompletions": true
+    },
+    "[go]": {
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit" // 仅在显式保存时触发
+        },
+        "editor.formatOnSave": true // 可选：启用自动格式化
+    },
+```
