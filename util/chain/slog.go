@@ -1,4 +1,4 @@
-package trace
+package chain
 
 import (
 	"context"
@@ -25,7 +25,7 @@ func (h ContextHandler) Handle(ctx context.Context, r slog.Record) error {
 var EnableLevel slog.Level = slog.LevelDebug
 
 func init() {
-	var Options = slog.HandlerOptions{
+	Options := slog.HandlerOptions{
 		AddSource: true,
 		Level:     EnableLevel,
 	}

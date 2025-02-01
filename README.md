@@ -58,7 +58,7 @@ You can use `go get -u github.com/wangzhione/sbp@master` to get or update `sbp`.
 
 ```JSON
     "go.testFlags": [
-        "-v"
+        "-v", "-count=1"
     ],
     "gopls": {
         "ui.importShortcut": "both",

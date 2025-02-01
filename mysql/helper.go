@@ -8,7 +8,7 @@ import (
 	"runtime/debug"
 	"time"
 
-	"sbp/util/trace"
+	"sbp/util/chain"
 
 	_ "github.com/go-sql-driver/mysql" // init MySQL 驱动
 )
@@ -22,11 +22,11 @@ var MySQLDriverName = "mysql"
 // DB 数据库帮助新结构体
 type DB sql.DB
 
-// NewMyMySQL 创建一个新的 MyMySQL 实例
-func NewMySQLHelper(ctx context.Context, config MySQLConfig) (s *DB, err error) {
+// NewDB 创建一个新的 MyMySQL 实例
+func NewDB(ctx context.Context, config *MySQLConfig) (s *DB, err error) {
 	// 构建 DSN（Data Source Name）
 	dsn := config.DataSourceName()
-	if trace.EnableLevel == slog.LevelDebug {
+	if chain.EnableLevel == slog.LevelDebug {
 		slog.DebugContext(ctx, "dsn and mysql cmd", "mysql", dsn, "command", config.Command())
 	}
 
@@ -144,7 +144,7 @@ func (s *DB) QueryCallBack(ctx context.Context, callback func(context.Context, *
 	return nil
 }
 
-// QueryRow FindOne
+// QueryRow FindOne, args is empty 可以是 nil or []any{}
 func (s *DB) QueryRow(ctx context.Context, query string, args []any, dest ...any) error {
 	defer After(ctx, Before(ctx, query, args))
 

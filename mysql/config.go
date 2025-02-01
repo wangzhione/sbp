@@ -2,8 +2,9 @@ package mysql
 
 import (
 	"fmt"
-	"sbp/util/cast"
 	"strings"
+
+	"sbp/util/cast"
 )
 
 // MySQLConfig 用于配置 MySQL 数据库连接
@@ -116,8 +117,13 @@ func ParseCommand(command string) (*MySQLConfig, error) {
 	}
 
 	// Validate required fields
-	if config.Username == "" || config.Password == "" || config.Host == "" || config.Port == 0 || config.Database == "" {
+	if config.Username == "" || config.Password == "" || config.Database == "" {
 		return nil, fmt.Errorf("missing required fields in MySQL command")
+	}
+
+	// default mysql port
+	if config.Port == 0 {
+		config.Port = 3306
 	}
 
 	return config, nil

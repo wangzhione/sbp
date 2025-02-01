@@ -1,4 +1,4 @@
-package trace
+package chain
 
 import (
 	"log/slog"
