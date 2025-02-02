@@ -17,6 +17,7 @@ import (
 // 对于底层 MySQL 处理, 非常重且重要业务, 实战开发, 只推荐 context 版本
 // 这里用的是显示注入 SQL log 行为. 整体而言非常轻量级别 API 设计
 
+// MySQLDriverName 驱动名称, 方便以后有更好的 sql hook 出现, 留一个口子
 var MySQLDriverName = "mysql"
 
 // DB 数据库帮助新结构体

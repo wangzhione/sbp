@@ -78,6 +78,7 @@ func TestDB_QueryCallBack(t *testing.T) {
 		t.Fatal("NewDB fatal", err)
 	}
 
+	// 现代 Go 开发, 一定要集合 AI, 例如 ChatGPT 辅助, 很多工作都好节省
 	var users []User
 	query := "SELECT id, user_name, password, password_salt, email_not_verified, user_email, update_time, create_time, delete_time FROM t_user WHERE delete_time = 0"
 	err = s.QueryCallBack(chain.Background, func(ctx context.Context, rows *sql.Rows) error {
