@@ -11,4 +11,6 @@ require (
 	github.com/go-sql-driver/mysql v1.8.1-0.20250123093231-85c6311943c8 // indirect
 	github.com/qustavo/sqlhooks/v2 v2.1.1-0.20220401034213-7875602513fa // indirect
 	github.com/spf13/cast v1.7.1 // indirect
+	golang.org/x/net v0.34.1-0.20250204013920-938a9fb94e41 // indirect
+	golang.org/x/text v0.21.0 // indirect
 )
