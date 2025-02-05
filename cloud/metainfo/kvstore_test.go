@@ -20,7 +20,7 @@ import (
 )
 
 func TestKVStore(t *testing.T) {
-	store := newKVStore()
+	store := newkvstore()
 	store["a"] = "a"
 	store["a"] = "b"
 	if store["a"] != "b" {
@@ -30,8 +30,15 @@ func TestKVStore(t *testing.T) {
 	if store["a"] == "b" {
 		t.Fatal()
 	}
-	store = newKVStore()
+	store = newkvstore()
 	if store["a"] == "b" {
+		t.Fatal()
+	}
+
+	store = newkvstore(3)
+	store1 := make(map[string]string, 3)
+	t.Log(store.size(), len(store1))
+	if store.size() != len(store1) {
 		t.Fatal()
 	}
 }
@@ -55,7 +62,7 @@ func BenchmarkKVStore(b *testing.B) {
 		b.Run(fmt.Sprintf("keys=%d", keys), func(b *testing.B) {
 			b.ReportAllocs()
 			for i := 0; i < b.N; i++ {
-				m := newKVStore()
+				m := newkvstore()
 				for idx := 0; idx < 1000; idx++ {
 					m[fmt.Sprintf("key-%d", idx)] = string('a' + byte(idx%26))
 				}

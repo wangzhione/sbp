@@ -6,21 +6,7 @@ import (
 	"testing"
 )
 
-func TestHasMetaInfo(t *testing.T) {
-	c0 := context.Background()
-	assert(t, !HasMetaInfo(c0))
-
-	c1 := WithValue(c0, "k", "v")
-	assert(t, HasMetaInfo(c1))
-
-	c2 := WithPersistentValue(c0, "k", "v")
-	assert(t, HasMetaInfo(c2))
-}
-
 func TestSetMetaInfoFromMap(t *testing.T) {
-	// Nil tests
-	assert(t, SetMetaInfoFromMap(nil, nil) == nil)
-
 	ctx := context.Background()
 	assert(t, SetMetaInfoFromMap(ctx, nil) == ctx)
 
@@ -107,9 +93,6 @@ func TestSetMetaInfoFromMapKeepPreviousData(t *testing.T) {
 
 func TestSaveMetaInfoToMap(t *testing.T) {
 	m := make(map[string]string)
-
-	SaveMetaInfoToMap(nil, m)
-	assert(t, len(m) == 0)
 
 	ctx := context.Background()
 	SaveMetaInfoToMap(ctx, m)

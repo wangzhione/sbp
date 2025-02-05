@@ -59,27 +59,26 @@ func (h HTTPHeader) Set(key, value string) {
 // FromHTTPHeader reads metainfo from a given HTTP header and sets them into the context.
 // Note that this function does not call TransferForward inside.
 func FromHTTPHeader(ctx context.Context, h HTTPHeaderCarrier) context.Context {
-	if ctx == nil || h == nil {
+	if h == nil {
 		return ctx
 	}
+
 	nd := getNode(ctx)
-	if nd == nil || nd.size() == 0 {
+	if nd.size() == 0 {
 		return newCtxFromHTTPHeader(ctx, h)
 	}
 
 	// inherit from exist ctx node
-	persistent := newKVStore()
-	transient := newKVStore()
-	stale := newKVStore()
-	sliceToMap(nd.persistent, persistent)
-	sliceToMap(nd.transient, transient)
-	sliceToMap(nd.stale, stale)
+	persistent := newkvtostore(nd.persistent)
+	transient := newkvtostore(nd.transient)
+	stale := newkvtostore(nd.stale)
 
 	// insert new kvs from http header
 	h.Visit(func(k, v string) {
 		if len(v) == 0 {
 			return
 		}
+
 		kk := strings.ToLower(k)
 		ln := len(kk)
 		if ln > lenHPT && strings.HasPrefix(kk, HTTPPrefixTransient) {
@@ -92,17 +91,8 @@ func FromHTTPHeader(ctx context.Context, h HTTPHeaderCarrier) context.Context {
 	})
 
 	// return original ctx if no invalid key in http header
-	if (persistent.size() + transient.size() + stale.size()) == 0 {
-		return ctx
-	}
-
 	// make new kvs
-	nd = newNodeFromMaps(persistent, transient, stale)
-	persistent.recycle()
-	transient.recycle()
-	stale.recycle()
-	ctx = withNode(ctx, nd)
-	return ctx
+	return withNodeFromMaps(ctx, persistent, transient, stale)
 }
 
 func newCtxFromHTTPHeader(ctx context.Context, h HTTPHeaderCarrier) context.Context {

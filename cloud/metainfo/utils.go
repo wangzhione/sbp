@@ -5,32 +5,25 @@ import (
 	"strings"
 )
 
-// HasMetaInfo detects whether the given context contains metainfo.
-func HasMetaInfo(ctx context.Context) bool {
-	return getNode(ctx) != nil
-}
-
 // SetMetaInfoFromMap retrieves metainfo key-value pairs from the given map and sets then into the context.
 // Only those keys with prefixes defined in this module would be used.
 // If the context has been carrying metanifo pairs, they will be merged as a basis.
 func SetMetaInfoFromMap(ctx context.Context, m map[string]string) context.Context {
-	if ctx == nil || len(m) == 0 {
+	// need ctx != nil, 永远别用 nil context 去玩
+	if len(m) == 0 {
 		return ctx
 	}
 
 	nd := getNode(ctx)
-	if nd == nil || nd.size() == 0 {
+	if nd.size() == 0 {
 		// fast path
 		return newCtxFromMap(ctx, m)
 	}
+
 	// inherit from node
-	mapSize := len(m)
-	persistent := newKVStore(mapSize)
-	transient := newKVStore(mapSize)
-	stale := newKVStore(mapSize)
-	sliceToMap(nd.persistent, persistent)
-	sliceToMap(nd.transient, transient)
-	sliceToMap(nd.stale, stale)
+	persistent := newkvtostore(nd.persistent)
+	transient := newkvtostore(nd.transient)
+	stale := newkvtostore(nd.stale)
 
 	// insert new kvs from m to node
 	for k, v := range m {
@@ -54,16 +47,8 @@ func SetMetaInfoFromMap(ctx context.Context, m map[string]string) context.Contex
 	}
 
 	// return original ctx if no invalid key in map
-	if (persistent.size() + transient.size() + stale.size()) == 0 {
-		return ctx
-	}
-
 	// make new node, and transfer map to list
-	nd = newNodeFromMaps(persistent, transient, stale)
-	persistent.recycle()
-	transient.recycle()
-	stale.recycle()
-	return withNode(ctx, nd)
+	return withNodeFromMaps(ctx, persistent, transient, stale)
 }
 
 func newCtxFromMap(ctx context.Context, m map[string]string) context.Context {
@@ -96,18 +81,15 @@ func newCtxFromMap(ctx context.Context, m map[string]string) context.Context {
 		}
 	}
 
-	// return original ctx if no invalid key in map
-	if nd.size() == 0 {
-		return ctx
-	}
 	return withNode(ctx, nd)
 }
 
 // SaveMetaInfoToMap set key-value pairs from ctx to m while filtering out transient-upstream data.
 func SaveMetaInfoToMap(ctx context.Context, m map[string]string) {
-	if ctx == nil || m == nil {
+	if len(m) == 0 {
 		return
 	}
+
 	ctx = TransferForward(ctx)
 	if n := getNode(ctx); n != nil {
 		for _, kv := range n.stale {
@@ -122,12 +104,11 @@ func SaveMetaInfoToMap(ctx context.Context, m map[string]string) {
 	}
 }
 
-// sliceToMap converts a kv slice to map.
-func sliceToMap(slice []kv, kvs kvstore) {
-	if len(slice) == 0 {
-		return
-	}
+// newkvtostore new kvstore and converts a kv slice to map.
+func newkvtostore(slice []kv) kvstore {
+	kvs := newkvstore(len(slice))
 	for _, kv := range slice {
 		kvs[kv.key] = kv.val
 	}
+	return kvs
 }

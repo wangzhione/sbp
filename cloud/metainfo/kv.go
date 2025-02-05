@@ -4,23 +4,44 @@ import (
 	"context"
 )
 
-type ctxKeyType struct{}
-
-var ctxKey ctxKeyType
-
 type kv struct {
 	key string
 	val string
 }
 
-func newNodeFromMaps(persistent, transient, stale kvstore) *node {
+type node struct {
+	persistent []kv
+	transient  []kv
+	stale      []kv
+}
+
+func (n *node) size() int {
+	if n == nil {
+		return 0
+	}
+	return len(n.persistent) + len(n.transient) + len(n.stale)
+}
+
+// withNodeFromMaps kvstore 对象转移到 node 上, 转移成功后 node != nil && kvstore 不再可用
+func withNodeFromMaps(ctx context.Context, persistent, transient, stale kvstore) context.Context {
+	// need 需要 ps + ts + sz > 0
 	ps, ts, sz := persistent.size(), transient.size(), stale.size()
+	if ps+ts+sz == 0 {
+		return ctx
+	}
+
+	nd := new(node)
 	// make slices together to reduce malloc cost
 	kvs := make([]kv, ps+ts+sz)
-	nd := new(node)
-	nd.persistent = kvs[:ps]
-	nd.transient = kvs[ps : ps+ts]
-	nd.stale = kvs[ps+ts:]
+	if ps > 0 {
+		nd.persistent = kvs[:ps]
+	}
+	if ts > 0 {
+		nd.transient = kvs[ps : ps+ts]
+	}
+	if ts > 0 {
+		nd.stale = kvs[ps+ts:]
+	}
 
 	i := 0
 	for k, v := range persistent {
@@ -37,25 +58,20 @@ func newNodeFromMaps(persistent, transient, stale kvstore) *node {
 		nd.stale[i].key, nd.stale[i].val = k, v
 		i++
 	}
-	return nd
+
+	// kvstore 对象生命周期转给 node, 前者不再可用
+	persistent.recycle()
+	transient.recycle()
+	stale.recycle()
+
+	return withNode(ctx, nd)
 }
 
-type node struct {
-	persistent []kv
-	transient  []kv
-	stale      []kv
-}
-
-func (n *node) size() int {
-	return len(n.persistent) + len(n.transient) + len(n.stale)
-}
-
-func (n *node) transferForward() (r *node) {
-	r = &node{
+func (n *node) transferForward() *node {
+	return &node{
 		persistent: n.persistent,
 		stale:      n.transient,
 	}
-	return
 }
 
 func (n *node) addTransient(k, v string) *node {
@@ -160,25 +176,26 @@ func remove(kvs []kv, key string) (res []kv, removed bool) {
 	return kvs, false
 }
 
+type ctxkeytype struct{}
+
+var ctxkey ctxkeytype
+
 func getNode(ctx context.Context) *node {
-	if ctx != nil {
-		if val, ok := ctx.Value(ctxKey).(*node); ok {
-			return val
-		}
-	}
-	return nil
+	val, _ := ctx.Value(ctxkey).(*node)
+	return val
 }
 
 func withNode(ctx context.Context, n *node) context.Context {
-	if ctx == nil {
+	// return original ctx if no invalid key in map
+	if n.size() == 0 {
 		return ctx
 	}
-	return context.WithValue(ctx, ctxKey, n)
+	return context.WithValue(ctx, ctxkey, n)
 }
 
 func appendEx(arr []kv, x kv) (res []kv) {
 	res = make([]kv, len(arr)+1)
 	copy(res, arr)
 	res[len(arr)] = x
-	return res
+	return
 }
