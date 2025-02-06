@@ -18,6 +18,8 @@ metainfo
 1. 框架使用的传输协议应该支持元信息的传递（例如 HTTP header、thrift 的 header transport 等）。
 2. 当框架作为服务端接收到元信息后，需要将元信息添加到 `context.Context` 对象里。随后，进入用户的代码逻辑
 
+**整体而言这个库非常鸡肋, 主要提供功能是 context 和 HTTP header 直接沟通能力, 实战中, 往往定向从 context 获取, 然后直接 set 到 HTTP header 中, 炫技成份高**
+因为协议层东西, 比较麻烦, 普通开发一遍不会接触, 或者写死在固定业务函数中.
 
 API 参考
 -------
@@ -38,8 +40,6 @@ metainfo 包提供了几个常量字符串前缀，用于无 context（例如网
 
 **方法**
 
-- `TransferForward(ctx context.Context) context.Context`
-    -  persistent 数据等传递
 - `GetPersistentValue(ctx context.Context, k string) (string, bool)`
     - 从 context 里获取指定 key 的 persistent 数据。
 - `GetAllPersistentValues(ctx context.Context) map[string]string`

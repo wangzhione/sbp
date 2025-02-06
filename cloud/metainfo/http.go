@@ -2,29 +2,11 @@ package metainfo
 
 import (
 	"context"
+	"net/textproto"
 	"strings"
 
 	"golang.org/x/net/http/httpguts"
 )
-
-// HTTP header prefixes.
-const (
-	HTTPPrefixPersistent = "rpc-persist-"
-
-	lenHPP = len(HTTPPrefixPersistent)
-)
-
-// HTTPHeaderToCGIVariable performs an CGI variable conversion.
-// For example, an HTTP header key `abc-def` will result in `ABC_DEF`.
-func HTTPHeaderToCGIVariable(key string) string {
-	return strings.ToUpper(strings.ReplaceAll(key, "-", "_"))
-}
-
-// CGIVariableToHTTPHeader converts a CGI variable into an HTTP header key.
-// For example, `ABC_DEF` will be converted to `abc-def`.
-func CGIVariableToHTTPHeader(key string) string {
-	return strings.ToLower(strings.ReplaceAll(key, "_", "-"))
-}
 
 // HTTPHeaderSetter sets a key with a value into a HTTP header.
 type HTTPHeaderSetter interface {
@@ -49,7 +31,21 @@ func (h HTTPHeader) Visit(v func(k, v string)) {
 // Set sets the header entries associated with key to the single element value.
 // The key will converted into lowercase as the HTTP/2 protocol requires.
 func (h HTTPHeader) Set(key, value string) {
-	h[strings.ToLower(key)] = []string{value}
+	if len(key) != 0 && len(value) != 0 {
+		h[textproto.CanonicalMIMEHeaderKey(key)] = []string{value}
+	}
+}
+
+func (h HTTPHeader) Get(key string) (value string) {
+	if len(key) == 0 {
+		return
+	}
+
+	vs, ok := h[textproto.CanonicalMIMEHeaderKey(key)]
+	if ok && len(vs) == 1 {
+		value = vs[0]
+	}
+	return
 }
 
 // FromHTTPHeader reads metainfo from a given HTTP header and sets them into the context.
@@ -73,11 +69,8 @@ func FromHTTPHeader(ctx context.Context, h HTTPHeaderCarrier) context.Context {
 			return
 		}
 
-		kk := strings.ToLower(k)
-		ln := len(kk)
-		if ln > lenHPP && strings.HasPrefix(kk, HTTPPrefixPersistent) {
-			kk = HTTPHeaderToCGIVariable(kk[lenHPP:])
-			persistent[kk] = v
+		if len(k) > lenPP && strings.HasPrefix(k, PrefixPersistent) {
+			persistent[k[lenPP:]] = v
 		}
 	})
 
@@ -96,11 +89,8 @@ func newCtxFromHTTPHeader(ctx context.Context, h HTTPHeaderCarrier) context.Cont
 			return
 		}
 
-		kk := strings.ToLower(k)
-		ln := len(kk)
-		if ln > lenHPP && strings.HasPrefix(kk, HTTPPrefixPersistent) {
-			kk = HTTPHeaderToCGIVariable(kk[lenHPP:])
-			nd.persistent = append(nd.persistent, kv{key: kk, val: v})
+		if len(k) > lenPP && strings.HasPrefix(k, PrefixPersistent) {
+			nd.persistent = append(nd.persistent, kv{key: k, val: v})
 		}
 	})
 
@@ -122,8 +112,7 @@ func ToHTTPHeader(ctx context.Context, h HTTPHeaderSetter) {
 
 	for k, v := range GetAllPersistentValues(ctx) {
 		if httpguts.ValidHeaderFieldName(k) && httpguts.ValidHeaderFieldValue(v) {
-			k := HTTPPrefixPersistent + CGIVariableToHTTPHeader(k)
-			h.Set(k, v)
+			h.Set(PrefixPersistent+textproto.CanonicalMIMEHeaderKey(k), v)
 		}
 	}
 }

@@ -46,9 +46,8 @@ func (p *bwCtxValue) getAll() (m map[string]string) {
 
 func (p *bwCtxValue) set(k, v string) {
 	p.Lock()
-	defer p.Unlock()
-
 	p.kvs[k] = v
+	p.Unlock()
 }
 
 // setMany len(kvs) 必须是偶数

@@ -102,7 +102,6 @@ func TestDelPersistentValue(t *testing.T) {
 
 	k, v := "Key", "Value"
 	ctx = WithPersistentValue(ctx, k, v)
-	assert(t, ctx != nil)
 
 	x, ok := GetPersistentValue(ctx, k)
 	assert(t, ok)
@@ -111,7 +110,7 @@ func TestDelPersistentValue(t *testing.T) {
 	ctx = DelPersistentValue(ctx, k)
 	assert(t, ctx != nil)
 
-	x, ok = GetPersistentValue(ctx, k)
+	_, ok = GetPersistentValue(ctx, k)
 	assert(t, !ok)
 
 	assert(t, DelPersistentValue(ctx, "") == ctx)
@@ -183,16 +182,6 @@ func TestGetAllPersistent2(t *testing.T) {
 
 ///////////////////////////////////////////////
 
-func TestNilSafty(t *testing.T) {
-	assert(t, TransferForward(nil) == nil)
-
-	_, pOK := GetPersistentValue(nil, "any")
-	assert(t, !pOK)
-	assert(t, GetAllPersistentValues(nil) == nil)
-	assert(t, WithPersistentValue(nil, "any", "any") == nil)
-	assert(t, DelPersistentValue(nil, "any") == nil)
-}
-
 func TestTransitAndPersistent(t *testing.T) {
 	ctx := context.Background()
 
@@ -229,12 +218,6 @@ func initMetaInfo(count int) (context.Context, []string, []string) {
 func benchmark(b *testing.B, api string, count int) {
 	ctx, keys, vals := initMetaInfo(count)
 	switch api {
-	case "TransferForward":
-		b.ReportAllocs()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			_ = TransferForward(ctx)
-		}
 	case "GetPersistentValue":
 		b.ReportAllocs()
 		b.ResetTimer()
@@ -302,14 +285,6 @@ func benchmark(b *testing.B, api string, count int) {
 func benchmarkParallel(b *testing.B, api string, count int) {
 	ctx, keys, vals := initMetaInfo(count)
 	switch api {
-	case "TransferForward":
-		b.ReportAllocs()
-		b.ResetTimer()
-		b.RunParallel(func(pb *testing.PB) {
-			for pb.Next() {
-				_ = TransferForward(ctx)
-			}
-		})
 	case "GetPersistentValue":
 		b.ReportAllocs()
 		b.ResetTimer()

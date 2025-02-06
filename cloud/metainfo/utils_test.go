@@ -45,7 +45,6 @@ func TestSetMetaInfoFromMap(t *testing.T) {
 
 func TestSetMetaInfoFromMapKeepPreviousData(t *testing.T) {
 	ctx0 := context.Background()
-	ctx0 = TransferForward(ctx0)
 	ctx0 = WithPersistentValue(ctx0, "pk", "pv")
 
 	m := map[string]string{

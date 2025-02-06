@@ -5,27 +5,19 @@ import (
 )
 
 // The prefix listed below may be used to tag the types of values when there is no context to carry them.
+// HTTP header prefixes.
 const (
-	PrefixPersistent = "RPC_PERSIST_"
+	PrefixPersistent = "Rpc-Persist-" // to textproto.CanonicalMIMEHeaderKey
 	lenPP            = len(PrefixPersistent)
 )
 
 // **Using empty string as key or value is not support.**
 
-// TransferForward converts transient values to transient-upstream values and filters out original transient-upstream values.
-// It should be used before the context is passing from server to client.
-func TransferForward(ctx context.Context) context.Context {
-	if n := getNode(ctx); n != nil {
-		return withNode(ctx, n.transferForward())
-	}
-	return ctx
-}
-
 // GetPersistentValue retrieves the persistent value set into the context by the given key.
 func GetPersistentValue(ctx context.Context, k string) (v string, ok bool) {
-	if n := getNode(ctx); n != nil {
-		if idx, ok := search(n.persistent, k); ok {
-			return n.persistent[idx].val, true
+	if n := getNode(ctx); n.size() > 0 {
+		if i := search(n.persistent, k); i >= 0 {
+			return n.persistent[i].val, true
 		}
 	}
 	return
@@ -33,28 +25,23 @@ func GetPersistentValue(ctx context.Context, k string) (v string, ok bool) {
 
 // GetAllPersistentValues retrieves all persistent values.
 func GetAllPersistentValues(ctx context.Context) (m map[string]string) {
-	if n := getNode(ctx); n != nil {
-		if cnt := len(n.persistent); cnt > 0 {
-			m = make(map[string]string, cnt)
-			for _, kv := range n.persistent {
-				m[kv.key] = kv.val
-			}
+	if n := getNode(ctx); n.size() > 0 {
+		m = make(map[string]string, len(n.persistent))
+		for _, kv := range n.persistent {
+			m[kv.key] = kv.val
 		}
 	}
 	return
 }
 
-// RangePersistentValues calls f sequentially for each persistent kv.
-// If f returns false, range stops the iteration.
-func RangePersistentValues(ctx context.Context, f func(k, v string) bool) {
-	n := getNode(ctx)
-	if n == nil {
-		return
-	}
-
-	for _, kv := range n.persistent {
-		if !f(kv.key, kv.val) {
-			break
+// RangePersistentValues calls fn sequentially for each persistent kv.
+// If fn returns false, range stops the iteration.
+func RangePersistentValues(ctx context.Context, fn func(k, v string) bool) {
+	if n := getNode(ctx); n.size() > 0 {
+		for _, kv := range n.persistent {
+			if !fn(kv.key, kv.val) {
+				break
+			}
 		}
 	}
 }
@@ -65,16 +52,16 @@ func WithPersistentValue(ctx context.Context, k, v string) context.Context {
 	if len(k) == 0 || len(v) == 0 {
 		return ctx
 	}
+
 	if n := getNode(ctx); n != nil {
 		if m := n.addPersistent(k, v); m != n {
 			return withNode(ctx, m)
 		}
-	} else {
-		return withNode(ctx, &node{
-			persistent: []kv{{key: k, val: v}},
-		})
+		return ctx
 	}
-	return ctx
+	return withNode(ctx, &node{
+		persistent: []kv{{key: k, val: v}},
+	})
 }
 
 // DelPersistentValue deletes a persistent key/value from the current context.
@@ -83,7 +70,7 @@ func DelPersistentValue(ctx context.Context, k string) context.Context {
 	if len(k) == 0 {
 		return ctx
 	}
-	if n := getNode(ctx); n != nil {
+	if n := getNode(ctx); n.size() > 0 {
 		if m := n.delPersistent(k); m != n {
 			return withNode(ctx, m)
 		}
@@ -91,21 +78,9 @@ func DelPersistentValue(ctx context.Context, k string) context.Context {
 	return ctx
 }
 
-func getKey(kvs []string, i int) string {
-	return kvs[i*2]
-}
-
-func getValue(kvs []string, i int) string {
-	return kvs[i*2+1]
-}
-
 // CountPersistentValues counts the length of persisten KV pairs
 func CountPersistentValues(ctx context.Context) int {
-	if n := getNode(ctx); n == nil {
-		return 0
-	} else {
-		return len(n.persistent)
-	}
+	return getNode(ctx).size()
 }
 
 // WithPersistentValues sets the values into the context by the given keys.
@@ -117,33 +92,28 @@ func WithPersistentValues(ctx context.Context, kvs ...string) context.Context {
 
 	kvLen := len(kvs) / 2
 
-	var n *node
-	if m := getNode(ctx); m != nil {
-		nn := *m
-		n = &nn
+	n := &node{}
+	if m := getNode(ctx); m.size() > 0 {
 		n.persistent = make([]kv, len(m.persistent), len(m.persistent)+kvLen)
 		copy(n.persistent, m.persistent)
 	} else {
-		n = &node{
-			persistent: make([]kv, 0, kvLen),
-		}
+		n.persistent = make([]kv, 0, kvLen)
 	}
 
 	for i := 0; i < kvLen; i++ {
-		key := getKey(kvs, i)
-		val := getValue(kvs, i)
-
+		key, val := kvs[i*2], kvs[i*2+1]
 		if len(key) == 0 || len(val) == 0 {
 			continue
 		}
 
-		if idx, ok := search(n.persistent, key); ok {
+		if idx := search(n.persistent, key); idx >= 0 {
 			if n.persistent[idx].val != val {
 				n.persistent[idx].val = val
 			}
-		} else {
-			n.persistent = append(n.persistent, kv{key: key, val: val})
+			continue
 		}
+
+		n.persistent = append(n.persistent, kv{key: key, val: val})
 	}
 
 	return withNode(ctx, n)

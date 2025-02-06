@@ -42,64 +42,56 @@ func withNodeFromMaps(ctx context.Context, persistent kvstore) context.Context {
 	return withNode(ctx, nd)
 }
 
-func (n *node) transferForward() *node {
-	return &node{
-		persistent: n.persistent,
-	}
-}
-
 func (n *node) addPersistent(k, v string) *node {
-	if idx, ok := search(n.persistent, k); ok {
-		if n.persistent[idx].val == v {
-			return n
+	i := search(n.persistent, k)
+	if i == -1 {
+		return &node{
+			persistent: appendEx(n.persistent, kv{k, v}),
 		}
-
-		r := *n
-		r.persistent = make([]kv, len(n.persistent))
-		copy(r.persistent, n.persistent)
-		r.persistent[idx].val = v
-		return &r
 	}
 
-	r := *n
-	r.persistent = appendEx(r.persistent, kv{
-		key: k,
-		val: v,
-	})
-	return &r
+	// 已经存在了, 不需要再添加了.
+	if n.persistent[i].val == v {
+		return n
+	}
+
+	r := &node{persistent: make([]kv, len(n.persistent))}
+	copy(r.persistent, n.persistent)
+	r.persistent[i].val = v
+	return r
 }
 
 func (n *node) delPersistent(k string) *node {
 	if res, ok := remove(n.persistent, k); ok {
-		return &node{
-			persistent: res,
-		}
+		return &node{persistent: res}
 	}
 	return n
 }
 
-func search(kvs []kv, key string) (idx int, ok bool) {
-	for i := range kvs {
+func search(kvs []kv, key string) (i int) {
+	for i = range kvs {
 		if kvs[i].key == key {
-			return i, true
+			return
 		}
 	}
-	return
+	return -1
 }
 
 func remove(kvs []kv, key string) (res []kv, removed bool) {
-	if idx, ok := search(kvs, key); ok {
-		if cnt := len(kvs); cnt == 1 {
-			removed = true
-			return
-		}
-
-		res = make([]kv, len(kvs)-1)
-		copy(res, kvs[:idx])
-		copy(res[idx:], kvs[idx+1:])
-		return res, true
+	i := search(kvs, key)
+	if i == -1 {
+		return
 	}
-	return kvs, false
+
+	removed = true
+	if len(kvs) == 1 {
+		return
+	}
+
+	res = make([]kv, len(kvs)-1)
+	copy(res, kvs[:i])
+	copy(res[i:], kvs[i+1:])
+	return
 }
 
 type ctxkeytype struct{}
@@ -119,7 +111,6 @@ func withNode(ctx context.Context, n *node) context.Context {
 
 func appendEx(arr []kv, x kv) (res []kv) {
 	res = make([]kv, len(arr)+1)
-	copy(res, arr)
-	res[len(arr)] = x
+	res[copy(res, arr)] = x
 	return
 }
