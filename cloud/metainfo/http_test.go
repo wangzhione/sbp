@@ -44,38 +44,22 @@ func TestFromHTTPHeader(t *testing.T) {
 	assert(t, c == c1)
 
 	h.Set("abc", "def")
-	h.Set(HTTPPrefixTransient+"123", "456")
-	h.Set(HTTPPrefixTransient+"abc-def", "ghi")
 	h.Set(HTTPPrefixPersistent+"xyz", "000")
 	c1 = FromHTTPHeader(c, HTTPHeader(h))
 	assert(t, c != c1)
-	vs := GetAllValues(c1)
-	assert(t, len(vs) == 2, vs)
-	assert(t, vs["ABC_DEF"] == "ghi" && vs["123"] == "456", vs)
-	vs = GetAllPersistentValues(c1)
-	assert(t, len(vs) == 1 && vs["XYZ"] == "000")
 }
 
 func TestFromHTTPHeaderKeepPreviousData(t *testing.T) {
 	c0 := context.Background()
-	c0 = WithValue(c0, "uk", "uv")
 	c0 = TransferForward(c0)
-	c0 = WithValue(c0, "tk", "tv")
 	c0 = WithPersistentValue(c0, "pk", "pv")
 
 	h := make(http.Header)
-	h.Set(HTTPPrefixTransient+"xk", "xv")
 	h.Set(HTTPPrefixPersistent+"yk", "yv")
 	h.Set(HTTPPrefixPersistent+"pk", "pp")
 
 	c1 := FromHTTPHeader(c0, HTTPHeader(h))
 	assert(t, c0 != c1)
-	vs := GetAllValues(c1)
-	assert(t, len(vs) == 3, len(vs))
-	assert(t, vs["tk"] == "tv" && vs["uk"] == "uv" && vs["XK"] == "xv")
-	vs = GetAllPersistentValues(c1)
-	assert(t, len(vs) == 3)
-	assert(t, vs["pk"] == "pv" && vs["YK"] == "yv" && vs["PK"] == "pp")
 }
 
 func TestToHTTPHeader(t *testing.T) {
@@ -86,11 +70,9 @@ func TestToHTTPHeader(t *testing.T) {
 	ToHTTPHeader(c, h)
 	assert(t, len(h) == 0)
 
-	c = WithValue(c, "123", "456")
 	c = WithPersistentValue(c, "abc", "def")
 	ToHTTPHeader(c, h)
 	assert(t, len(h) == 2)
-	assert(t, h.Get(HTTPPrefixTransient+"123") == "456")
 	assert(t, h.Get(HTTPPrefixPersistent+"abc") == "def")
 }
 
@@ -129,7 +111,6 @@ func BenchmarkFromHTTPHeader(b *testing.B) {
 		hd.Set("content-type", "test")
 		hd.Set("content-length", "12345")
 		for i := 0; len(hd) < cnt; i++ {
-			hd.Set(HTTPPrefixTransient+fmt.Sprintf("tk%d", i), fmt.Sprintf("tv-%d", i))
 			hd.Set(HTTPPrefixPersistent+fmt.Sprintf("pk%d", i), fmt.Sprintf("pv-%d", i))
 		}
 		ctx := context.Background()

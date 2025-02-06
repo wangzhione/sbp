@@ -50,4 +50,3 @@ metainfo 包提供了几个常量字符串前缀，用于无 context（例如网
     - 向 context 里添加一个 persistent 数据。
 - `DelPersistentValue(ctx context.Context, k string) context.Context`
     - 从 context 里删除指定的 persistent 数据。
-

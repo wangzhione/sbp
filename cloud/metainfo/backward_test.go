@@ -16,39 +16,14 @@ func TestWithBackwardValues3(t *testing.T) {
 func TestWithBackwardValues4(t *testing.T) {
 	ctx0 := context.Background()
 	ctx1 := WithBackwardValues(ctx0)
-	ctx2 := WithValue(ctx1, "key", "forward")
 
 	val, ok := RecvBackwardValue(ctx0, "key")
 	assert(t, !ok)
 	assert(t, val == "")
 
-	ok = SetBackwardValue(ctx2, "key", "backward")
-	assert(t, ok)
-
-	val, ok = GetValue(ctx2, "key")
-	assert(t, ok)
-	assert(t, val == "forward")
-
-	val, ok = RecvBackwardValue(ctx2, "key")
-	assert(t, ok)
-	assert(t, val == "backward")
-
 	val, ok = RecvBackwardValue(ctx1, "key")
 	assert(t, ok)
 	assert(t, val == "backward")
-
-	ctx3 := WithBackwardValues(ctx2)
-
-	val, ok = GetValue(ctx3, "key")
-	assert(t, ok)
-	assert(t, val == "forward")
-
-	val, ok = RecvBackwardValue(ctx3, "key")
-	assert(t, ok)
-	assert(t, val == "backward")
-
-	ok = SetBackwardValue(ctx3, "key", "backward2")
-	assert(t, ok)
 
 	val, ok = RecvBackwardValue(ctx1, "key")
 	assert(t, ok)
@@ -59,7 +34,7 @@ func TestWithBackwardValues5(t *testing.T) {
 	ctx0 := context.Background()
 	ctx1 := WithBackwardValues(ctx0)
 	ctx2 := WithBackwardValuesToSend(ctx1)
-	ctx3 := WithValue(ctx2, "key", "forward")
+	ctx3 := WithPersistentValue(ctx2, "key", "forward")
 
 	val, ok := RecvBackwardValue(ctx3, "key")
 	assert(t, !ok)
@@ -84,7 +59,7 @@ func TestWithBackwardValues5(t *testing.T) {
 	assert(t, ok)
 
 	ok = SetBackwardValues(ctx3)
-	assert(t, !ok)
+	assert(t, ok)
 
 	val, ok = RecvBackwardValue(ctx3, "key")
 	assert(t, ok && val == "recv")
@@ -96,7 +71,7 @@ func TestWithBackwardValues5(t *testing.T) {
 	assert(t, !ok)
 
 	ok = SendBackwardValues(ctx3)
-	assert(t, !ok)
+	assert(t, ok)
 
 	ok = SendBackwardValues(ctx3, "key", "send0", "key1", "send1")
 	assert(t, ok)

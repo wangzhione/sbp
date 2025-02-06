@@ -22,8 +22,6 @@ func SetMetaInfoFromMap(ctx context.Context, m map[string]string) context.Contex
 
 	// inherit from node
 	persistent := newkvtostore(nd.persistent)
-	transient := newkvtostore(nd.transient)
-	stale := newkvtostore(nd.stale)
 
 	// insert new kvs from m to node
 	for k, v := range m {
@@ -31,14 +29,6 @@ func SetMetaInfoFromMap(ctx context.Context, m map[string]string) context.Contex
 			continue
 		}
 		switch {
-		case strings.HasPrefix(k, PrefixTransientUpstream):
-			if len(k) > lenPTU { // do not move this condition to the case statement to prevent a PTU matches PT
-				stale[k[lenPTU:]] = v
-			}
-		case strings.HasPrefix(k, PrefixTransient):
-			if len(k) > lenPT {
-				transient[k[lenPT:]] = v
-			}
 		case strings.HasPrefix(k, PrefixPersistent):
 			if len(k) > lenPP {
 				persistent[k[lenPP:]] = v
@@ -48,16 +38,13 @@ func SetMetaInfoFromMap(ctx context.Context, m map[string]string) context.Contex
 
 	// return original ctx if no invalid key in map
 	// make new node, and transfer map to list
-	return withNodeFromMaps(ctx, persistent, transient, stale)
+	return withNodeFromMaps(ctx, persistent)
 }
 
 func newCtxFromMap(ctx context.Context, m map[string]string) context.Context {
 	// make new node
-	mapSize := len(m)
 	nd := &node{
-		persistent: make([]kv, 0, mapSize),
-		transient:  make([]kv, 0, mapSize),
-		stale:      make([]kv, 0, mapSize),
+		persistent: make([]kv, 0, len(m)),
 	}
 
 	// insert new kvs from m to node
@@ -66,14 +53,6 @@ func newCtxFromMap(ctx context.Context, m map[string]string) context.Context {
 			continue
 		}
 		switch {
-		case strings.HasPrefix(k, PrefixTransientUpstream):
-			if len(k) > lenPTU { // do not move this condition to the case statement to prevent a PTU matches PT
-				nd.stale = append(nd.stale, kv{key: k[lenPTU:], val: v})
-			}
-		case strings.HasPrefix(k, PrefixTransient):
-			if len(k) > lenPT {
-				nd.transient = append(nd.transient, kv{key: k[lenPT:], val: v})
-			}
 		case strings.HasPrefix(k, PrefixPersistent):
 			if len(k) > lenPP {
 				nd.persistent = append(nd.persistent, kv{key: k[lenPP:], val: v})
@@ -92,12 +71,6 @@ func SaveMetaInfoToMap(ctx context.Context, m map[string]string) {
 
 	ctx = TransferForward(ctx)
 	if n := getNode(ctx); n != nil {
-		for _, kv := range n.stale {
-			m[PrefixTransient+kv.key] = kv.val
-		}
-		for _, kv := range n.transient {
-			m[PrefixTransient+kv.key] = kv.val
-		}
 		for _, kv := range n.persistent {
 			m[PrefixPersistent+kv.key] = kv.val
 		}
@@ -108,7 +81,9 @@ func SaveMetaInfoToMap(ctx context.Context, m map[string]string) {
 func newkvtostore(slice []kv) kvstore {
 	kvs := newkvstore(len(slice))
 	for _, kv := range slice {
-		kvs[kv.key] = kv.val
+		if kv.key != "" && kv.val != "" {
+			kvs[kv.key] = kv.val
+		}
 	}
 	return kvs
 }

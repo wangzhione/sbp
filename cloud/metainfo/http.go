@@ -9,13 +9,9 @@ import (
 
 // HTTP header prefixes.
 const (
-	HTTPPrefixTransient  = "rpc-transit-"
 	HTTPPrefixPersistent = "rpc-persist-"
-	HTTPPrefixBackward   = "rpc-backward-"
 
-	lenHPT = len(HTTPPrefixTransient)
 	lenHPP = len(HTTPPrefixPersistent)
-	lenHPB = len(HTTPPrefixBackward)
 )
 
 // HTTPHeaderToCGIVariable performs an CGI variable conversion.
@@ -70,8 +66,6 @@ func FromHTTPHeader(ctx context.Context, h HTTPHeaderCarrier) context.Context {
 
 	// inherit from exist ctx node
 	persistent := newkvtostore(nd.persistent)
-	transient := newkvtostore(nd.transient)
-	stale := newkvtostore(nd.stale)
 
 	// insert new kvs from http header
 	h.Visit(func(k, v string) {
@@ -81,10 +75,7 @@ func FromHTTPHeader(ctx context.Context, h HTTPHeaderCarrier) context.Context {
 
 		kk := strings.ToLower(k)
 		ln := len(kk)
-		if ln > lenHPT && strings.HasPrefix(kk, HTTPPrefixTransient) {
-			kk = HTTPHeaderToCGIVariable(kk[lenHPT:])
-			transient[kk] = v
-		} else if ln > lenHPP && strings.HasPrefix(kk, HTTPPrefixPersistent) {
+		if ln > lenHPP && strings.HasPrefix(kk, HTTPPrefixPersistent) {
 			kk = HTTPHeaderToCGIVariable(kk[lenHPP:])
 			persistent[kk] = v
 		}
@@ -92,26 +83,22 @@ func FromHTTPHeader(ctx context.Context, h HTTPHeaderCarrier) context.Context {
 
 	// return original ctx if no invalid key in http header
 	// make new kvs
-	return withNodeFromMaps(ctx, persistent, transient, stale)
+	return withNodeFromMaps(ctx, persistent)
 }
 
 func newCtxFromHTTPHeader(ctx context.Context, h HTTPHeaderCarrier) context.Context {
 	nd := &node{
 		persistent: make([]kv, 0, 16), // 32B * 16 = 512B
-		transient:  make([]kv, 0, 16),
-		stale:      []kv{},
 	}
 	// insert new kvs from http header to node
 	h.Visit(func(k, v string) {
 		if len(v) == 0 {
 			return
 		}
+
 		kk := strings.ToLower(k)
 		ln := len(kk)
-		if ln > lenHPT && strings.HasPrefix(kk, HTTPPrefixTransient) {
-			kk = HTTPHeaderToCGIVariable(kk[lenHPT:])
-			nd.transient = append(nd.transient, kv{key: kk, val: v})
-		} else if ln > lenHPP && strings.HasPrefix(kk, HTTPPrefixPersistent) {
+		if ln > lenHPP && strings.HasPrefix(kk, HTTPPrefixPersistent) {
 			kk = HTTPHeaderToCGIVariable(kk[lenHPP:])
 			nd.persistent = append(nd.persistent, kv{key: kk, val: v})
 		}
@@ -129,15 +116,8 @@ func newCtxFromHTTPHeader(ctx context.Context, h HTTPHeaderCarrier) context.Cont
 // Any key or value that does not follow the HTTP specification
 // will be discarded.
 func ToHTTPHeader(ctx context.Context, h HTTPHeaderSetter) {
-	if ctx == nil || h == nil {
+	if h == nil {
 		return
-	}
-
-	for k, v := range GetAllValues(ctx) {
-		if httpguts.ValidHeaderFieldName(k) && httpguts.ValidHeaderFieldValue(v) {
-			k := HTTPPrefixTransient + CGIVariableToHTTPHeader(k)
-			h.Set(k, v)
-		}
 	}
 
 	for k, v := range GetAllPersistentValues(ctx) {
