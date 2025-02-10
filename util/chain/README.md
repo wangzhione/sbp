@@ -7,7 +7,7 @@
 **用法**
 
 ```
-import "sbp/util/chain"
+import "github.com/wangzhione/sbp/util/chain"
 
 InitSLog()
 ```
