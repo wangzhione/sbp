@@ -5,9 +5,8 @@ import (
 	"database/sql"
 	"testing"
 
-	"sbp/util/chain"
-
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/wangzhione/sbp/util/chain"
 )
 
 var connects = "mysql -u root -p123456 -h 127.0.0.1 -P 3306 demo"

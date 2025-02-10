@@ -3,7 +3,7 @@ package chain
 import (
 	"context"
 
-	"sbp/util/idhash"
+	"github.com/wangzhione/sbp/util/idhash"
 )
 
 var Background = Context()

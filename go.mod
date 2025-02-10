@@ -1,4 +1,4 @@
-module sbp
+module github.com/wangzhione/sbp
 
 go 1.23.5
 

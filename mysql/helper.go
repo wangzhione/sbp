@@ -8,9 +8,8 @@ import (
 	"runtime/debug"
 	"time"
 
-	"sbp/util/chain"
-
 	_ "github.com/go-sql-driver/mysql" // init MySQL 驱动
+	"github.com/wangzhione/sbp/util/chain"
 )
 
 // 设计师有话说

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"sbp/util/cast"
+	"github.com/wangzhione/sbp/util/cast"
 )
 
 // MySQLConfig 用于配置 MySQL 数据库连接
