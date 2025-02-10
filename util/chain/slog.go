@@ -24,7 +24,7 @@ func (h ContextHandler) Handle(ctx context.Context, r slog.Record) error {
 // EnableLevel 默认开启 slog.LevelDebug, 具体业务可以 init 通过配置日志等级
 var EnableLevel slog.Level = slog.LevelDebug
 
-func init() {
+func InitSLog() {
 	Options := slog.HandlerOptions{
 		AddSource: true,
 		Level:     EnableLevel,

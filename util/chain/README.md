@@ -7,7 +7,9 @@
 **用法**
 
 ```
-import _ "sbp/util/chain"
+import "sbp/util/chain"
+
+InitSLog()
 ```
 
 impor 后 可以无缝使用 slog 进行 InfoContext or WarnContext or ErrorContext. 也可以参照其内部代码, 在 main func 初始化, 用业务自己的自定义 slog. 其中 chain.Key 各个环节交互唯一 key 串
