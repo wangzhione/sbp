@@ -11,7 +11,7 @@ var Background = Context()
 var key = any(Key)
 
 // Key 默认所有链条 trace id 的 key
-const Key = "__key_log_trace_id"
+const Key = "X-Request-Id"
 
 // WithTraceID 尝试 init trace id 到 context 中, 并 return trace id
 func WithTraceID(c *context.Context) string {
@@ -31,4 +31,12 @@ func GetTraceID(c context.Context) string {
 
 func Context() context.Context {
 	return context.WithValue(context.Background(), key, idhash.UUID())
+}
+
+func CopyTrace(c context.Context) context.Context {
+	traceid := GetTraceID(c)
+	if len(traceid) == 0 {
+		traceid = idhash.UUID()
+	}
+	return context.WithValue(context.Background(), key, traceid)
 }
