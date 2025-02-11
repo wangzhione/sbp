@@ -57,6 +57,23 @@ func Do(ctx context.Context, req *http.Request, response any) (err error) {
 	return
 }
 
+func Data(ctx context.Context, req *http.Request) (data []byte, err error) {
+	resp, err := HTTPClient.Do(req)
+	if err != nil {
+		// 超时错误 case : errors.Is(err, context.DeadlineExceeded)
+		return
+	}
+	defer resp.Body.Close()
+
+	// 错误状态码返回错误信息
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		err = fmt.Errorf("HTTP Data Code error %d %s", resp.StatusCode, http.StatusText(resp.StatusCode))
+	}
+
+	data, _ = io.ReadAll(resp.Body)
+	return
+}
+
 // DoRequest 统一处理 HTTP 请求
 // http timeout 逻辑, 依赖外围 context.WithTimeout(ctx, time.Duration)
 func DoRequest(ctx context.Context, method, url string, headers map[string]string, request, response any) (err error) {
