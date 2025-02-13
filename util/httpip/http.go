@@ -32,6 +32,22 @@ var HTTPClient = &http.Client{
 	Transport: HTTPTransport,
 }
 
+// CloneRequest 复用 http.Request low api, 只有个别特殊业务才会考虑
+// body, err := io.ReadAll(req.Body)
+// req.Body.Close()
+// if err != nil { ... }
+// 随后才可以 newreq := CloneRequest(ctx, req, body)
+func CloneRequest(ctx context.Context, req *http.Request, body []byte) (newreq *http.Request) {
+	newreq = req.Clone(ctx)
+	if req.Body == nil {
+		return
+	}
+
+	// None Close
+	newreq.Body = io.NopCloser(bytes.NewReader(body))
+	return
+}
+
 func Do(ctx context.Context, req *http.Request, response any) (err error) {
 	resp, err := HTTPClient.Do(req)
 	if err != nil {
@@ -65,12 +81,15 @@ func Data(ctx context.Context, req *http.Request) (data []byte, err error) {
 	}
 	defer resp.Body.Close()
 
+	data, err = io.ReadAll(resp.Body)
+	if err != nil {
+		return
+	}
+
 	// 错误状态码返回错误信息
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
 		err = fmt.Errorf("HTTP Data Code error %d %s", resp.StatusCode, http.StatusText(resp.StatusCode))
 	}
-
-	data, _ = io.ReadAll(resp.Body)
 	return
 }
 
