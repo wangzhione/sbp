@@ -3,12 +3,8 @@ package jsou
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 )
-
-// Valid 判断字符串是否为合法 JSON
-func Valid(stj string) bool {
-	return json.Valid([]byte(stj))
-}
 
 // String 结构体转换为 JSON 字符串
 func String(obj any) string {
@@ -20,6 +16,32 @@ func String(obj any) string {
 func Unmarshal[T any](stj string) (obj T, err error) {
 	err = json.Unmarshal([]byte(stj), &obj)
 	return
+}
+
+// ReadFile 文件中读取生成 json 对象
+func ReadFile[T any](filePath string) (obj T, err error) {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(data, &obj)
+	return
+}
+
+// WriteFile 把内容写入文件中
+func WriteFile(filePath string, obj any) error {
+	data, err := json.Marshal(obj)
+	if err != nil {
+		return nil
+	}
+
+	return os.WriteFile(filePath, data, 0o644)
+}
+
+// Valid 判断字符串是否为合法 JSON
+func Valid(stj string) bool {
+	return json.Valid([]byte(stj))
 }
 
 // Map JSON 字符串转为 map[string]any 类似 Unmarshal[map[string]any](stj)
