@@ -32,6 +32,18 @@ var HTTPClient = &http.Client{
 	Transport: HTTPTransport,
 }
 
+// HTTPResponseCodeError http code error 构建
+func HTTPResponseCodeError(resp *http.Response) error {
+	code := resp.StatusCode
+
+	// 错误状态码返回错误信息
+	if code < http.StatusOK || code >= http.StatusMultipleChoices {
+		return fmt.Errorf("error: HTTP Code %d %s", code, http.StatusText(code))
+	}
+
+	return nil
+}
+
 // CloneRequest 复用 http.Request low api, 只有个别特殊业务才会考虑
 // body, err := io.ReadAll(req.Body)
 // req.Body.Close()
@@ -57,8 +69,7 @@ func Do(ctx context.Context, req *http.Request, response any) (err error) {
 	defer resp.Body.Close()
 
 	// 错误状态码返回错误信息
-	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-		err = fmt.Errorf("HTTP Code error %d %s", resp.StatusCode, http.StatusText(resp.StatusCode))
+	if err = HTTPResponseCodeError(resp); err != nil {
 		// 读完 resp.Body 增加链接复用可能
 		io.Copy(io.Discard, resp.Body)
 		return
@@ -87,9 +98,7 @@ func Data(ctx context.Context, req *http.Request) (data []byte, err error) {
 	}
 
 	// 错误状态码返回错误信息
-	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-		err = fmt.Errorf("HTTP Data Code error %d %s", resp.StatusCode, http.StatusText(resp.StatusCode))
-	}
+	err = HTTPResponseCodeError(resp)
 	return
 }
 
@@ -140,4 +149,39 @@ func Put(ctx context.Context, url string, headers map[string]string, request, re
 // Delete 发送 DELETE 请求，并支持自定义超时时间
 func Delete(ctx context.Context, url string, headers map[string]string, response any) error {
 	return DoRequest(ctx, http.MethodDelete, url, headers, nil, response)
+}
+
+// Call 基础 http call 操作 low api
+func Call(ctx context.Context, method, url string, headers map[string]string, reqData []byte) (respData []byte, err error) {
+	var body io.Reader
+	if len(reqData) > 0 {
+		body = bytes.NewBuffer(reqData)
+	}
+	req, err := http.NewRequestWithContext(ctx, method, url, body)
+	if err != nil {
+		return
+	}
+
+	// 设置默认 X-Request-Id
+	req.Header.Set(chain.Key, chain.GetTraceID(ctx))
+	for key, value := range headers {
+		req.Header.Set(key, value)
+	}
+
+	resp, err := HTTPClient.Do(req)
+	if err != nil {
+		// 被动取消 case : errors.Is(err, context.Canceled)
+		// 超时错误 case : errors.Is(err, context.DeadlineExceeded)
+		return
+	}
+	defer resp.Body.Close()
+
+	respData, err = io.ReadAll(resp.Body)
+	if err != nil {
+		return
+	}
+
+	// 错误状态码返回错误信息
+	err = HTTPResponseCodeError(resp)
+	return
 }

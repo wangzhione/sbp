@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/wangzhione/sbp/util/chain"
 )
 
 // 结构体定义（用于测试 JSON 响应）
@@ -80,4 +81,16 @@ func TestPostRequest(t *testing.T) {
 	// 断言
 	assert.NoError(t, err)
 	assert.Equal(t, "Hello, Go Developer", response.Message)
+}
+
+func TestCall(t *testing.T) {
+	ctx := chain.Context()
+	url := `https://chatgpt.com/`
+
+	respData, err := Call(ctx, http.MethodGet, url, nil, nil)
+	if err != nil {
+		t.Fatal("Call error", err, url)
+	}
+
+	t.Log(string(respData))
 }
