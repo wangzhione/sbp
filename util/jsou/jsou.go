@@ -35,8 +35,12 @@ func Slice(stj string) (obj []any, err error) {
 }
 
 // Debug json + printf 方便单元测试
-func Debug(obj any) {
-	fmt.Printf("\nJSON DEBUG <%T>\n", obj)
+func Debug(obj any, prefix ...any) {
+	fmt.Println()
+	if len(prefix) > 0 {
+		fmt.Print(prefix...)
+	}
+	fmt.Printf("JSON DEBUG <%T>\n", obj)
 	data, err := json.MarshalIndent(obj, "", "\t")
 	if err != nil {
 		fmt.Printf("jsou.Debug error: %+v\n", err)
