@@ -1,6 +1,7 @@
 package mysql
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -25,5 +26,5 @@ func TestConvertDSNToCommand(t *testing.T) {
 		t.Error("Error: ", err)
 	}
 
-	t.Log(command)
+	fmt.Printf("\n%s\n\n", command)
 }

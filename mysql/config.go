@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/wangzhione/sbp/util/cast"
@@ -132,7 +133,7 @@ func ParseCommand(command string) (*MySQLConfig, error) {
 // ConvertDSNToCommand 将 DataSourceName 转换为 mysql 命令行格式
 func ConvertDSNToCommand(dsn string) (string, error) {
 	// 分割 DSN 为主连接部分和查询参数部分
-	parts := strings.Split(dsn, "?")
+	parts := strings.SplitN(dsn, "?", 2)
 	connPart := parts[0]
 
 	// 校验格式是否包含 "@"
@@ -153,19 +154,20 @@ func ConvertDSNToCommand(dsn string) (string, error) {
 		password = userAndPass[1]
 	}
 
-	// 校验地址是否包含 "("
-	protocolAndAddress := strings.SplitN(protocolAndAddr, "(", 2)
-	if len(protocolAndAddress) < 2 {
-		return "", fmt.Errorf("invalid DSN: missing '(' separator for address")
+	// 解析地址
+	if !strings.HasPrefix(protocolAndAddr, "tcp(") {
+		return "", fmt.Errorf("invalid DSN: expected tcp() wrapper around address")
 	}
+	addressAndDb := strings.TrimPrefix(protocolAndAddr, "tcp(")
+	addressAndDb = strings.TrimSuffix(addressAndDb, ")")
 
 	// 提取地址和数据库名
-	addressAndDb := strings.SplitN(protocolAndAddress[1], ")/", 2)
-	if len(addressAndDb) < 2 {
+	addressDbParts := strings.SplitN(addressAndDb, ")/", 2)
+	if len(addressDbParts) < 2 {
 		return "", fmt.Errorf("invalid DSN: missing database name")
 	}
-	address := strings.TrimRight(addressAndDb[0], ")")
-	dbName := addressAndDb[1]
+	address := addressDbParts[0]
+	dbName := addressDbParts[1]
 
 	// 分割地址为主机名和端口
 	hostAndPort := strings.SplitN(address, ":", 2)
@@ -175,10 +177,22 @@ func ConvertDSNToCommand(dsn string) (string, error) {
 		port = hostAndPort[1]
 	}
 
-	// 构造 mysql 命令行格式
+	// 解析查询参数（如 charset）
+	charset := "utf8mb4"
+	if len(parts) > 1 {
+		queryParams, err := url.ParseQuery(parts[1])
+		if err != nil {
+			return "", fmt.Errorf("failed to parse DSN query parameters: %v", err)
+		}
+		if cs := queryParams.Get("charset"); cs != "" {
+			charset = cs
+		}
+	}
+
+	// 构造 mysql 命令（不直接拼接密码，防止泄露）
 	command := fmt.Sprintf(
-		"mysql -u %s -p%s -h %s -P %s %s --default-character-set=utf8mb4",
-		username, password, host, port, dbName,
+		"mysql -u %s -p%s -h %s -P %s %s --default-character-set=%s",
+		username, password, host, port, dbName, charset,
 	)
 
 	return command, nil
