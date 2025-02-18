@@ -54,9 +54,14 @@ You can use `go get -u github.com/wangzhione/sbp@master` to get or update `sbp`.
 
 我本身用的是 Visual Studio Code 简单说一下, 用这个 IDE 开发 Golang 基础配置
 
-在全局 settings.json 加入, 用于控制 go import 和 go test 相关行为
+在全局 settings.json 加入和 go env 有关配置, 用于控制 go import 和 go test 相关行为
 
 ```JSON
+{
+    "go.toolsManagement.autoUpdate": true,
+    "go.testEnvVars": {
+        
+    },
     "go.testFlags": [
         "-v", "-count=1"
     ],
@@ -64,7 +69,6 @@ You can use `go get -u github.com/wangzhione/sbp@master` to get or update `sbp`.
         "ui.importShortcut": "both",
         "formatting.gofumpt": true,
         "ui.semanticTokens": true,
-        "experimental.postfixCompletions": true
     },
     "[go]": {
         "editor.codeActionsOnSave": {
@@ -72,4 +76,30 @@ You can use `go get -u github.com/wangzhione/sbp@master` to get or update `sbp`.
         },
         "editor.formatOnSave": true // 可选：启用自动格式化
     },
+    "go.testTimeout": "120s",
+}
+```
+
+[可选] 本地 .vscode/launch.json 添加相关 F5 启动 main 配置
+
+```json
+{
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch Package",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${fileDirname}",
+
+            "args": [
+                
+            ]
+        }
+    ]
+}
 ```

@@ -1,6 +1,6 @@
 module github.com/wangzhione/sbp
 
-go 1.23.5
+go 1.24
 
 require github.com/google/uuid v1.6.1-0.20241114170450-2d3c2a9cc518
 
