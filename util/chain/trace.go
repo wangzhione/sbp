@@ -23,6 +23,11 @@ func WithTraceID(c *context.Context) string {
 	return traceID
 }
 
+// WithContext add trace id to context
+func WithContext(ctx context.Context, id string) context.Context {
+	return context.WithValue(ctx, key, id)
+}
+
 // GetTraceID context 中 get trace id
 func GetTraceID(c context.Context) string {
 	traceID, _ := c.Value(key).(string)
