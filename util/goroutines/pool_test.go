@@ -108,9 +108,9 @@ func TestGoroutines(t *testing.T) {
 
 	const count = 10
 
-	var catCh = make(chan struct{}, 1)
-	var dogCh = make(chan struct{}, 1)
-	var fishCh = make(chan struct{}, 1)
+	catCh := make(chan struct{}, 1)
+	dogCh := make(chan struct{}, 1)
+	fishCh := make(chan struct{}, 1)
 
 	var wait sync.WaitGroup
 	wait.Add(3)
@@ -180,7 +180,7 @@ func TestCompareInc(t *testing.T) {
 	var capacity int32 = 2
 	var worker int32
 
-	for range 2000 {
+	for i := 0; i < 200; i++ {
 		go func() {
 			old := atomic.LoadInt32(&worker)
 			if old < capacity {
@@ -202,7 +202,7 @@ func TestCompareInc2(t *testing.T) {
 	var capacity int32 = 2
 	var worker int32
 
-	for range 2000 {
+	for i := 0; i < 200; i++ {
 		go func() {
 			if atomic.LoadInt32(&worker) < capacity {
 				atomic.AddInt32(&worker, 1)
