@@ -2,8 +2,8 @@ package jsou
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
+	"reflect"
 )
 
 // String 结构体转换为 JSON 字符串
@@ -58,14 +58,17 @@ func Slice(stj string) (obj []any, err error) {
 
 // Debug json + printf 方便单元测试
 func Debug(obj any, prefix ...any) {
-	fmt.Println()
+	println()
 	if len(prefix) > 0 {
-		fmt.Print(prefix...)
+		println(prefix, "JSOU DEBUG", reflect.ValueOf(obj).String())
+	} else {
+		println("JSOU DEBUG", reflect.ValueOf(obj).String())
 	}
-	fmt.Printf("JSON DEBUG <%T>\n", obj)
+	println()
 	data, err := json.MarshalIndent(obj, "", "\t")
 	if err != nil {
-		fmt.Printf("jsou.Debug error: %+v\n", err)
+		println("jsou.Debug MarshalIndent error:", err)
 	}
-	fmt.Printf("%s\n\n", data)
+	println(string(data))
+	println()
 }
