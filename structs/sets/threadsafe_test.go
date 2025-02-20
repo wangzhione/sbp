@@ -1,4 +1,4 @@
-package set
+package sets
 
 import (
 	"encoding/json"

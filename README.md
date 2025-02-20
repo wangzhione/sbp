@@ -22,7 +22,7 @@ We depend on the same code(this repo) in our production environment.
 
 * [cache](https://github.com/wangzhione/sbp/tree/master/cache): Caching Mechanism
 * [cloud](https://github.com/wangzhione/sbp/tree/master/cloud): Cloud Computing Design Patterns
-* [struct](https://github.com/wangzhione/sbp/tree/master/struct): Data Structures or Collection
+* [structs](https://github.com/wangzhione/sbp/tree/master/structs): Data Structures or Collection
 * [util](https://github.com/wangzhione/sbp/tree/master/util): Utilities Useful across Domains
 
 > 设计者注: 通常 **util** 与业务无关的，可以独立出来，可供其他项目使用通用代码集。方法通常是 public static; **tool** 可以与某些业务有关，通用性限于某几个业务类之间; **helper** 通常与业务相关. 随后是否加 s, 不加 s 看个人喜好了. 
