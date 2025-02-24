@@ -7,15 +7,15 @@ import (
 	"os"
 )
 
-func MD5(data []byte) string {
+// MD5 string to md5 sign
+func MD5(s string) string {
+	return MD5Data([]byte(s))
+}
+
+func MD5Data(data []byte) string {
 	// 小写 16 进制
 	digest := md5.Sum(data)
 	return hex.EncodeToString(digest[:])
-}
-
-// MD5String string to md5 sign
-func MD5String(s string) string {
-	return MD5([]byte(s))
 }
 
 func MD5File(path string) (sign string, err error) {

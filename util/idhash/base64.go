@@ -1,7 +1,10 @@
 package idhash
 
 import (
+	"crypto/md5"
 	"encoding/base64"
+	"encoding/hex"
+	"errors"
 )
 
 //
@@ -19,8 +22,8 @@ func Base64Encode(input string) string {
 //	decodedBytes, err := base64.StdEncoding.DecodeString(input)
 //	if err != nil { ... return }
 //	[]data : decodedBytes -> ...
-func Base64Decode(input string) string {
-	decodedBytes, _ := base64.StdEncoding.DecodeString(input)
+func Base64Decode(output string) string {
+	decodedBytes, _ := base64.StdEncoding.DecodeString(output)
 	return string(decodedBytes)
 }
 
@@ -30,7 +33,28 @@ func Base64EncodeURL(input string) string {
 }
 
 // Base64DecodeURL decodes a URL-safe Base64-encoded string
-func Base64DecodeURL(input string) string {
-	decodedBytes, _ := base64.URLEncoding.DecodeString(input)
+func Base64DecodeURL(output string) string {
+	decodedBytes, _ := base64.URLEncoding.DecodeString(output)
 	return string(decodedBytes)
+}
+
+// Base64MD5 input -> md5 [16]byte -> base64 string
+func Base64MD5(input string) string {
+	digest := md5.Sum([]byte(input))
+	return base64.StdEncoding.EncodeToString(digest[:])
+}
+
+// ErrBase64MD5Size base64 解码后 size error
+var ErrBase64MD5Size = errors.New("error: base64 md5 size")
+
+// Base64MD5Decode base64 string -> md5 [16]byte -> input
+func Base64MD5Decode(output string) (string, error) {
+	digest, err := base64.StdEncoding.DecodeString(output)
+	if err != nil {
+		return "", err
+	}
+	if len(digest) != md5.Size {
+		return "", ErrBase64MD5Size
+	}
+	return hex.EncodeToString(digest), nil
 }
