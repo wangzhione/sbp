@@ -25,11 +25,18 @@ func (h ContextHandler) Handle(ctx context.Context, r slog.Record) error {
 var EnableLevel slog.Level = slog.LevelDebug
 
 func InitSLog() {
-	Options := slog.HandlerOptions{
-		AddSource: true,
+	Options := &slog.HandlerOptions{
+		AddSource: true, // 启用日志源文件定位
 		Level:     EnableLevel,
 	}
-	logs := slog.New(&ContextHandler{slog.NewTextHandler(os.Stdout, &Options)})
+
+	var handler slog.Handler
+	if os.Getenv("LOG_FORMAT") == "json" {
+		handler = slog.NewJSONHandler(os.Stdout, Options)
+	} else {
+		handler = slog.NewTextHandler(os.Stdout, Options)
+	}
+	logs := slog.New(&ContextHandler{handler})
 	slog.SetDefault(logs)
 }
 
