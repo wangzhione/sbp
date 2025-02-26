@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/wangzhione/sbp/util/filedir"
+	"github.com/wangzhione/sbp/util/idhash"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
@@ -25,6 +26,16 @@ func (h ContextHandler) Handle(ctx context.Context, r slog.Record) error {
 	}
 
 	return h.Handler.Handle(ctx, r)
+}
+
+func Hostname() string {
+	// 获取容器的 hostname（通常是容器的短 ID）
+	hostname, err := os.Hostname()
+	if err == nil {
+		return hostname
+	}
+
+	return idhash.UUID()
 }
 
 // EnableLevel 默认开启 slog.LevelDebug, 具体业务可以 init 通过配置日志等级
@@ -51,7 +62,7 @@ func InitRotatingFileSLog(logger ...Logger) {
 	case 0:
 		logger = append(logger, Logger{
 			// 自适应 path, 默认 {ExeDir}/logs/{ExeName}.log
-			Filename:   filepath.Join(filedir.ExeDir, "logs", filedir.ExeName+".log"),
+			Filename:   filepath.Join(filedir.ExeDir, "logs", filedir.ExeName+"-"+Hostname()+".log"),
 			MaxSize:    600, // 单位 MB ; 0 is 不按大小分割
 			MaxBackups: 0,   // 不限制备份数量
 			MaxAge:     7,   // 保留日志 7 天内的所有日志
@@ -60,7 +71,7 @@ func InitRotatingFileSLog(logger ...Logger) {
 		})
 	case 1:
 		if len(logger[0].Filename) == 0 {
-			logger[0].Filename = filepath.Join(filedir.ExeDir, "logs", filedir.ExeName+".log")
+			logger[0].Filename = filepath.Join(filedir.ExeDir, "logs", filedir.ExeName+"-"+Hostname()+".log")
 		}
 	default:
 	}
