@@ -111,29 +111,6 @@ func InitRotatingFileSLog(logger ...Logger) {
 	slog.SetDefault(logs)
 }
 
-func InitFileSLog(path string) {
-	logFile, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o666)
-	if err != nil {
-		slog.Error("os.OpenFile panic error", "path", path, "error", err)
-	}
-
-	Options := &slog.HandlerOptions{
-		AddSource: true,
-		Level:     EnableLevel,
-	}
-
-	// 创建 MultiWriter，让日志同时写入文件和终端
-	multiWriter := io.MultiWriter(os.Stdout, logFile)
-
-	var handler slog.Handler = slog.NewJSONHandler(multiWriter, Options)
-	if os.Getenv("LOG_FORMAT") == "text" {
-		handler = slog.NewTextHandler(multiWriter, Options)
-	}
-
-	logs := slog.New(&ContextHandler{handler})
-	slog.SetDefault(logs)
-}
-
 func InitSLog() {
 	Options := &slog.HandlerOptions{
 		AddSource: true, // 启用日志源文件定位
