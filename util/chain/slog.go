@@ -57,6 +57,7 @@ var EnableLevel slog.Level = slog.LevelDebug
 
 type Logger = lumberjack.Logger
 
+// InitRotatingFileSLog 需要自行管理 logger close 操作
 func InitRotatingFileSLog(logger ...Logger) {
 	switch len(logger) {
 	case 0:
