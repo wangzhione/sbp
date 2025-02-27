@@ -22,7 +22,7 @@ var MySQLDriverName = "mysql"
 // DB 数据库帮助新结构体
 type DB sql.DB
 
-// NewDB 创建一个新的 MyMySQL 实例
+// NewDB 创建一个新的 MyMySQL 实例, 需要自行 Close 释放资源
 func NewDB(ctx context.Context, config *MySQLConfig) (s *DB, err error) {
 	// 构建 DSN（Data Source Name）
 	dsn := config.DataSourceName()

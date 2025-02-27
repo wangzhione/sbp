@@ -28,6 +28,8 @@ func TestNewDB(t *testing.T) {
 	if s != nil {
 		t.Log("Success")
 	}
+
+	s.Close()
 }
 
 func TestQueryRow(t *testing.T) {
