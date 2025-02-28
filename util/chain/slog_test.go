@@ -24,7 +24,7 @@ func TestInitRotatingFileSLog(t *testing.T) {
 	path := "logs/log.log"
 	// var path string
 
-	InitRotatingFileSLog(Logger{Filename: path})
+	InitRotatingFileSLog(&Logger{Filename: path})
 
 	ctx := Context()
 	slog.WarnContext(ctx, "测试 warn", "123", "value 123")

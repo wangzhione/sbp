@@ -32,6 +32,6 @@ func OpenFile(path string) (file *os.File, err error) {
 		}
 	}
 
-	// 内部有 runtime.SetFinalizer(f.file, (*file).close), 对象释放时候会自动 close
+	// os.OpenFile 内部有 runtime.SetFinalizer(f.file, (*file).close), 对象释放时候会 GC 1 close -> GC 2 free
 	return os.OpenFile(path, os.O_RDWR, 0o644)
 }

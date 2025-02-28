@@ -3,7 +3,9 @@ package mysql
 import (
 	"context"
 	"database/sql"
+	"runtime"
 	"testing"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/wangzhione/sbp/util/chain"
@@ -29,7 +31,19 @@ func TestNewDB(t *testing.T) {
 		t.Log("Success")
 	}
 
+	_ = s
+
+	runtime.AddCleanup(s, func(fd uintptr) { println("runtime.AddCleanup close", fd) }, 0)
+
 	s.Close()
+	// 必须主动 close 后才能被回收, 所以 runtime.SetFinalizer(s, (*DB).Close) 永远不会执行
+	s = nil
+
+	for i := 0; i < 6; i++ {
+		runtime.GC()
+		t.Log(i+1, "runtime.GC()")
+		time.Sleep(time.Second)
+	}
 }
 
 func TestQueryRow(t *testing.T) {

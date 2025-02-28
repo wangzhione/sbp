@@ -2,7 +2,6 @@ package chain
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"log/slog"
 	"os"
@@ -58,34 +57,28 @@ var EnableLevel slog.Level = slog.LevelDebug
 type Logger = lumberjack.Logger
 
 // InitRotatingFileSLog 需要自行管理 logger close 操作
-func InitRotatingFileSLog(logger ...Logger) {
-	switch len(logger) {
+func InitRotatingFileSLog(args ...*Logger) {
+	var logger *Logger
+
+	switch len(args) {
 	case 0:
-		logger = append(logger, Logger{
-			// 自适应 path, 默认 {ExeDir}/logs/{ExeName}.log
-			Filename:   filepath.Join(filedir.ExeDir, "logs", filedir.ExeName+"-"+Hostname()+".log"),
+		logger = &Logger{
 			MaxSize:    600, // 单位 MB ; 0 is 不按大小分割
 			MaxBackups: 0,   // 不限制备份数量
 			MaxAge:     7,   // 保留日志 7 天内的所有日志
 			LocalTime:  true,
 			Compress:   false, // 是否压缩旧日志文件, 默认不压缩
-		})
-	case 1:
-		if len(logger[0].Filename) == 0 {
-			logger[0].Filename = filepath.Join(filedir.ExeDir, "logs", filedir.ExeName+"-"+Hostname()+".log")
 		}
+	case 1:
+		logger = args[0]
+	case 2:
+		logger = args[0]
 	default:
+		panic("len(args) > 1")
 	}
 
-	for i := 0; i < len(logger); i++ {
-		println(
-			fmt.Sprintf(
-				`{"index":%d, "time":"%s", "level":"DEBUG", "msg":"InitRotatingFileSLog", "path":"%s"}`,
-				i+1,
-				time.Now(),
-				logger[i].Filename,
-			),
-		)
+	if len(logger.Filename) == 0 {
+		logger.Filename = filepath.Join(filedir.ExeDir, "logs", filedir.ExeName+"-"+Hostname()+".log")
 	}
 
 	// lumberjack 会 mkdir + open file
@@ -96,11 +89,11 @@ func InitRotatingFileSLog(logger ...Logger) {
 	}
 
 	var multiWriter io.Writer
-	if len(logger) > 1 {
+	if len(args) == 2 {
 		// 有的项目, 喜欢在普通 {project}.log 日志基础上, 构建 {project}.error.log
-		multiWriter = io.MultiWriter(os.Stdout, &logger[0], &logger[1])
+		multiWriter = io.MultiWriter(os.Stdout, logger, args[1])
 	} else {
-		multiWriter = io.MultiWriter(os.Stdout, &logger[0])
+		multiWriter = io.MultiWriter(os.Stdout, logger)
 	}
 
 	var handler slog.Handler = slog.NewJSONHandler(multiWriter, Options)

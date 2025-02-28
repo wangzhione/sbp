@@ -58,10 +58,11 @@ func NewDB(ctx context.Context, config *MySQLConfig) (s *DB, err error) {
 	}
 
 	slog.InfoContext(ctx, "Connected to MySQL successfully!", "database", config.Database, "username", config.Username)
-	return (*DB)(db), nil
+	s = (*DB)(db)
+	return
 }
 
-// Close 关闭数据库连接
+// Close 关闭数据库连接, 必须主动去执行, 否则无法被回收
 func (s *DB) Close() error {
 	return (*sql.DB)(s).Close()
 }
