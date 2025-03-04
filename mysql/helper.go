@@ -64,6 +64,9 @@ func NewDB(ctx context.Context, config *MySQLConfig) (s *DB, err error) {
 
 // Close 关闭数据库连接, 必须主动去执行, 否则无法被回收
 func (s *DB) Close() error {
+	if s == nil {
+		return nil
+	}
 	return (*sql.DB)(s).Close()
 }
 
