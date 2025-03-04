@@ -1,9 +1,7 @@
-package cast
+package casu
 
 import (
 	"testing"
-
-	_ "github.com/spf13/cast"
 )
 
 func TestStringToFloat(t *testing.T) {

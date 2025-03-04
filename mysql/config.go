@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/wangzhione/sbp/util/cast"
+	"github.com/wangzhione/sbp/util/casu"
 )
 
 // MySQLConfig 用于配置 MySQL 数据库连接
@@ -101,7 +101,7 @@ func ParseCommand(command string) (*MySQLConfig, error) {
 		} else if arg == "-P" {
 			// Handle `-P` with a value in the next argument
 			if i+1 < len(args) {
-				port, err := cast.StringToIntE[uint16](args[i+1])
+				port, err := casu.StringToIntE[uint16](args[i+1])
 				if err != nil {
 					return nil, fmt.Errorf("invalid port format: %s %v", args[i+1], err)
 				}
