@@ -32,7 +32,7 @@ func NewTSet[T comparable]() *TSet[T] { return &TSet[T]{S: NewSet[T]()} }
 func NewTSetWithSize[T comparable](size int) *TSet[T] { return &TSet[T]{S: NewSetWithSize[T](size)} }
 
 func NewTSetWithValue[T comparable](vals ...T) *TSet[T] {
-	return &TSet[T]{S: NewSetFromSlice[T](vals)}
+	return &TSet[T]{S: NewSetFromSlice(vals)}
 }
 
 func (r *TSet[T]) Add(v T) {

@@ -7,8 +7,15 @@ import (
 	_ "github.com/spf13/cast"
 )
 
+// IUNumber int or uint numbers type
+type IUNumber interface {
+	~int | ~int8 | ~int16 | ~int32 | ~int64 |
+		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 |
+		~uintptr
+}
+
 // IntToString int to string 默认都是 10 进制数
-func IntToString[T ~int | ~int64 | ~uint | ~uint64 | ~uint8 | int8 | ~uint16 | ~int16 | ~uint32 | ~int32](i T) string {
+func IntToString[T IUNumber](i T) string {
 	if 0 <= i && i < nSmalls {
 		return small(int(i))
 	}
@@ -17,7 +24,7 @@ func IntToString[T ~int | ~int64 | ~uint | ~uint64 | ~uint8 | int8 | ~uint16 | ~
 }
 
 // StringToInt string to int 默认都是 10 进制, 内部吃掉 error 业务上会打印日志
-func StringToInt[T ~int | ~int64 | ~uint | ~uint64 | ~uint8 | int8 | ~uint16 | ~int16 | ~uint32 | ~int32](s string) T {
+func StringToInt[T IUNumber](s string) T {
 	if s == "" {
 		return 0
 	}
@@ -40,7 +47,7 @@ func StringToInt[T ~int | ~int64 | ~uint | ~uint64 | ~uint8 | int8 | ~uint16 | ~
 }
 
 // StringToIntE string to int 默认都是 10 进制, 需要处理 Error
-func StringToIntE[T ~int | ~int64 | ~uint | ~uint64 | ~uint8 | int8 | ~uint16 | ~int16 | ~uint32 | ~int32](s string) (i T, err error) {
+func StringToIntE[T IUNumber](s string) (i T, err error) {
 	if s == "" {
 		return
 	}

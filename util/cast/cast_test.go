@@ -22,7 +22,7 @@ func TestStringToFloat(t *testing.T) {
 func TestStringToInt(t *testing.T) {
 	var i8 int8 = 1
 	var u16 uint16 = 2
-	var i int = 3
+	i := 3
 	var u64 uint64 = 5
 
 	if i8 != StringToInt[int8](IntToString(i8)) {
