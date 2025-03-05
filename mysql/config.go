@@ -118,7 +118,7 @@ func ParseCommand(command string) (*MySQLConfig, error) {
 	}
 
 	// Validate required fields
-	if config.Username == "" || config.Password == "" || config.Database == "" {
+	if config.Username == "" || config.Database == "" {
 		return nil, fmt.Errorf("missing required fields in MySQL command")
 	}
 
