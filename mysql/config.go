@@ -83,6 +83,9 @@ func ParseCommand(command string) (*MySQLConfig, error) {
 				config.Username = args[i+1]
 				i++ // Skip the next argument since it's already used
 			}
+		} else if strings.HasPrefix(arg, "-u") {
+			// Handle `-uUserName` format
+			config.Username = strings.TrimPrefix(arg, "-u")
 		} else if arg == "-p" {
 			// Handle `-p` with a value in the next argument
 			if i+1 < len(args) {
@@ -98,6 +101,9 @@ func ParseCommand(command string) (*MySQLConfig, error) {
 				config.Host = args[i+1]
 				i++ // Skip the next argument since it's already used
 			}
+		} else if strings.HasPrefix(arg, "-h") {
+			// Handle `-hHostName` format
+			config.Host = strings.TrimPrefix(arg, "-h")
 		} else if arg == "-P" {
 			// Handle `-P` with a value in the next argument
 			if i+1 < len(args) {
@@ -108,8 +114,19 @@ func ParseCommand(command string) (*MySQLConfig, error) {
 				config.Port = port
 				i++ // Skip the next argument since it's already used
 			}
+		} else if strings.HasPrefix(arg, "-P") {
+			// Handle `-PPort` format
+			ports := strings.TrimPrefix(arg, "-P")
+			port, err := casu.StringToIntE[uint16](ports)
+			if err != nil {
+				return nil, fmt.Errorf("invalid 2 port format: %s %v", ports, err)
+			}
+			config.Port = port
 		} else if strings.HasPrefix(arg, "--default-character-set=") {
 			// Handle `--default-character-set` format
+			continue
+		} else if strings.EqualFold(arg, "mysql") {
+			// Handle `mysql`
 			continue
 		} else {
 			// Assume the last argument is the database name
