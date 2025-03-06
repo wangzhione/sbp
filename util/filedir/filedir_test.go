@@ -24,3 +24,14 @@ func TestOpenFile(t *testing.T) {
 
 	time.Sleep(time.Second * 6)
 }
+
+func TestFileList(t *testing.T) {
+	dirname := "../"
+
+	files, err := FileList(dirname)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(files)
+}

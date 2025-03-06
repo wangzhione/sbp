@@ -91,3 +91,17 @@ func CopyFileSync(src, dst string) error {
 	// 确保数据写入磁盘
 	return dest.Sync()
 }
+
+// FileList 收集完整的文件列表
+func FileList(dirname string) (files []string, err error) {
+	err = filepath.WalkDir(dirname, func(path string, d os.DirEntry, err error) error {
+		if err == nil {
+			// 只收集文件，跳过目录
+			if !d.IsDir() {
+				files = append(files, path)
+			}
+		}
+		return err
+	})
+	return
+}
