@@ -39,6 +39,31 @@ func WriteFile(filePath string, obj any) error {
 	return os.WriteFile(filePath, data, 0o644)
 }
 
+// ReadWriteFile src -> T json obj -> dst
+func ReadWriteFile[T any](src, dst string) (err error) {
+	// 打开源文件
+	source, err := os.Open(src)
+	if err != nil {
+		return
+	}
+	defer source.Close()
+
+	// 创建目标文件
+	dest, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer dest.Close()
+
+	var obj T
+	err = json.NewDecoder(source).Decode(&obj)
+	if err != nil {
+		return
+	}
+
+	return json.NewEncoder(dest).Encode(obj)
+}
+
 // Valid 判断字符串是否为合法 JSON
 func Valid(stj string) bool {
 	return json.Valid([]byte(stj))

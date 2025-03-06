@@ -1,6 +1,8 @@
 package jsou
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestDebug(t *testing.T) {
 	s := []string{"123", "456", `789

@@ -1,6 +1,7 @@
 package filedir
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 )
@@ -43,4 +44,50 @@ func Exist(filename string) bool {
 		return false
 	}
 	return err == nil
+}
+
+// CopyFile 复制文件 src 到 dst
+func CopyFile(src, dst string) error {
+	// 打开源文件
+	source, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer source.Close()
+
+	// 创建目标文件
+	dest, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer dest.Close()
+
+	// 使用 io.Copy 进行高效复制
+	_, err = io.Copy(dest, source)
+	return err
+}
+
+func CopyFileSync(src, dst string) error {
+	// 打开源文件
+	source, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer source.Close()
+
+	// 创建目标文件
+	dest, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer dest.Close()
+
+	// 使用 io.Copy 进行高效复制
+	_, err = io.Copy(dest, source)
+	if err != nil {
+		return err
+	}
+
+	// 确保数据写入磁盘
+	return dest.Sync()
 }
