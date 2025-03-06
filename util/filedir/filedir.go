@@ -35,3 +35,12 @@ func OpenFile(path string) (file *os.File, err error) {
 	// os.OpenFile 内部有 runtime.SetFinalizer(f.file, (*file).close), 对象释放时候会 GC 1 close -> GC 2 free
 	return os.OpenFile(path, os.O_RDWR, 0o644)
 }
+
+// Exist 粗略检查文件是否存在
+func Exist(filename string) bool {
+	_, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return err == nil
+}
