@@ -1,90 +1,156 @@
 package sets
 
 import (
-	"cmp"
-	"slices"
+	"encoding/json"
+	"fmt"
 )
 
-// Seter is the primary interface provided by the mapset package.  It
-// represents an unordered set of data and a large number of
-// operations that can be applied to that set.
-type Seter[T comparable] interface {
-	// Add adds an element to the set.
-	Add(v T)
+// Set[T] map set
+type Set[T comparable] map[T]struct{}
 
-	// Append multiple elements to the set.
-	Append(vals ...T)
+func NewSet[T comparable]() Set[T] { return make(Set[T]) }
 
-	// Len returns the number of elements in the set.
-	Len() int
-
-	// Exists returns whether the given items
-	// are all in the set.
-	Exists(vals ...T) bool
-
-	// Contains returns whether the given item
-	// is in the set.
-	//
-	// maybe Exists may cause the argument to escape to the heap.
-	Contains(v T) bool
-
-	// Delete removes a single element from the set.
-	Delete(v T)
-
-	// Remove removes multiple elements from the set.
-	Remove(vals ...T)
-
-	// ToSlice returns the members of the set as a slice.
-	ToSlice() []T
-
-	// String provides a convenient string representation
-	// of the current state of the set.
-	String() string
-
-	// MarshalJSON will marshal the set into a JSON-based representation.
-	MarshalJSON() ([]byte, error)
-
-	// UnmarshalJSON will unmarshal a JSON-based byte slice into a full Set datastructure.
-	// For this to work, set subtypes must implemented the Marshal/Unmarshal interface.
-	UnmarshalJSON(b []byte) error
+func NewSetWithValue[T comparable](vals ...T) Set[T] {
+	s := make(Set[T], len(vals))
+	for _, elem := range vals {
+		s.Add(elem)
+	}
+	return s
 }
 
-// Sorted returns a sorted slice of a set of any ordered type in ascending order.
-// When sorting floating-point numbers, NaNs are ordered before other values.
-func Sorted[T cmp.Ordered](s Seter[T]) []T {
-	keys := s.ToSlice()
-	slices.Sort(keys)
+/*
+	//go:linkname makemap_small
+	func makemap_small() *hmap {
+		h := new(hmap)
+		h.hash0 = uint32(rand())
+		return h
+	}
+
+	go map 默认返回 *hmap 所以大部分情况, 大部分情况下函数方法值传递更好.
+*/
+
+func (s Set[T]) Add(v T) { s[v] = struct{}{} }
+
+func (s Set[T]) Append(vals ...T) {
+	for _, key := range vals {
+		s[key] = struct{}{}
+	}
+}
+
+func (s Set[T]) AddSet(other Set[T]) {
+	for key := range other {
+		s[key] = struct{}{}
+	}
+}
+
+func (s Set[T]) Len() int { return len(s) }
+
+func (s Set[T]) Exists(vals ...T) bool {
+	for _, key := range vals {
+		if _, ok := s[key]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
+func (s Set[T]) Contains(v T) bool {
+	_, ok := s[v]
+	return ok
+}
+
+func (s Set[T]) ContainSet(other Set[T]) bool {
+	if len(s) < len(other) {
+		return false
+	}
+
+	for key := range other {
+		if _, ok := s[key]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
+func (s Set[T]) Delete(v T) { delete(s, v) }
+
+func (s Set[T]) Remove(vals ...T) {
+	for _, key := range vals {
+		delete(s, key)
+	}
+}
+
+func (s Set[T]) RemoveSet(other Set[T]) Set[T] {
+	for key := range other {
+		if s.Contains(key) {
+			delete(s, key)
+		}
+	}
+	return s
+}
+
+func (s Set[T]) EQual(other Set[T]) bool {
+	if len(s) != other.Len() {
+		return false
+	}
+
+	for key := range s {
+		if !other.Contains(key) {
+			return false
+		}
+	}
+	return true
+}
+
+func (s Set[T]) Clone() Set[T] {
+	newset := make(Set[T], len(s))
+	for elem := range s {
+		newset[elem] = struct{}{}
+	}
+	return newset
+}
+
+func (s Set[T]) ToSlice() []T {
+	keys := make([]T, 0, s.Len())
+	for elem := range s {
+		keys = append(keys, elem)
+	}
 	return keys
 }
 
-func NewSetFromSlice[T comparable](keys []T) Set[T] {
-	s := NewSetWithSize[T](len(keys))
+func (s Set[T]) String() string {
+	if len(s) == 0 {
+		return "Set{}"
+	}
+	if len(s) == 1 {
+		for elem := range s {
+			return fmt.Sprintf("Set{%v}", elem)
+		}
+	}
 
+	var buf []byte
+	buf = append(buf, "Set{"...)
+	for elem := range s {
+		buf = append(buf, fmt.Sprintf("%v,", elem)...)
+	}
+	buf[len(buf)-1] = '}'
+	return string(buf)
+}
+
+func (s Set[T]) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.ToSlice())
+}
+
+func (s *Set[T]) UnmarshalJSON(buf []byte) error {
+	var keys []T
+	err := json.Unmarshal(buf, &keys)
+	if err != nil {
+		return err
+	}
+
+	*s = make(Set[T], len(keys))
 	for _, key := range keys {
-		s.Add(key)
+		(*s)[key] = struct{}{}
 	}
-
-	return s
-}
-
-// NewSetFromMapKey creates and returns a new set with the given keys of the map.
-// Operations on the resulting set are not thread-safe.
-func NewSetFromMapKey[T comparable, V any](m map[T]V) Set[T] {
-	s := NewSetWithSize[T](len(m))
-
-	for key := range m {
-		s.Add(key)
-	}
-
-	return s
-}
-
-func NewSetFromMapValue[T comparable, V comparable](m map[T]V) Set[V] {
-	s := NewSetWithSize[V](len(m))
-
-	for _, value := range m {
-		s.Add(value)
-	}
-
-	return s
+	return nil
 }
