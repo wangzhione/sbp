@@ -9,6 +9,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/wangzhione/sbp/util/chain"
+	"github.com/wangzhione/sbp/util/jsou"
 )
 
 var connects = "mysql -u root -p123456 -h 127.0.0.1 -P 3306 demo"
@@ -16,13 +17,7 @@ var connects = "mysql -u root -p123456 -h 127.0.0.1 -P 3306 demo"
 func TestNewDB(t *testing.T) {
 	connects = "mysql -u root -p123456 demo"
 
-	config, err := ParseCommand(connects)
-	if err != nil {
-		t.Fatal("ParseCommand error", connects, err)
-	}
-	t.Log(config.DataSourceName(), config.Command())
-
-	s, err := NewDB(chain.Background, config)
+	s, err := NewDB(chain.Background, connects)
 	if err != nil {
 		t.Fatal("NewDB fatal", err)
 	}
@@ -47,11 +42,7 @@ func TestNewDB(t *testing.T) {
 }
 
 func TestQueryRow(t *testing.T) {
-	config, err := ParseCommand(connects)
-	if err != nil {
-		t.Fatal("ParseCommand error", connects, err)
-	}
-	s, err := NewDB(chain.Background, config)
+	s, err := NewDB(chain.Background, connects)
 	if err != nil {
 		t.Fatal("NewDB fatal", err)
 	}
@@ -84,11 +75,7 @@ type User struct {
 }
 
 func TestDB_QueryCallBack(t *testing.T) {
-	config, err := ParseCommand(connects)
-	if err != nil {
-		t.Fatal("ParseCommand error", connects, err)
-	}
-	s, err := NewDB(chain.Background, config)
+	s, err := NewDB(chain.Background, connects)
 	if err != nil {
 		t.Fatal("NewDB fatal", err)
 	}
@@ -118,4 +105,19 @@ func TestDB_QueryCallBack(t *testing.T) {
 	if err != nil {
 		t.Fatal("QueryCallBack fatal", err)
 	}
+}
+
+func TestDB_QueryAll(t *testing.T) {
+	s, err := NewDB(chain.Background, connects)
+	if err != nil {
+		t.Fatal("NewDB fatal", err)
+	}
+
+	query := "SELECT id, user_name, password, password_salt, email_not_verified, user_email, update_time, create_time, delete_time FROM t_user WHERE delete_time = 0"
+	results, err := s.QueryAll(chain.Background, query)
+	if err != nil {
+		t.Fatal("s.QueryAll fatal", err)
+	}
+
+	t.Log("Success", "\n", jsou.String(results))
 }
