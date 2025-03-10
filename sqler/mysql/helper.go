@@ -49,11 +49,11 @@ func NewDBWithConfig(ctx context.Context, config *MySQLConfig) (s *sqler.DB, err
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 	if err = db.PingContext(ctx); err != nil {
-		slog.ErrorContext(ctx, "failed to ping MySQL error", "dsn", dsn, "error", err, "cmd", config.Command())
+		slog.ErrorContext(ctx, "failed to ping MySQL panic error", "dsn", dsn, "error", err, "cmd", config.Command())
 		return
 	}
 
-	slog.InfoContext(ctx, "Connected to MySQL successfully!", "database", config.Database, "username", config.Username)
+	slog.InfoContext(ctx, "Connected to MySQL successfully", "database", config.Database, "username", config.Username)
 	s = (*sqler.DB)(db)
 	return
 }
