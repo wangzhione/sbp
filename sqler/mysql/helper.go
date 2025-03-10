@@ -29,7 +29,7 @@ func NewDBWithConfig(ctx context.Context, config *MySQLConfig) (s *sqler.DB, err
 	// 初始化数据库连接
 	db, err := sql.Open(MySQLDriverName, dsn)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to connect to MySQL", "dsn", dsn, "reason", err, "cmd", config.Command())
+		slog.ErrorContext(ctx, "failed to connect to MySQL error", "dsn", dsn, "error", err, "cmd", config.Command())
 		return
 	}
 
@@ -49,7 +49,7 @@ func NewDBWithConfig(ctx context.Context, config *MySQLConfig) (s *sqler.DB, err
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 	if err = db.PingContext(ctx); err != nil {
-		slog.ErrorContext(ctx, "failed to ping MySQL", "dsn", dsn, "reason", err, "cmd", config.Command())
+		slog.ErrorContext(ctx, "failed to ping MySQL error", "dsn", dsn, "error", err, "cmd", config.Command())
 		return
 	}
 
