@@ -105,3 +105,13 @@ func FileList(dirname string) (files []string, err error) {
 	})
 	return
 }
+
+// ReadString os.ReadFile []byte -> string
+func ReadString(filename string) (text string, err error) {
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		return
+	}
+	text = string(data)
+	return
+}
