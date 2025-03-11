@@ -53,3 +53,26 @@ func GetTraceID(c context.Context) string
 
 
 ## `道常无为而无不为` 
+
+
+## helper
+
+### git tag 
+
+```bash
+git tag -d $(git tag)
+
+git ls-remote --tags origin | awk '{print $2}' | sed 's|refs/tags/||' | xargs -I {} git push --delete origin {}
+
+git fetch --prune --tags
+```
+
+```
+git tag -d $(git tag) && git ls-remote --tags origin | awk '{print $2}' | sed 's|refs/tags/||' | xargs -I {} git push --delete origin {} && git fetch --prune --tags
+```
+
+```
+git tag
+
+git ls-remote --tags origin
+```
