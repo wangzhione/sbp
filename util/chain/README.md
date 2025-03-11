@@ -22,10 +22,32 @@ impor 后 可以无缝使用 slog 进行 InfoContext or WarnContext or ErrorCont
 import "sbp/util/chain"
 
 
-// First 注入 trace id
-func WithTraceID(c *context.Context) string
+// step 1: First 注入 trace id
 
-// Second 获取 trace id
+// WithContext add trace id to context
+func WithContext(ctx context.Context, id string) context.Context {
+	return context.WithValue(ctx, key, id)
+}
+
+// or 
+
+// Request init http.Request and return request id
+func Request(r *http.Request) (req *http.Request, requestID string) {
+	// 获取或生成 requestID
+	requestID = r.Header.Get(Key)
+	if requestID == "" {
+		requestID = idhash.UUID()
+	}
+	// 注入 requestID 到 Context
+	ctx := WithContext(r.Context(), requestID)
+
+	req = r.WithContext(ctx)
+
+	return
+}
+
+
+// step 2:  Second 获取 trace id
 func GetTraceID(c context.Context) string 
 ```
 

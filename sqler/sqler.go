@@ -12,18 +12,22 @@ import (
 // DB 数据库帮助新结构体, 也可以 (*sql.DB)(s) 调用原生接口
 type DB sql.DB
 
+func (s *DB) SQL() *sql.DB {
+	return (*sql.DB)(s)
+}
+
 // Close 关闭数据库连接, 必须主动去执行, 否则无法被回收
 func (s *DB) Close() error {
 	if s == nil {
 		return nil
 	}
-	return (*sql.DB)(s).Close()
+	return s.SQL().Close()
 }
 
 // Before hook will print the query with it's args and return the context with the timestamp
 func Before(ctx context.Context, query string, args ...any) time.Time {
 	begin := time.Now()
-	slog.InfoContext(ctx, "SQLer before", "begin", begin, "query", query, "args", args)
+	slog.InfoContext(ctx, "SQLer Before", "begin", begin, "query", query, "args", args)
 	return begin
 }
 
@@ -43,7 +47,7 @@ func (s *DB) Exec(ctx context.Context, query string, args ...any) (sql.Result, e
 	// 主动注入日志模块
 	defer After(ctx, Before(ctx, query, args))
 
-	result, err := (*sql.DB)(s).ExecContext(ctx, query, args...)
+	result, err := s.SQL().ExecContext(ctx, query, args...)
 	if err != nil {
 		slog.ErrorContext(ctx, "SQLer Exec error", "query", query, "args", args, "reason", err)
 	}
@@ -55,7 +59,7 @@ func (s *DB) Exec(ctx context.Context, query string, args ...any) (sql.Result, e
 func (s *DB) QueryCallBack(ctx context.Context, callback func(context.Context, *sql.Rows) error, query string, args ...any) error {
 	defer After(ctx, Before(ctx, query, args))
 
-	rows, err := (*sql.DB)(s).QueryContext(ctx, query, args...)
+	rows, err := s.SQL().QueryContext(ctx, query, args...)
 	if err != nil {
 		slog.ErrorContext(ctx, "SQLer QueryCallBack error", "query", query, "args", args, "reason", err)
 		return err
@@ -91,7 +95,7 @@ func (s *DB) QueryCallBack(ctx context.Context, callback func(context.Context, *
 func (s *DB) QueryRow(ctx context.Context, query string, args []any, dest ...any) error {
 	defer After(ctx, Before(ctx, query, args))
 
-	err := (*sql.DB)(s).QueryRowContext(ctx, query, args...).Scan(dest...)
+	err := s.SQL().QueryRowContext(ctx, query, args...).Scan(dest...)
 	switch err {
 	case nil: // success
 		return nil
@@ -105,12 +109,12 @@ func (s *DB) QueryRow(ctx context.Context, query string, args []any, dest ...any
 }
 
 // QueryOne 查询单条记录
-func (s *DB) QueryOne(ctx context.Context, query string, args ...interface{}) (result map[string]interface{}, err error) {
+func (s *DB) QueryOne(ctx context.Context, query string, args ...any) (result map[string]any, err error) {
 	defer After(ctx, Before(ctx, query, args))
 
-	rows, err := (*sql.DB)(s).QueryContext(ctx, query, args...)
+	rows, err := s.SQL().QueryContext(ctx, query, args...)
 	if err != nil {
-		slog.ErrorContext(ctx, "QueryOne QueryContext error", "query", query, "args", args, "reason", err)
+		slog.ErrorContext(ctx, "SQLer QueryOne QueryContext error", "query", query, "args", args, "reason", err)
 		return
 	}
 	defer rows.Close()
@@ -118,18 +122,18 @@ func (s *DB) QueryOne(ctx context.Context, query string, args ...interface{}) (r
 	// 获取列名
 	columns, err := rows.Columns()
 	if err != nil {
-		slog.ErrorContext(ctx, "QueryOne rows.Columns() error", "query", query, "args", args, "reason", err)
+		slog.ErrorContext(ctx, "SQLer QueryOne rows.Columns() error", "query", query, "args", args, "reason", err)
 		return
 	}
 
-	result = make(map[string]interface{})
+	result = make(map[string]any)
 	if len(columns) == 0 {
 		return
 	}
 
 	// 创建切片用于存储结果
-	values := make([]interface{}, len(columns))
-	valuePtrs := make([]interface{}, len(columns))
+	values := make([]any, len(columns))
+	valuePtrs := make([]any, len(columns))
 	for i := range values {
 		valuePtrs[i] = &values[i]
 	}
@@ -137,23 +141,23 @@ func (s *DB) QueryOne(ctx context.Context, query string, args ...interface{}) (r
 	if rows.Next() {
 		// 读取数据
 		if err = rows.Scan(valuePtrs...); err != nil {
-			slog.ErrorContext(ctx, "QueryOne rows.Scan(valuePtrs...) error", "query", query, "args", args, "reason", err)
+			slog.ErrorContext(ctx, "SQLer QueryOne rows.Scan(valuePtrs...) error", "query", query, "args", args, "reason", err)
 			return
 		}
 	}
 
 	if err = rows.Err(); err != nil {
-		slog.ErrorContext(ctx, "QueryOne rows.Err() error", "query", query, "args", args, "reason", err)
+		slog.ErrorContext(ctx, "SQLer QueryOne rows.Err() error", "query", query, "args", args, "reason", err)
 		return
 	}
 
 	// 解析数据
 	for i, colName := range columns {
 		switch val := values[i].(type) {
-		case []byte:
-			result[colName] = string(val) // 转换 []byte 为 string
 		case nil:
 			result[colName] = nil // 保持 NULL 值
+		case []byte:
+			result[colName] = string(val) // 转换 []byte 为 string
 		default:
 			result[colName] = val
 		}
@@ -163,19 +167,19 @@ func (s *DB) QueryOne(ctx context.Context, query string, args ...interface{}) (r
 }
 
 // QueryAll 查询多条记录
-func (s *DB) QueryAll(ctx context.Context, query string, args ...interface{}) (results []map[string]interface{}, err error) {
+func (s *DB) QueryAll(ctx context.Context, query string, args ...any) (results []map[string]any, err error) {
 	defer After(ctx, Before(ctx, query, args))
 
-	rows, err := (*sql.DB)(s).QueryContext(ctx, query, args...)
+	rows, err := s.SQL().QueryContext(ctx, query, args...)
 	if err != nil {
-		slog.ErrorContext(ctx, "QueryAll QueryContext error", "query", query, "args", args, "reason", err)
+		slog.ErrorContext(ctx, "SQLer QueryAll QueryContext error", "query", query, "args", args, "reason", err)
 		return
 	}
 	defer rows.Close()
 
 	columns, err := rows.Columns()
 	if err != nil {
-		slog.ErrorContext(ctx, "QueryAll rows.Columns() error", "query", query, "args", args, "reason", err)
+		slog.ErrorContext(ctx, "SQLer QueryAll rows.Columns() error", "query", query, "args", args, "reason", err)
 		return
 	}
 
@@ -185,26 +189,26 @@ func (s *DB) QueryAll(ctx context.Context, query string, args ...interface{}) (r
 
 	for rows.Next() {
 		// 创建存储每列数据的切片
-		values := make([]interface{}, len(columns))
-		valuePtrs := make([]interface{}, len(columns))
+		values := make([]any, len(columns))
+		valuePtrs := make([]any, len(columns))
 		for i := range values {
 			valuePtrs[i] = &values[i] // 指针绑定
 		}
 
 		// 读取数据
 		if err = rows.Scan(valuePtrs...); err != nil {
-			slog.ErrorContext(ctx, "QueryAll rows.Scan(valuePtrs...) error", "query", query, "args", args, "reason", err)
+			slog.ErrorContext(ctx, "SQLer QueryAll rows.Scan(valuePtrs...) error", "query", query, "args", args, "reason", err)
 			return
 		}
 
 		// 解析数据，转换 NULL 值
-		result := make(map[string]interface{}, len(columns))
+		result := make(map[string]any, len(columns))
 		for i, colName := range columns {
 			switch val := values[i].(type) {
-			case []byte:
-				result[colName] = string(val) // 转换 []byte 为 string
 			case nil:
 				result[colName] = nil // 保持 NULL 值
+			case []byte:
+				result[colName] = string(val) // 转换 []byte 为 string
 			default:
 				result[colName] = val
 			}
@@ -215,7 +219,7 @@ func (s *DB) QueryAll(ctx context.Context, query string, args ...interface{}) (r
 
 	// 检查迭代过程中是否出错
 	if err = rows.Err(); err != nil {
-		slog.ErrorContext(ctx, "QueryAll rows.Err() error", "query", query, "args", args, "reason", err)
+		slog.ErrorContext(ctx, "SQLer QueryAll rows.Err() error", "query", query, "args", args, "reason", err)
 		return
 	}
 
@@ -229,7 +233,7 @@ func (s *DB) Transaction(ctx context.Context, transaction func(context.Context, 
 	defer After(ctx, Before(ctx, "Transaction"))
 
 	// opts *sql.TxOptions 用于指定事务的隔离级别和是否为只读事务。可选参数，可以传 nil 使用 mysql 默认配置。
-	tx, err := (*sql.DB)(s).BeginTx(ctx, nil)
+	tx, err := s.SQL().BeginTx(ctx, nil)
 	if err != nil {
 		slog.ErrorContext(ctx, "SQLer Transaction error", "reason", err)
 		return err

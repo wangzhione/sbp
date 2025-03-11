@@ -18,12 +18,8 @@ type ContextHandler struct {
 }
 
 func (h ContextHandler) Handle(ctx context.Context, r slog.Record) error {
-	// context 需要在首次出现地方 注入 WithTraceID(&ctx) trace id
-	traceID := GetTraceID(ctx)
-	if len(traceID) > 0 {
-		r.AddAttrs(slog.String(Key, traceID))
-	}
-
+	// context 依赖 WithContext(ctx, id) or Request(r)
+	r.AddAttrs(slog.String(Key, GetTraceID(ctx)))
 	return h.Handler.Handle(ctx, r)
 }
 
