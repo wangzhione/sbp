@@ -78,5 +78,5 @@ git ls-remote --tags origin
 ```
 
 ```
-for tag in v1.0.0 v2.0.0; do git tag -d $tag && git push --delete origin $tag && git tag $tag && git push origin $tag; done
+for tag in v0.0.1; do git tag -d $tag && git push --delete origin $tag && git tag $tag && git push origin $tag; done
 ```
