@@ -55,14 +55,9 @@ func Exist(filename string) bool {
 	return err == nil
 }
 
-// CopyFile 复制文件 src 到 dst
-func CopyFile(src, dst string) error {
-	// 打开源文件
-	source, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer source.Close()
+// CopyFileBody resp.Body write file low api
+func CopyFileBody(body io.ReadCloser, dst string) error {
+	defer body.Close()
 
 	// 创建目标文件
 	dest, err := os.Create(dst)
@@ -72,8 +67,19 @@ func CopyFile(src, dst string) error {
 	defer dest.Close()
 
 	// 使用 io.Copy 进行高效复制
-	_, err = io.Copy(dest, source)
+	_, err = io.Copy(dest, body)
 	return err
+}
+
+// CopyFile 复制文件 src 到 dst
+func CopyFile(src, dst string) error {
+	// 打开源文件
+	source, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+
+	return CopyFileBody(source, dst)
 }
 
 func CopyFileSync(src, dst string) error {
