@@ -8,10 +8,19 @@ import (
 
 // CreateDir 根据 path 创建 dir
 func CreateDir(path string) error {
-	// 获取文件所在的目录路径
+	// 如果文件不存在，尝试创建文件所在的目录
 	dir := filepath.Dir(path)
 
-	return os.MkdirAll(dir, 0o755)
+	// 检查文件是否存在
+	_, err := os.Stat(dir)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return err
+		}
+	}
+
+	// 确保目录存在，如果不存在则创建
+	return os.MkdirAll(dir, os.ModePerm)
 }
 
 // OpenFile 打开文件
