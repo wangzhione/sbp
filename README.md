@@ -20,7 +20,7 @@ We depend on the same code(this repo) in our production environment.
 
 ## Catalogs
 
-* [cache](https://github.com/wangzhione/sbp/tree/master/cache): Caching Mechanism
+* [localcache](https://github.com/wangzhione/sbp/tree/master/localcache): Caching Mechanism
 * [cloud](https://github.com/wangzhione/sbp/tree/master/cloud): Cloud Computing Design Patterns
 * [structs](https://github.com/wangzhione/sbp/tree/master/structs): Data Structures or Collection
 * [util](https://github.com/wangzhione/sbp/tree/master/util): Utilities Useful across Domains

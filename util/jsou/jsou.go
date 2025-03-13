@@ -92,7 +92,7 @@ func Debug(obj any, prefix ...any) {
 	println()
 	data, err := json.MarshalIndent(obj, "", "\t")
 	if err != nil {
-		println("jsou.Debug MarshalIndent error:", err)
+		println("jsou.Debug MarshalIndent error:", err.Error())
 	}
 	println(string(data))
 	println()
