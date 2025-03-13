@@ -116,11 +116,6 @@ func InitSLog() {
 	slog.SetDefault(logs)
 }
 
-func InitDefaultSLog() {
-	logs := slog.New(&ContextHandler{slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{})})
-	slog.SetDefault(logs)
-}
-
 // LogStartEnd Wrapper function to log start and end times, and measure duration
 func LogStartEnd(ctx context.Context, name string, fn func(context.Context)) {
 	start := time.Now()
