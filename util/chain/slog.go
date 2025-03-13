@@ -79,7 +79,7 @@ func InitRotatingFileSLog(args ...*Logger) {
 
 	// lumberjack 会 mkdir + open file
 
-	Options := &slog.HandlerOptions{
+	options := &slog.HandlerOptions{
 		AddSource: true,
 		Level:     EnableLevel,
 	}
@@ -92,9 +92,9 @@ func InitRotatingFileSLog(args ...*Logger) {
 		multiWriter = io.MultiWriter(os.Stdout, logger)
 	}
 
-	var handler slog.Handler = slog.NewJSONHandler(multiWriter, Options)
+	var handler slog.Handler = slog.NewJSONHandler(multiWriter, options)
 	if os.Getenv("LOG_FORMAT") == "text" {
-		handler = slog.NewTextHandler(multiWriter, Options)
+		handler = slog.NewTextHandler(multiWriter, options)
 	}
 
 	logs := slog.New(&ContextHandler{handler})
@@ -102,17 +102,22 @@ func InitRotatingFileSLog(args ...*Logger) {
 }
 
 func InitSLog() {
-	Options := &slog.HandlerOptions{
+	options := &slog.HandlerOptions{
 		AddSource: true, // 启用日志源文件定位
 		Level:     EnableLevel,
 	}
 
-	var handler slog.Handler = slog.NewJSONHandler(os.Stdout, Options)
+	var handler slog.Handler = slog.NewJSONHandler(os.Stdout, options)
 	if os.Getenv("LOG_FORMAT") == "text" {
-		handler = slog.NewTextHandler(os.Stdout, Options)
+		handler = slog.NewTextHandler(os.Stdout, options)
 	}
 
 	logs := slog.New(&ContextHandler{handler})
+	slog.SetDefault(logs)
+}
+
+func InitDefaultSLog() {
+	logs := slog.New(&ContextHandler{slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{})})
 	slog.SetDefault(logs)
 }
 
