@@ -12,16 +12,18 @@ import (
 // DB 数据库帮助新结构体, 也可以 (*sql.DB)(s) 调用原生接口
 type DB sql.DB
 
-func (s *DB) SQL() *sql.DB {
+func (s *DB) DB() *sql.DB {
 	return (*sql.DB)(s)
 }
 
 // Close 关闭数据库连接, 必须主动去执行, 否则无法被回收
-func (s *DB) Close() error {
-	if s == nil {
-		return nil
+func (s *DB) Close(ctx context.Context) (err error) {
+	if s != nil {
+		err = s.DB().Close()
+		// 创建和关闭都是很重的操作需要格外小心
+		slog.InfoContext(ctx, "r.DB().Close() info", "reason", err)
 	}
-	return s.SQL().Close()
+	return
 }
 
 // Before hook will print the query with it's args and return the context with the timestamp
@@ -47,7 +49,7 @@ func (s *DB) Exec(ctx context.Context, query string, args ...any) (sql.Result, e
 	// 主动注入日志模块
 	defer After(ctx, Before(ctx, query, args))
 
-	result, err := s.SQL().ExecContext(ctx, query, args...)
+	result, err := s.DB().ExecContext(ctx, query, args...)
 	if err != nil {
 		slog.ErrorContext(ctx, "SQLer Exec error", "query", query, "args", args, "reason", err)
 	}
@@ -59,7 +61,7 @@ func (s *DB) Exec(ctx context.Context, query string, args ...any) (sql.Result, e
 func (s *DB) QueryCallBack(ctx context.Context, callback func(context.Context, *sql.Rows) error, query string, args ...any) error {
 	defer After(ctx, Before(ctx, query, args))
 
-	rows, err := s.SQL().QueryContext(ctx, query, args...)
+	rows, err := s.DB().QueryContext(ctx, query, args...)
 	if err != nil {
 		slog.ErrorContext(ctx, "SQLer QueryCallBack error", "query", query, "args", args, "reason", err)
 		return err
@@ -95,7 +97,7 @@ func (s *DB) QueryCallBack(ctx context.Context, callback func(context.Context, *
 func (s *DB) QueryRow(ctx context.Context, query string, args []any, dest ...any) error {
 	defer After(ctx, Before(ctx, query, args))
 
-	err := s.SQL().QueryRowContext(ctx, query, args...).Scan(dest...)
+	err := s.DB().QueryRowContext(ctx, query, args...).Scan(dest...)
 	switch err {
 	case nil: // success
 		return nil
@@ -112,7 +114,7 @@ func (s *DB) QueryRow(ctx context.Context, query string, args []any, dest ...any
 func (s *DB) QueryOne(ctx context.Context, query string, args ...any) (result map[string]any, err error) {
 	defer After(ctx, Before(ctx, query, args))
 
-	rows, err := s.SQL().QueryContext(ctx, query, args...)
+	rows, err := s.DB().QueryContext(ctx, query, args...)
 	if err != nil {
 		slog.ErrorContext(ctx, "SQLer QueryOne QueryContext error", "query", query, "args", args, "reason", err)
 		return
@@ -170,7 +172,7 @@ func (s *DB) QueryOne(ctx context.Context, query string, args ...any) (result ma
 func (s *DB) QueryAll(ctx context.Context, query string, args ...any) (results []map[string]any, err error) {
 	defer After(ctx, Before(ctx, query, args))
 
-	rows, err := s.SQL().QueryContext(ctx, query, args...)
+	rows, err := s.DB().QueryContext(ctx, query, args...)
 	if err != nil {
 		slog.ErrorContext(ctx, "SQLer QueryAll QueryContext error", "query", query, "args", args, "reason", err)
 		return
@@ -233,7 +235,7 @@ func (s *DB) Transaction(ctx context.Context, transaction func(context.Context, 
 	defer After(ctx, Before(ctx, "Transaction"))
 
 	// opts *sql.TxOptions 用于指定事务的隔离级别和是否为只读事务。可选参数，可以传 nil 使用 mysql 默认配置。
-	tx, err := s.SQL().BeginTx(ctx, nil)
+	tx, err := s.DB().BeginTx(ctx, nil)
 	if err != nil {
 		slog.ErrorContext(ctx, "SQLer Transaction error", "reason", err)
 		return err

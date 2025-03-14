@@ -11,8 +11,8 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func NewRedis(ctx context.Context, options *redis.Options) (rdb *redis.Client, err error) {
-	rdb = redis.NewClient(options)
+func NewRedis(ctx context.Context, options *redis.Options) (c *Client, err error) {
+	rdb := redis.NewClient(options)
 
 	// 测试连接
 	result, err := rdb.Ping(ctx).Result()
@@ -22,11 +22,12 @@ func NewRedis(ctx context.Context, options *redis.Options) (rdb *redis.Client, e
 	}
 	slog.InfoContext(ctx, "Redis Success "+options.Addr, "result", result)
 
+	c = (*Client)(rdb)
 	return
 }
 
 // NewDefaultRedis 构建默认的 redis client
-func NewDefaultRedis(ctx context.Context, command string) (rdb *redis.Client, err error) {
+func NewDefaultRedis(ctx context.Context, command string) (rdb *Client, err error) {
 	options, err := ParseRedisCommand(command)
 	if err != nil {
 		slog.ErrorContext(ctx, "ParseRedisCommand is error", "error", err, "command", command)

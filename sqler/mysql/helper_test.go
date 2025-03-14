@@ -30,7 +30,7 @@ func TestNewDB(t *testing.T) {
 
 	runtime.AddCleanup(s, func(fd uintptr) { println("runtime.AddCleanup close", fd) }, 0)
 
-	s.Close()
+	s.Close(chain.Background)
 	// 必须主动 close 后才能被回收, 所以 runtime.SetFinalizer(s, (*DB).Close) 永远不会执行
 	s = nil
 
