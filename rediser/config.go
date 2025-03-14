@@ -5,17 +5,39 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/redis/go-redis/v9"
 )
 
-func NewCommand(ctx context.Context, command string) (options *redis.Options, err error) {
+func NewRedis(ctx context.Context, options *redis.Options) (rdb *redis.Client, err error) {
+	rdb = redis.NewClient(options)
+
+	// 测试连接
+	result, err := rdb.Ping(ctx).Result()
+	if err != nil {
+		slog.ErrorContext(ctx, "rdb.Ping(ctx).Result() error", "error", err, "Addr", options.Addr)
+		return
+	}
+	slog.InfoContext(ctx, "Redis Success "+options.Addr, "result", result)
+
 	return
 }
 
-// ParseRedisCLI 解析 redis-cli 命令并返回 redis.Options
-func ParseRedisCLI(command string) (*redis.Options, error) {
+// NewDefaultRedis 构建默认的 redis client
+func NewDefaultRedis(ctx context.Context, command string) (rdb *redis.Client, err error) {
+	options, err := ParseRedisCommand(command)
+	if err != nil {
+		slog.ErrorContext(ctx, "ParseRedisCommand is error", "error", err, "command", command)
+		return
+	}
+
+	return NewRedis(ctx, options)
+}
+
+// ParseRedisCommand 解析 redis-cli 命令并返回 redis.Options
+func ParseRedisCommand(command string) (*redis.Options, error) {
 	// 分割命令行参数
 	args := strings.Fields(command)
 
