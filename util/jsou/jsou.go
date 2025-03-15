@@ -84,19 +84,29 @@ func Slice(stj string) (obj []any, err error) {
 
 // Debug json + printf 方便单元测试
 func Debug(args ...any) {
-	println()
-
 	for _, arg := range args {
-		t := reflect.TypeOf(arg)
-		println("DEBUG", t.PkgPath()+"."+t.Name())
-		data, err := json.MarshalIndent(arg, "", "\t")
-		if err != nil {
-			println("error", err.Error())
-			fmt.Printf("%#v\n", arg)
-		} else {
-			println(string(data))
+		fmt.Println()
+
+		if arg == nil {
+			fmt.Println("DEBUG nil\nnil")
+			continue
 		}
 
-		println()
+		t := reflect.TypeOf(arg)
+		if t.PkgPath() != "" {
+			fmt.Printf("DEBUG %s.%s\n", t.PkgPath(), t.Name())
+		} else {
+			fmt.Printf("DEBUG %s\n", t.Name())
+		}
+
+		// 尝试格式化 JSON
+		data, err := json.MarshalIndent(arg, "", "\t")
+		if err != nil {
+			fmt.Printf("%#v\n", arg) // 备用输出，防止 JSON 失败时无法查看数据
+		} else {
+			fmt.Println(string(data))
+		}
 	}
+
+	fmt.Println()
 }

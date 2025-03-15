@@ -26,5 +26,5 @@ func TestDebugPrefix(t *testing.T) {
 		C func()
 	}
 
-	Debug(XX{A: 2, B: "XX"}, 2, 3)
+	Debug(nil, XX{A: 2, B: "XX"}, 2, 3)
 }
