@@ -2,6 +2,7 @@ package jsou
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"reflect"
 )
@@ -82,18 +83,20 @@ func Slice(stj string) (obj []any, err error) {
 }
 
 // Debug json + printf 方便单元测试
-func Debug(obj any, prefix ...any) {
+func Debug(args ...any) {
 	println()
-	if len(prefix) > 0 {
-		println(prefix, "JSOU DEBUG", reflect.ValueOf(obj).String())
-	} else {
-		println("JSOU DEBUG", reflect.ValueOf(obj).String())
+
+	for _, arg := range args {
+		t := reflect.TypeOf(arg)
+		println("DEBUG", t.PkgPath()+"."+t.Name())
+		data, err := json.MarshalIndent(arg, "", "\t")
+		if err != nil {
+			println("error", err.Error())
+			fmt.Printf("%#v\n", arg)
+		} else {
+			println(string(data))
+		}
+
+		println()
 	}
-	println()
-	data, err := json.MarshalIndent(obj, "", "\t")
-	if err != nil {
-		println("jsou.Debug MarshalIndent error:", err.Error())
-	}
-	println(string(data))
-	println()
 }

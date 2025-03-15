@@ -18,3 +18,13 @@ func TestDebug(t *testing.T) {
 
 	Debug(XX{A: 2, B: "XX"})
 }
+
+func TestDebugPrefix(t *testing.T) {
+	type XX struct {
+		A int
+		B string
+		C func()
+	}
+
+	Debug(XX{A: 2, B: "XX"}, 2, 3)
+}
