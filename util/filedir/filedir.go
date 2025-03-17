@@ -48,11 +48,20 @@ func OpenFile(path string) (file *os.File, err error) {
 
 // Exist 粗略检查文件是否存在
 func Exist(filename string) bool {
-	_, err := os.Stat(filename)
-	if os.IsNotExist(err) {
-		return false
+	exists, _ := ExistE(filename)
+	return exists
+}
+
+// ExistE 判断路径（文件或目录）是否存在
+func ExistE(filepath string) (exists bool, err error) {
+	_, err = os.Stat(filepath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil // 路径不存在
+		}
+		return false, err // 其他错误（如权限问题）
 	}
-	return err == nil
+	return true, nil // 路径存在（无论是文件还是目录）
 }
 
 // CopyFileBody resp.Body write file low api
