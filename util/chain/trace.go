@@ -9,24 +9,24 @@ import (
 
 var Background = Context()
 
-var key = any(Key)
+// XRquestID 默认所有链条 trace id 的 key
+const XRquestID = "X-Request-Id"
 
-// Key 默认所有链条 trace id 的 key
-const Key = "X-Request-Id"
+var xRquestID = any(XRquestID)
 
 // WithContext add trace id to context
 func WithContext(ctx context.Context, id string) context.Context {
-	return context.WithValue(ctx, key, id)
+	return context.WithValue(ctx, xRquestID, id)
 }
 
 // GetTraceID context 中 get trace id
 func GetTraceID(c context.Context) string {
-	traceID, _ := c.Value(key).(string)
+	traceID, _ := c.Value(xRquestID).(string)
 	return traceID
 }
 
 func Context() context.Context {
-	return context.WithValue(context.Background(), key, idhash.UUID())
+	return context.WithValue(context.Background(), xRquestID, idhash.UUID())
 }
 
 func CopyTrace(c context.Context) context.Context {
@@ -35,12 +35,12 @@ func CopyTrace(c context.Context) context.Context {
 		traceid = idhash.UUID()
 	}
 	// 防止 context 存在 timeout or cancel
-	return context.WithValue(context.Background(), key, traceid)
+	return context.WithValue(context.Background(), xRquestID, traceid)
 }
 
 func Request(r *http.Request) (req *http.Request, requestID string) {
 	// 获取或生成 requestID
-	requestID = r.Header.Get(Key)
+	requestID = r.Header.Get(XRquestID)
 	if requestID == "" {
 		requestID = idhash.UUID()
 	}

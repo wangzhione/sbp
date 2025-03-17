@@ -19,7 +19,7 @@ type ContextHandler struct {
 
 func (h ContextHandler) Handle(ctx context.Context, r slog.Record) error {
 	// context 依赖 WithContext(ctx, id) or Request(r)
-	r.AddAttrs(slog.String(Key, GetTraceID(ctx)))
+	r.AddAttrs(slog.String(XRquestID, GetTraceID(ctx)))
 	return h.Handler.Handle(ctx, r)
 }
 

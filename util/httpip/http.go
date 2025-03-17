@@ -123,7 +123,7 @@ func DoRequest(ctx context.Context, method, url string, headers map[string]strin
 
 	// 设置默认 Content-Type X-Request-Id
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(chain.Key, chain.GetTraceID(ctx))
+	req.Header.Set(chain.XRquestID, chain.GetTraceID(ctx))
 	for key, value := range headers {
 		req.Header.Set(key, value)
 	}
@@ -163,7 +163,7 @@ func Call(ctx context.Context, method, url string, headers map[string]string, re
 	}
 
 	// 设置默认 X-Request-Id
-	req.Header.Set(chain.Key, chain.GetTraceID(ctx))
+	req.Header.Set(chain.XRquestID, chain.GetTraceID(ctx))
 	for key, value := range headers {
 		req.Header.Set(key, value)
 	}
