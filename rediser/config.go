@@ -47,21 +47,13 @@ func ParseRedisCommand(command string) (*redis.Options, error) {
 		return nil, errors.New("not redis-cli head")
 	}
 
-	// 定义默认值
-	options := &redis.Options{
-		Addr:     "localhost:6379", // 默认地址
-		Password: "",               // 默认无密码
-		DB:       0,                // 默认 DB 0
-	}
-
 	// 使用 flag 库解析命令行参数
 	lag := flag.NewFlagSet("redis-cli", flag.ContinueOnError)
 	host := lag.String("h", "localhost", "Redis host")
 	port := lag.String("p", "6379", "Redis port")
 	password := lag.String("a", "", "Redis passwd")
-
-	// 默认数据库编号就是 0, 不应该设置
-	db := lag.Int("n", 0, "Redis database num")
+	username := lag.String("u", "", "Redis Username")
+	db := lag.Int("n", 0, "Redis database num") // 默认数据库编号就是 0, 不应该设置
 
 	// 解析参数（跳过 "redis-cli"）
 	err := lag.Parse(args[1:])
@@ -70,9 +62,12 @@ func ParseRedisCommand(command string) (*redis.Options, error) {
 	}
 
 	// 设置解析后的值
-	options.Addr = fmt.Sprintf("%s:%s", *host, *port)
-	options.Password = *password
-	options.DB = *db
+	options := &redis.Options{
+		Addr:     fmt.Sprintf("%s:%s", *host, *port), // 默认地址
+		Password: *password,                          // 默认无密码
+		DB:       *db,                                // 默认 DB 0
+		Username: *username,                          // 默认 "" 一般不配置
+	}
 
 	return options, nil
 }
