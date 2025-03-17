@@ -105,31 +105,6 @@ func CopyFile(src, dst string) error {
 	return CopyBodyFile(source, dst)
 }
 
-func CopyFileSync(src, dst string) error {
-	// 打开源文件
-	source, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer source.Close()
-
-	// 创建目标文件
-	dest, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer dest.Close()
-
-	// 使用 io.Copy 进行高效复制
-	_, err = io.Copy(dest, source)
-	if err != nil {
-		return err
-	}
-
-	// 确保数据写入磁盘
-	return dest.Sync()
-}
-
 // FileList 收集完整的文件列表
 func FileList(dirname string) (files []string, err error) {
 	err = filepath.WalkDir(dirname, func(path string, d os.DirEntry, err error) error {
