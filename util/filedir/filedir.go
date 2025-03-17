@@ -64,8 +64,22 @@ func ExistE(filepath string) (exists bool, err error) {
 	return true, nil // 路径存在（无论是文件还是目录）
 }
 
-// CopyFileBody resp.Body write file low api
-func CopyFileBody(body io.ReadCloser, dst string) error {
+// CopyWriter src file copy io.Writer
+func CopyWriter(src string, writer io.Writer) error {
+	// 打开源文件
+	source, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer source.Close()
+
+	// 使用 io.Copy 进行高效复制
+	_, err = io.Copy(writer, source)
+	return err
+}
+
+// CopyBodyFile resp.Body write file low api
+func CopyBodyFile(body io.ReadCloser, dst string) error {
 	defer body.Close()
 
 	// 创建目标文件
@@ -88,7 +102,7 @@ func CopyFile(src, dst string) error {
 		return err
 	}
 
-	return CopyFileBody(source, dst)
+	return CopyBodyFile(source, dst)
 }
 
 func CopyFileSync(src, dst string) error {
