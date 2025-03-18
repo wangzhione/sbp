@@ -2,7 +2,7 @@
 
 Simple Beautiful Package 高频使用的 Go 代码工具包合集
 
-`sbp` is a universal utility collection for Go, it complements offerings such as Boost, Better std, Cloud tools.
+`sbp` is a universal utility collection for Go, it complements offerings such as Boost, Better std, Helper tools.
 
 ## Table of Contents
 
@@ -14,7 +14,7 @@ Simple Beautiful Package 高频使用的 Go 代码工具包合集
 
 ## Introduction
 
-`sbp` is a universal utility collection for Go, it complements offerings such as Boost, Better std, Cloud tools. It is migrated from the [![Go Reference](https://pkg.go.dev/badge/github.com/bytedance/gopkg.svg)](https://pkg.go.dev/github.com/bytedance/gopkg) `gopkg` 主要对其相关实战项目使用体验提升, 最初用 gopkg 感觉是里面代码水平层次不齐, 实战用起来很别扭, 逐渐想对其设计理念继续雕琢雕琢删繁就简.
+`sbp` is a universal utility collection for Go, it complements offerings such as Boost, Better std, Helper tools. It is migrated from the [![Go Reference](https://pkg.go.dev/badge/github.com/bytedance/gopkg.svg)](https://pkg.go.dev/github.com/bytedance/gopkg) `gopkg` 主要对其相关实战项目使用体验提升, 最初用 gopkg 感觉是里面代码水平层次不齐, 实战用起来很别扭, 逐渐想在实战中雕琢耐用.
 
 We depend on the same code(this repo) in our production environment.
 
