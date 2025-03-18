@@ -103,7 +103,7 @@ You can use `go get -u github.com/wangzhione/sbp@master` to get or update `sbp`.
 }
 ```
 
-# sbp 前传 One Package 
+# 前世 One Package 
 
 看见公司在用的 gopkg 项目, 有一股啰嗦妈宝氛围扑面而来. 为了方便自己提炼内在细节, 构造当前 one package 项目用于学习和工程使用.
 
