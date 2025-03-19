@@ -14,7 +14,7 @@ Simple Beautiful Package 高频使用的 Go 代码工具包合集
 
 ## Introduction
 
-`sbp` is a universal utility collection for Go, it complements offerings such as Boost, Better std, Helper tools. It is migrated from the [![Go Reference](https://pkg.go.dev/badge/github.com/bytedance/gopkg.svg)](https://pkg.go.dev/github.com/bytedance/gopkg) `gopkg` 主要对其相关实战项目使用体验提升, 最初用 gopkg 感觉是里面代码水平层次不齐, 实战用起来很别扭, 逐渐想在实战中雕琢耐用.
+`sbp` is a universal utility collection for Go, it complements offerings such as Boost, Better std, Helper tools. It is migrated from the 实战项目使用util or tool 体验提升.
 
 We depend on the same code(this repo) in our production environment.
 
@@ -51,9 +51,7 @@ You can use `go get -u github.com/wangzhione/sbp@master` to get or update `sbp`.
 
 ## 拓展配置
 
-我本身用的是 Visual Studio Code 简单说一下, 用这个 IDE 开发 Golang 基础配置
-
-在全局 settings.json 加入和 go env 有关配置, 用于控制 go import 和 go test 相关行为
+自己用的是 Visual Studio Code 简单说一下, 用这个 IDE 开发 Golang 基础配置在全局 settings.json 加入和 go env 有关配置, 用于控制 go import 和 go test 相关行为
 
 ```JSON
 {
@@ -103,9 +101,9 @@ You can use `go get -u github.com/wangzhione/sbp@master` to get or update `sbp`.
 }
 ```
 
-# 前世 One Package 
+# One Package 
 
-看见公司在用的 gopkg 项目, 有一股啰嗦妈宝氛围扑面而来. 为了方便自己提炼内在细节, 构造当前 one package 项目用于学习和工程使用.
+long long ago 在公司用 gopkg 项目, 有一股啰嗦妈宝氛围扑面而来. 为了方便自己用起来舒服, 构造 one package 项目用于 Go 软件工程使用.
 
 ## How To Use
 

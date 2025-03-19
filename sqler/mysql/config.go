@@ -107,7 +107,7 @@ func ParseCommand(command string) (*MySQLConfig, error) {
 		} else if arg == "-P" {
 			// Handle `-P` with a value in the next argument
 			if i+1 < len(args) {
-				port, err := casu.StringToIntE[uint16](args[i+1])
+				port, err := casu.ParseINTE[uint16](args[i+1])
 				if err != nil {
 					return nil, fmt.Errorf("invalid port format: %s %v", args[i+1], err)
 				}
@@ -117,7 +117,7 @@ func ParseCommand(command string) (*MySQLConfig, error) {
 		} else if strings.HasPrefix(arg, "-P") {
 			// Handle `-PPort` format
 			ports := strings.TrimPrefix(arg, "-P")
-			port, err := casu.StringToIntE[uint16](ports)
+			port, err := casu.ParseINTE[uint16](ports)
 			if err != nil {
 				return nil, fmt.Errorf("invalid 2 port format: %s %v", ports, err)
 			}
