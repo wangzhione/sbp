@@ -46,12 +46,11 @@ func OpenFile(path string) (file *os.File, err error) {
 	return os.OpenFile(path, os.O_RDWR, 0o644)
 }
 
-// IsNotExist 粗略检查文件是否存在
-func IsNotExist(filename string) bool {
+func IsExist(filename string) bool {
 	exists, err := Exist(filename)
 	if err == nil {
-		// 这部分结果是 逻辑正确的, return true 就是不存在, return false 表示存在
-		return !exists
+		// 这部分结果是 逻辑正确的, return true 就是存在, return false 表示不存在
+		return exists
 	}
 
 	// err != nil
