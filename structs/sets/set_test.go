@@ -6,7 +6,7 @@ import (
 )
 
 func TestThreadUnsafeSet_MarshalJSON(t *testing.T) {
-	expected := NewSetWithValue[int64](1, 2, 3)
+	expected := NewSet[int64](1, 2, 3)
 	var actual Set[int64]
 
 	// test Marshal from Set method
@@ -41,7 +41,7 @@ func TestThreadUnsafeSet_MarshalJSON(t *testing.T) {
 }
 
 func TestThreadUnsafeSet_UnmarshalJSON(t *testing.T) {
-	expected := NewSetWithValue[int64](1, 2, 3)
+	expected := NewSet[int64](1, 2, 3)
 	var actual Set[int64]
 
 	// test Unmarshal from Set method
@@ -65,9 +65,9 @@ func TestThreadUnsafeSet_UnmarshalJSON(t *testing.T) {
 }
 
 func TestThreadUnsafeSet_MarshalJSON_Struct(t *testing.T) {
-	expected := &testStruct{"test", NewSetWithValue("a")}
+	expected := &testStruct{"test", NewSet("a")}
 
-	b, err := json.Marshal(&testStruct{"test", NewSetWithValue("a")})
+	b, err := json.Marshal(&testStruct{"test", NewSet("a")})
 	if err != nil {
 		t.Errorf("Error should be nil: %v", err)
 	}
@@ -84,7 +84,7 @@ func TestThreadUnsafeSet_MarshalJSON_Struct(t *testing.T) {
 }
 
 func TestThreadUnsafeSet_UnmarshalJSON_Struct(t *testing.T) {
-	expected := &testStruct{"test", NewSetWithValue("a", "b", "c")}
+	expected := &testStruct{"test", NewSet("a", "b", "c")}
 	actual := &testStruct{}
 
 	err := json.Unmarshal([]byte(`{"other":"test", "set":["a", "b", "c"]}`), actual)
@@ -95,7 +95,7 @@ func TestThreadUnsafeSet_UnmarshalJSON_Struct(t *testing.T) {
 		t.Errorf("Expected no difference, got: %v", expected.Set.RemoveSet(actual.Set))
 	}
 
-	expectedComplex := NewSetWithValue(struct{ Val string }{Val: "a"}, struct{ Val string }{Val: "b"})
+	expectedComplex := NewSet(struct{ Val string }{Val: "a"}, struct{ Val string }{Val: "b"})
 	actualComplex := NewSet[struct{ Val string }]()
 
 	err = actualComplex.UnmarshalJSON([]byte(`[{"Val": "a"}, {"Val": "b"}]`))
@@ -134,13 +134,13 @@ func (t *testStruct) UnmarshalJSON(b []byte) error {
 	}
 
 	t.Other = raw.Other
-	t.Set = NewSetWithValue(raw.Set...)
+	t.Set = NewSet(raw.Set...)
 
 	return nil
 }
 
 func TestSet_String(t *testing.T) {
-	expected := NewSetWithValue[int64](1, 2, 3)
+	expected := NewSet[int64](1, 2, 3)
 	var actual Set[int64]
 
 	t.Log(expected.String())

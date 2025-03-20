@@ -24,10 +24,8 @@ type SetSaft[T comparable] struct {
 	S Set[T]
 }
 
-func NewTSet[T comparable]() *SetSaft[T] { return &SetSaft[T]{S: NewSet[T]()} }
-
-func NewTSetWithValue[T comparable](vals ...T) *SetSaft[T] {
-	return &SetSaft[T]{S: NewSetWithValue(vals...)}
+func NewTSet[T comparable](vals ...T) *SetSaft[T] {
+	return &SetSaft[T]{S: NewSet(vals...)}
 }
 
 func (r *SetSaft[T]) Add(v T) {
@@ -60,16 +58,16 @@ func (r *SetSaft[T]) Len() int {
 	return r.S.Len()
 }
 
-func (r *SetSaft[T]) Exists(vals ...T) bool {
+func (r *SetSaft[T]) Exist(vals ...T) bool {
 	r.RLock()
 	defer r.RUnlock()
-	return r.S.Exists(vals...)
+	return r.S.Exist(vals...)
 }
 
-func (r *SetSaft[T]) Contains(v T) bool {
+func (r *SetSaft[T]) Contain(v T) bool {
 	r.RLock()
 	defer r.RUnlock()
-	return r.S.Contains(v)
+	return r.S.Contain(v)
 }
 
 func (r *SetSaft[T]) ContainSet(other Set[T]) bool {

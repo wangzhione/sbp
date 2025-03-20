@@ -8,9 +8,7 @@ import (
 // Set[T] map set
 type Set[T comparable] map[T]struct{}
 
-func NewSet[T comparable]() Set[T] { return make(Set[T]) }
-
-func NewSetWithValue[T comparable](vals ...T) Set[T] {
+func NewSet[T comparable](vals ...T) Set[T] {
 	s := make(Set[T], len(vals))
 	for _, elem := range vals {
 		s.Add(elem)
@@ -45,7 +43,7 @@ func (s Set[T]) AddSet(other Set[T]) {
 
 func (s Set[T]) Len() int { return len(s) }
 
-func (s Set[T]) Exists(vals ...T) bool {
+func (s Set[T]) Exist(vals ...T) bool {
 	for _, key := range vals {
 		if _, ok := s[key]; !ok {
 			return false
@@ -54,7 +52,7 @@ func (s Set[T]) Exists(vals ...T) bool {
 	return true
 }
 
-func (s Set[T]) Contains(v T) bool {
+func (s Set[T]) Contain(v T) bool {
 	_, ok := s[v]
 	return ok
 }
@@ -82,7 +80,7 @@ func (s Set[T]) Remove(vals ...T) {
 
 func (s Set[T]) RemoveSet(other Set[T]) Set[T] {
 	for key := range other {
-		if s.Contains(key) {
+		if s.Contain(key) {
 			delete(s, key)
 		}
 	}
@@ -95,7 +93,7 @@ func (s Set[T]) EQual(other Set[T]) bool {
 	}
 
 	for key := range s {
-		if !other.Contains(key) {
+		if !other.Contain(key) {
 			return false
 		}
 	}

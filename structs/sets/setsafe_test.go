@@ -27,7 +27,7 @@ func Test_AddConcurrent(t *testing.T) {
 
 	wg.Wait()
 	for _, i := range ints {
-		if !s.Contains(i) {
+		if !s.Contain(i) {
 			t.Errorf("Set is missing element: %v", i)
 		}
 	}
@@ -51,7 +51,7 @@ func Test_AppendConcurrent(t *testing.T) {
 
 	wg.Wait()
 	for _, i := range ints {
-		if !s.Contains(i) {
+		if !s.Contain(i) {
 			t.Errorf("Set is missing element: %v", i)
 		}
 	}
@@ -139,7 +139,7 @@ func Test_ContainssConcurrent(t *testing.T) {
 	for range ints {
 		wg.Add(1)
 		go func() {
-			s.Exists(integers...)
+			s.Exist(integers...)
 			wg.Done()
 		}()
 	}
@@ -160,7 +160,7 @@ func Test_ContainssOneConcurrent(t *testing.T) {
 		number := v
 		wg.Add(1)
 		go func() {
-			s.Contains(number)
+			s.Contain(number)
 			wg.Done()
 		}()
 	}
@@ -254,7 +254,7 @@ func Test_ToSlice(t *testing.T) {
 	}
 
 	for _, i := range setAsSlice {
-		if !s.Exists(i) {
+		if !s.Exist(i) {
 			t.Errorf("Set is missing element: %v", i)
 		}
 	}
@@ -283,7 +283,7 @@ func Test_ToSliceDeadlock(t *testing.T) {
 
 func Test_UnmarshalJSON(t *testing.T) {
 	s := []byte(`["test", "1", "2", "3"]`) //,["4,5,6"]]`)
-	expected := NewTSetWithValue(
+	expected := NewTSet(
 		[]string{
 			string(json.Number("1")),
 			string(json.Number("2")),
@@ -304,7 +304,7 @@ func Test_UnmarshalJSON(t *testing.T) {
 }
 
 func Test_MarshalJSON(t *testing.T) {
-	expected := NewTSetWithValue(
+	expected := NewTSet(
 		[]string{
 			string(json.Number("1")),
 			"test",
@@ -312,7 +312,7 @@ func Test_MarshalJSON(t *testing.T) {
 	)
 
 	b, err := json.Marshal(
-		NewTSetWithValue(
+		NewTSet(
 			[]string{
 				"1",
 				"test",
