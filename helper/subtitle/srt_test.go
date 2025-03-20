@@ -1,14 +1,17 @@
 package subtitle
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/wangzhione/sbp/util/chain"
 )
+
+var ctx = chain.Context()
 
 // 测试 `DownloadSRT`
 func TestDownloadSRT(t *testing.T) {
@@ -31,7 +34,6 @@ This is a test subtitle.
 	defer server.Close() // 关闭服务器
 
 	// 执行 `DownloadSRT`
-	ctx := context.Background()
 	subtitles, err := DownloadSRT(ctx, server.URL)
 
 	// 确保没有错误
@@ -56,6 +58,55 @@ This is a test subtitle.
 
 	item2 := subtitles.Items[1]
 	assert.Equal(t, "This is a test subtitle.", item2.Lines[0].Items[0].Text, "Second subtitle text should match")
+	assert.Equal(t, "5s", item2.StartAt.String(), "Second subtitle start time should match")
+	assert.Equal(t, "7.5s", item2.EndAt.String(), "Second subtitle end time should match")
+}
+
+// 测试 LoadSRT 正常解析 SRT 文件
+func TestLoadSRT(t *testing.T) {
+	// 定义测试 SRT 内容
+	mockSRT := `1
+00:00:01,500 --> 00:00:04,000
+Hello, world!
+
+2
+00:00:05,000 --> 00:00:07,500
+This is a test subtitle.`
+
+	// 创建临时 SRT 文件
+	tempFile, err := os.CreateTemp("", "test_*.srt")
+	assert.NoError(t, err, "Failed to create temporary SRT file")
+	defer os.Remove(tempFile.Name()) // 测试完成后删除文件
+
+	// 写入 SRT 内容
+	_, err = tempFile.WriteString(mockSRT)
+	assert.NoError(t, err, "Failed to write to temporary SRT file")
+
+	// 关闭文件，使其可用于读取
+	err = tempFile.Close()
+	assert.NoError(t, err, "Failed to close temporary SRT file")
+
+	// 执行 LoadSRT
+	subtitles, err := LoadSRT(ctx, tempFile.Name())
+
+	// 确保解析没有错误
+	assert.NoError(t, err, "LoadSRT should not return an error")
+	assert.NotNil(t, subtitles, "Subtitles should not be nil")
+
+	// 验证字幕条目数量
+	assert.Equal(t, 2, len(subtitles.Items), "Expected 2 subtitle entries")
+
+	// 验证第一条字幕内容
+	item1 := subtitles.Items[0]
+	assert.Equal(t, "Hello, world!", item1.Lines[0].String(), "First subtitle text should match")
+	assert.Equal(t, "Hello, world!", item1.String(), "First subtitle text should match")
+	assert.Equal(t, "1.5s", item1.StartAt.String(), "First subtitle start time should match")
+	assert.Equal(t, "4s", item1.EndAt.String(), "First subtitle end time should match")
+
+	// 验证第二条字幕内容
+	item2 := subtitles.Items[1]
+	assert.Equal(t, "This is a test subtitle.", item2.Lines[0].String(), "Second subtitle text should match")
+	assert.Equal(t, "This is a test subtitle.", item2.String(), "Second subtitle text should match")
 	assert.Equal(t, "5s", item2.StartAt.String(), "Second subtitle start time should match")
 	assert.Equal(t, "7.5s", item2.EndAt.String(), "Second subtitle end time should match")
 }
