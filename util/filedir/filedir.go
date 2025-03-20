@@ -46,23 +46,34 @@ func OpenFile(path string) (file *os.File, err error) {
 	return os.OpenFile(path, os.O_RDWR, 0o644)
 }
 
-// Exist 粗略检查文件是否存在
-func Exist(filename string) bool {
-	exists, _ := ExistE(filename)
-	return exists
+// IsNotExist 粗略检查文件是否存在
+func IsNotExist(filename string) bool {
+	exists, err := Exist(filename)
+	if err == nil {
+		// 这部分结果是 逻辑正确的, return true 就是不存在, return false 表示存在
+		return !exists
+	}
+
+	// err != nil
+	// 这时候其实是不知道. 内部默认当 false 不存在, 让其业务自行再试试
+	// not err IsNotExist 和 not err IsExist 业务上不是互为逆函数
+
+	return false
 }
 
-// ExistE 判断路径（文件或目录）是否存在
-func ExistE(filepath string) (exists bool, err error) {
+// Exist 判断路径（文件或目录）是否存在
+func Exist(filepath string) (exists bool, err error) {
 	_, err = os.Stat(filepath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return false, nil // 路径不存在
 		}
-		return false, err // 其他错误（如权限问题）
+		return false, err // 其他错误（如权限问题）, 但对当前用户而言是不存在
 	}
 	return true, nil // 路径存在（无论是文件还是目录）
 }
+
+// os.RemoveAll 删除文件 or 文件夹
 
 // CopyWriter src file copy io.Writer
 func CopyWriter(src string, writer io.Writer) error {
