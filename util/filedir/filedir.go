@@ -19,7 +19,7 @@ func CreateDir(path string) error {
 		}
 	}
 
-	// 确保目录存在，如果不存在则创建
+	// 确保目录存在，如果不存在则创建; 0o777	rwxrwxrwx	全执行+读写权限
 	return os.MkdirAll(dir, os.ModePerm)
 }
 
@@ -43,7 +43,7 @@ func OpenFile(path string) (file *os.File, err error) {
 	}
 
 	// os.OpenFile 内部有 runtime.SetFinalizer(f.file, (*file).close), 对象释放时候会 GC 1 close -> GC 2 free
-	return os.OpenFile(path, os.O_RDWR, 0o644)
+	return os.OpenFile(path, os.O_RDWR, 0o664)
 }
 
 func IsExist(filename string) bool {
@@ -93,14 +93,14 @@ func CopyBodyFile(body io.ReadCloser, dst string) error {
 	defer body.Close()
 
 	// 创建目标文件
-	dest, err := os.Create(dst)
+	destination, err := os.Create(dst)
 	if err != nil {
 		return err
 	}
-	defer dest.Close()
+	defer destination.Close()
 
 	// 使用 io.Copy 进行高效复制
-	_, err = io.Copy(dest, body)
+	_, err = io.Copy(destination, body)
 	return err
 }
 
@@ -117,24 +117,23 @@ func CopyFile(src, dst string) error {
 
 // FileList 收集完整的文件列表
 func FileList(dirname string) (files []string, err error) {
-	err = filepath.WalkDir(dirname, func(path string, d os.DirEntry, err error) error {
-		if err == nil {
-			// 只收集文件，跳过目录
-			if !d.IsDir() {
-				files = append(files, path)
+	err = filepath.WalkDir(
+		dirname,
+		func(path string, dir os.DirEntry, direrr error) error {
+			if direrr != nil {
+				return direrr
 			}
-		}
-		return err
-	})
+
+			// 只收集文件，跳过目录
+			if dir.IsDir() {
+				return nil
+			}
+
+			files = append(files, path)
+			return nil
+		},
+	)
 	return
 }
 
-// ReadString os.ReadFile []byte -> string
-func ReadString(filename string) (text string, err error) {
-	data, err := os.ReadFile(filename)
-	if err != nil {
-		return
-	}
-	text = string(data)
-	return
-}
+// ReadString os.ReadFile data []byte -> text string

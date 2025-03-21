@@ -19,9 +19,9 @@ func Unmarshal[T any](stj string) (obj T, err error) {
 	return
 }
 
-// ReadFile 文件中读取生成 json 对象
-func ReadFile[T any](filePath string) (obj T, err error) {
-	data, err := os.ReadFile(filePath)
+// ReadFile 读取 src 文件, 尝试生成 json T 对象
+func ReadFile[T any](src string) (obj T, err error) {
+	data, err := os.ReadFile(src)
 	if err != nil {
 		return
 	}
@@ -30,17 +30,22 @@ func ReadFile[T any](filePath string) (obj T, err error) {
 	return
 }
 
-// WriteFile 把内容写入文件中
-func WriteFile(filePath string, obj any) error {
+// WriteFile 尝试将 obj 转成 json 格式, 然后输出到 dst 目标文件中
+func WriteFile(dst string, obj any) error {
 	data, err := json.Marshal(obj)
 	if err != nil {
 		return nil
 	}
 
-	return os.WriteFile(filePath, data, 0o644)
+	// 所有者 (owner)	6 → rw-	可读可写
+	// 所在组 (group)	6 → rw-	可读可写
+	// 其他人 (others)	4 → r--	只读
+	return os.WriteFile(dst, data, 0o664)
 }
 
-// ReadWriteFile src -> T json obj -> dst
+// ReadWriteFile
+// 1. 读取 src 文件, 尝试生成 json T obj 对象;
+// 2. 尝试将 obj 转成 json 格式, 然后输出到 dst destination（目的地）目标文件中;
 func ReadWriteFile[T any](src, dst string) (err error) {
 	// 打开源文件
 	source, err := os.Open(src)
@@ -50,11 +55,11 @@ func ReadWriteFile[T any](src, dst string) (err error) {
 	defer source.Close()
 
 	// 创建目标文件
-	dest, err := os.Create(dst)
+	destination, err := os.Create(dst)
 	if err != nil {
 		return err
 	}
-	defer dest.Close()
+	defer destination.Close()
 
 	var obj T
 	err = json.NewDecoder(source).Decode(&obj)
@@ -62,28 +67,28 @@ func ReadWriteFile[T any](src, dst string) (err error) {
 		return
 	}
 
-	return json.NewEncoder(dest).Encode(obj)
+	return json.NewEncoder(destination).Encode(obj)
 }
 
-// Valid 判断字符串是否为合法 JSON
-func Valid(stj string) bool {
-	return json.Valid([]byte(stj))
+// Valid 判断字符串 or []byte 是否为合法 json
+func Valid[T ~string | ~[]byte](dj T) bool {
+	return json.Valid([]byte(dj))
 }
 
-// Map JSON 字符串转为 map[string]any 类似 Unmarshal[map[string]any](stj)
-func Map(stj string) (obj map[string]any, err error) {
-	err = json.Unmarshal([]byte(stj), &obj)
+// Map json 字符串 or []byte 数据集转为 map[string]any 类似 Unmarshal[map[string]any](dj)
+func Map[T ~string | ~[]byte](dj T) (obj map[string]any, err error) {
+	err = json.Unmarshal([]byte(dj), &obj)
 	return
 }
 
-// Slice JSON 字符串转为 []any
-func Slice(stj string) (obj []any, err error) {
-	err = json.Unmarshal([]byte(stj), &obj)
+// Slice json 字符串 or []byte 数据集转为 []any
+func Slice[T ~string | ~[]byte](dj T) (obj []any, err error) {
+	err = json.Unmarshal([]byte(dj), &obj)
 	return
 }
 
-// Debug json + printf 方便单元测试
-func Debug(args ...any) {
+// DEBUG json + fmt printf 简单打印测试
+func DEBUG(args ...any) {
 	for _, arg := range args {
 		fmt.Println()
 

@@ -2,7 +2,6 @@ package idhash
 
 import (
 	"encoding/hex"
-	"log/slog"
 
 	"github.com/google/uuid"
 )
@@ -11,8 +10,7 @@ func UUID() string {
 	// 依赖 google uuid random uuid v4 算法构建
 	v4, err := uuid.NewRandom()
 	if err != nil {
-		slog.Error("sbp id uuid.NewRandom() error", "error", err)
-		// 这个分支理论走不到的, 为了兜底 用默认 uuid 串返回
+		// never case, 兜底 用默认 uuid 串返回
 		return "00000000000000000000000000000000"
 	}
 

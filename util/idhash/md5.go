@@ -23,6 +23,7 @@ func MD5File(path string) (sign string, err error) {
 	if err != nil {
 		return
 	}
+	defer file.Close()
 
 	d := md5.New()
 	// io.Copy 类似 32K copy buffer 读取直到 读取到 EOF, 然后成功的话 err == nil 并返回
