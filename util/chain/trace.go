@@ -9,14 +9,18 @@ import (
 
 var Background = Context()
 
+func Context() context.Context {
+	return context.WithValue(context.Background(), xRquestID, idhash.UUID())
+}
+
 // XRquestID 默认所有链条 trace id 的 key
 const XRquestID = "X-Request-Id"
 
 var xRquestID = any(XRquestID)
 
 // WithContext add trace id to context
-func WithContext(ctx context.Context, id string) context.Context {
-	return context.WithValue(ctx, xRquestID, id)
+func WithContext(ctx context.Context, traceID string) context.Context {
+	return context.WithValue(ctx, xRquestID, traceID)
 }
 
 // GetTraceID context 中 get trace id
@@ -25,17 +29,20 @@ func GetTraceID(c context.Context) string {
 	return traceID
 }
 
-func Context() context.Context {
-	return context.WithValue(context.Background(), xRquestID, idhash.UUID())
-}
-
-func CopyTrace(c context.Context) context.Context {
-	traceid := GetTraceID(c)
-	if len(traceid) == 0 {
-		traceid = idhash.UUID()
-	}
+func CopyTrace(c context.Context, keys ...any) context.Context {
 	// 防止 context 存在 timeout or cancel
-	return context.WithValue(context.Background(), xRquestID, traceid)
+	ctx := context.Background()
+	for _, key := range keys {
+		if val := c.Value(key); val != nil {
+			ctx = context.WithValue(ctx, key, val)
+		}
+	}
+
+	traceID := GetTraceID(c)
+	if len(traceID) == 0 {
+		traceID = idhash.UUID()
+	}
+	return context.WithValue(ctx, xRquestID, traceID)
 }
 
 func Request(r *http.Request) (req *http.Request, requestID string) {
