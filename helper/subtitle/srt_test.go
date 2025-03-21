@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/wangzhione/sbp/util/chain"
+	"github.com/wangzhione/sbp/chain"
 )
 
 var ctx = chain.Context()

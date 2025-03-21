@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/wangzhione/sbp/util/chain"
+	"github.com/wangzhione/sbp/chain"
 )
 
 // Download 下载 uri 到本地文件 outputPath

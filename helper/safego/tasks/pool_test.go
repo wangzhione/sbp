@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/wangzhione/sbp/util/chain"
+	"github.com/wangzhione/sbp/chain"
 )
 
 func DoCopyStack(a, b int) int {

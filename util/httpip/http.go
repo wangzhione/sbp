@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/wangzhione/sbp/util/chain"
+	"github.com/wangzhione/sbp/chain"
 )
 
 //

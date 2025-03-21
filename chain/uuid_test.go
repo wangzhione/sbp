@@ -1,4 +1,4 @@
-package idhash
+package chain
 
 import "testing"
 

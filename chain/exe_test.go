@@ -1,4 +1,4 @@
-package filedir
+package chain
 
 import (
 	"os"

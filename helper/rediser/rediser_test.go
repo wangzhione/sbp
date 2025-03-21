@@ -3,7 +3,7 @@ package rediser
 import (
 	"testing"
 
-	"github.com/wangzhione/sbp/util/chain"
+	"github.com/wangzhione/sbp/chain"
 )
 
 var ctx = chain.Context()

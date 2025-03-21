@@ -18,13 +18,13 @@ func TestEnableDebug(t *testing.T) {
 	t.Log(EnableLevel)
 }
 
-func TestInitRotatingFileSLog(t *testing.T) {
+func TestInitSLogRotatingFile(t *testing.T) {
 	t.Log(os.Args[0])
 
 	path := "logs/log.log"
 	// var path string
 
-	InitRotatingFileSLog(&Logger{Filename: path})
+	InitSLogRotatingFile(&Logger{Filename: path})
 
 	ctx := Context()
 	slog.WarnContext(ctx, "测试 warn", "123", "value 123")
