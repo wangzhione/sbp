@@ -10,14 +10,14 @@ import (
 
 // A Group is a collection of goroutines working on subtasks that are part of
 // the same overall task.
-//
-// A zero Group is valid, has no limit on the number of active goroutines,
-// and does not cancel on error.
+// 具有 limit 限制 goroutine group call 方式
 type Group struct {
 	c   context.Context
 	wg  sync.WaitGroup
 	sem chan struct{}
-	err error
+
+	errOnce sync.Once
+	err     error // 默认只纪录第一个错误
 }
 
 func (g *Group) done() {
@@ -44,9 +44,7 @@ func (g *Group) Wait() error {
 // Go calls the given function in a new goroutine.
 // It blocks until the new goroutine can be added without the number of
 // active goroutines in the group exceeding the configured limit.
-//
-// The first call to return a non-nil error cancels the group's context, if the
-// group was created by calling WithContext. The error will be returned by Wait.
+// 会纪录首次出现 error 信息
 func (g *Group) Go(f func(ctx context.Context) error) {
 	g.sem <- struct{}{}
 
@@ -54,7 +52,9 @@ func (g *Group) Go(f func(ctx context.Context) error) {
 	go func() {
 		defer func() {
 			if cover := recover(); cover != nil {
-				g.err = fmt.Errorf("panic: groupgo.Group.Go %#v", cover)
+				g.errOnce.Do(func() {
+					g.err = fmt.Errorf("panic: groupgo.Group.Go %#v", cover)
+				})
 
 				// 遇到启动不起来, 异常退出, 打印堆栈方便排除问题
 				slog.ErrorContext(g.c, "Group Go panic error",
@@ -67,8 +67,11 @@ func (g *Group) Go(f func(ctx context.Context) error) {
 		}()
 
 		if err := f(g.c); err != nil {
-			g.err = err
 			slog.ErrorContext(g.c, "Group f call error", "error", err)
+
+			g.errOnce.Do(func() {
+				g.err = err
+			})
 		}
 	}()
 }
