@@ -6,8 +6,6 @@ import (
 	"runtime/debug"
 	"sync"
 	"sync/atomic"
-
-	"github.com/wangzhione/sbp/chain"
 )
 
 // NewPool creates a new pool with the given name, cap and config.
@@ -31,7 +29,7 @@ type pool struct {
 // task list
 type task struct {
 	// context is trade 执行链的上下文, 主要用于 panic handler 追查链
-	ctx  context.Context
+	c    context.Context
 	fn   func(ctx context.Context)
 	next *task
 }
@@ -68,10 +66,12 @@ var PanicHandler = func(ctx context.Context, cover any) {
 	)
 }
 
-func (p *pool) Go(ctx context.Context, fn func(ctx context.Context), keys ...any) {
+// Go pool add task before run
+// ctx 多数需要 chain.CopyTrace(ctx, keys), // context 脱敏 & 延长生命周期
+func (p *pool) Go(ctx context.Context, fn func(c context.Context)) {
 	tail := &task{
-		ctx: chain.CopyTrace(ctx, keys), // context 脱敏 & 延长生命周期
-		fn:  fn,
+		c:  ctx, // 需要自行进行 context 脱敏 & 延长生命周期
+		fn: fn,
 	}
 
 	// tail push
@@ -96,11 +96,11 @@ func (p *pool) running() {
 		func() {
 			defer func() {
 				if cover := recover(); cover != nil {
-					PanicHandler(head.ctx, cover)
+					PanicHandler(head.c, cover)
 				}
 			}()
 
-			head.fn(head.ctx)
+			head.fn(head.c)
 		}()
 	}
 
