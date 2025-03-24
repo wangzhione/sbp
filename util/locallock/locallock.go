@@ -17,8 +17,8 @@ func TryLock(key string) bool {
 	return defaultLocalLock.mutex(key).TryLock()
 }
 
-func TryLockWithTimeout(key string, timeout time.Duration) bool {
-	return defaultLocalLock.mutex(key).TryLockWithTimeout(timeout)
+func TimeoutLock(key string, timeout time.Duration) bool {
+	return defaultLocalLock.mutex(key).TimeoutLock(timeout)
 }
 
 // Unlock 解锁
@@ -46,8 +46,8 @@ func (l *LocalLock) TryLock(key string) bool {
 	return l.mutex(key).TryLock() // Go 1.18+
 }
 
-func (l *LocalLock) TryLockWithTimeout(key string, timeout time.Duration) bool {
-	return l.mutex(key).TryLockWithTimeout(timeout)
+func (l *LocalLock) TimeoutLock(key string, timeout time.Duration) bool {
+	return l.mutex(key).TimeoutLock(timeout)
 }
 
 // Unlock 解锁
@@ -91,7 +91,7 @@ func (k *Locker) TryLock() bool {
 	}
 }
 
-func (k *Locker) TryLockWithTimeout(timeout time.Duration) bool {
+func (k *Locker) TimeoutLock(timeout time.Duration) bool {
 	timer := time.NewTimer(timeout)
 	defer timer.Stop()
 
