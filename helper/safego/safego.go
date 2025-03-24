@@ -14,7 +14,7 @@ import (
 func Run(ctx context.Context, fn func() error) (err error) {
 	defer func() {
 		if cover := recover(); cover != nil {
-			err = fmt.Errorf("panic recovered: %#v", cover)
+			err = fmt.Errorf("panic: safego.Run %#v", cover)
 
 			// 遇到启动不起来, 异常退出, 打印堆栈方便排除问题
 			slog.ErrorContext(ctx, "Run panic error",

@@ -54,7 +54,7 @@ func (g *Group) Go(f func(ctx context.Context) error) {
 	go func() {
 		defer func() {
 			if cover := recover(); cover != nil {
-				g.err = fmt.Errorf("panic recovered: %#v", cover)
+				g.err = fmt.Errorf("panic: groupgo.Group.Go %#v", cover)
 
 				// 遇到启动不起来, 异常退出, 打印堆栈方便排除问题
 				slog.ErrorContext(g.c, "Group Go panic error",
