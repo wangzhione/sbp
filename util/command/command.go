@@ -27,6 +27,8 @@ type BatchOption struct {
 
 func (b *BatchOption) Start() error {
 	for _, opt := range b.Options {
+		// 遇到错误会停下,
+		// 因为有时候在错误情况下继续执行, 行为未知的, 还不如主动出错, 等待工程师接入
 		if err := opt.Start(b.C); err != nil {
 			opt.cmd = nil
 			return err
