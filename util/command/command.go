@@ -21,8 +21,9 @@ func Run(ctx context.Context, bin string, args ...string) (err error) {
 }
 
 type BatchOption struct {
-	C       context.Context // context, 自行 chain.CopyTrace or context.WithTimeout
-	Options []*Option       // 要执行的命令列表
+	C             context.Context // context, 自行 chain.CopyTrace or context.WithTimeout
+	Options       []*Option       // 要执行的命令列表
+	Serialization bool            // true 串行化
 }
 
 func (b *BatchOption) Start() error {
@@ -55,10 +56,24 @@ func (b *BatchOption) Run() error {
 		return nil
 	}
 
-	if err := b.Start(); err != nil {
-		return err
+	if !b.Serialization {
+		if err := b.Start(); err != nil {
+			return err
+		}
+		return b.Wait()
 	}
-	return b.Wait()
+
+	for _, opt := range b.Options {
+		// 遇到错误会停下,
+		// 因为有时候在错误情况下继续执行, 行为未知的, 还不如主动出错, 等待工程师接入
+		if err := opt.Start(b.C); err != nil {
+			return err
+		}
+		if err := opt.Wait(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Option 定义命令的执行参数, Run 等同于 Start + Wait
@@ -189,7 +204,7 @@ func (o *Option) Wait() (err error) {
 	}
 
 	slog.InfoContext(o.c, "Option Run End",
-		slog.Duration("Duration", time.Since(o.StartTime)),
+		slog.Float64("Duration", time.Since(o.StartTime).Seconds()),
 		slog.Time("StartTime", o.StartTime),
 	)
 
