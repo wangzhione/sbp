@@ -51,6 +51,10 @@ func (b *BatchOption) Wait() error {
 }
 
 func (b *BatchOption) Run() error {
+	if len(b.Options) == 0 {
+		return nil
+	}
+
 	if err := b.Start(); err != nil {
 		return err
 	}
