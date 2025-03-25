@@ -49,7 +49,7 @@ func (rate *Limiter) Allow(ctx context.Context) bool {
 				"Redis Expire panic error",
 				slog.String("rate.Key", rate.Key),
 				slog.String("error", err.Error()),
-				slog.Duration("rate.TTL", rate.TTL),
+				slog.Float64("rate.TTL", rate.TTL.Seconds()),
 			)
 		}
 	}

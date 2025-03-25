@@ -45,7 +45,7 @@ func Go(ctx context.Context, fn func(), keys ...any) {
 			slog.InfoContext(ctx, "Go Run End",
 				slog.Time("begin", begin),
 				slog.Time("end", end),
-				slog.Duration("cost", end.Sub(begin)))
+				slog.Float64("cost", end.Sub(begin).Seconds()))
 		}()
 
 		fn()
