@@ -2,9 +2,12 @@ package chain
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log/slog"
 	"os"
+	"path/filepath"
+	"runtime"
 	"time"
 
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -17,6 +20,22 @@ type ContextHandler struct {
 func (h ContextHandler) Handle(ctx context.Context, r slog.Record) error {
 	// context 依赖 WithContext(ctx, id) or Request(r)
 	r.AddAttrs(slog.String(XRquestID, GetTraceID(ctx)))
+
+	// add source
+	// skip [Callers, Handle, Infof]
+	pc, file, line, ok := runtime.Caller(3)
+	if ok {
+		fullFuncName := runtime.FuncForPC(pc).Name()
+		i := len(fullFuncName) - 2
+		for ; i >= 0 && fullFuncName[i] != '/'; i-- {
+		}
+		// {short package name}.{func name}
+		funcName := fullFuncName[i+1:]
+
+		source := fmt.Sprintf("%s:%d %s", filepath.Base(file), line, funcName)
+		r.AddAttrs(slog.String(slog.SourceKey, source))
+	}
+
 	return h.Handler.Handle(ctx, r)
 }
 
@@ -25,8 +44,7 @@ var EnableLevel slog.Level = slog.LevelDebug
 
 func InitSLog() {
 	options := &slog.HandlerOptions{
-		AddSource: true, // 启用日志源文件定位
-		Level:     EnableLevel,
+		Level: EnableLevel,
 	}
 
 	var handler slog.Handler = slog.NewJSONHandler(os.Stdout, options)
@@ -39,7 +57,6 @@ func InitSLog() {
 }
 
 /*
-
 	// lumberjack 会 mkdir + open file
 	logger := &lumberjack.Logger{
 		Filename:   path,
@@ -49,7 +66,6 @@ func InitSLog() {
 		LocalTime:  true,
 		Compress:   false, // 是否压缩旧日志文件, 默认不压缩
 	}
-
 */
 
 type Logger = lumberjack.Logger
@@ -82,8 +98,7 @@ func InitSLogRotatingFile(args ...*Logger) {
 	// lumberjack 会 mkdir + open file
 
 	options := &slog.HandlerOptions{
-		AddSource: true,
-		Level:     EnableLevel,
+		Level: EnableLevel,
 	}
 
 	var multiWriter io.Writer
@@ -113,5 +128,5 @@ func LogStartEnd(ctx context.Context, name string, fn func(context.Context)) {
 
 	end := time.Now()
 	elapsed := end.Sub(start)
-	slog.InfoContext(ctx, "["+name+"] - End", "elapsed", elapsed, "time", end.Format("2006-01-02 15:04:05.000000"))
+	slog.InfoContext(ctx, "["+name+"] - End", "elapsed", elapsed.Seconds(), "time", end.Format("2006-01-02 15:04:05.000000"))
 }
