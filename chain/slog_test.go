@@ -8,21 +8,12 @@ import (
 
 var ctx = Context()
 
-func TestContextHandler_Handle(t *testing.T) {
-	slog.Debug("你好", "你好", "你好")
-	slog.Info("你好", "你好", "你好")
-
-	slog.WarnContext(ctx, "测试 warn", "123", "value 123")
-
-	t.Log(EnableLevel)
-}
-
 func TestInitSLog(t *testing.T) {
 	t.Log(os.Args[0])
 
 	InitSLog()
 
-	slog.WarnContext(ctx, "测试 warn", "123", "value 123")
+	slog.WarnContext(ctx, "测试 warn", "123", "value 123", "234", "value 234", "456", "value 456", "789", "value 789")
 }
 
 func TestInitSLogRotatingFile(t *testing.T) {

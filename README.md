@@ -4,6 +4,8 @@ Simple Beautiful Package 高频使用的 Go 代码工具包合集
 
 `sbp` is a universal utility collection for Go, it complements offerings such as Boost, Better std, Helper tools.
 
+这个库为工程实战服务的, 重度依赖 Go slog 日志库, 纪录线上业务 内部状态. 
+
 ## Table of Contents
 
 - [Introduction](#Introduction)
@@ -20,10 +22,10 @@ We depend on the same code(this repo) in our production environment.
 
 ## Catalogs
 
-* [localcache](https://github.com/wangzhione/sbp/tree/master/localcache): Caching Mechanism
-* [structs](https://github.com/wangzhione/sbp/tree/master/structs): Data Structures or Collection
-* [util](https://github.com/wangzhione/sbp/tree/master/util): Utilities Useful across Domains
 * [chain](https://github.com/wangzhione/sbp/tree/master/chain): trace and log
+* [util](https://github.com/wangzhione/sbp/tree/master/util): Utilities Useful across Domains
+* [helper](https://github.com/wangzhione/sbp/tree/master/helper): helper redis mysql safego local cahce
+* [structs](https://github.com/wangzhione/sbp/tree/master/structs): Data Structures or Collection
 
 > 设计者注: 通常 **util** 与业务无关的，可以独立出来，可供其他项目使用通用代码集。方法通常是 public static; **tool** 可以与某些业务有关，通用性限于某几个业务类之间; **helper** 通常与业务相关. 随后是否加 s, 不加 s 看个人喜好了. 
 

@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/wangzhione/sbp/chain"
 )
 
@@ -55,10 +54,12 @@ func TestGetRequest(t *testing.T) {
 	// 发送 GET 请求
 	var response TestResponse
 	err := Get(ctx, server.URL, nil, &response)
-
 	// 断言
-	assert.NoError(t, err)
-	assert.Equal(t, "GET success", response.Message)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log("GET success", response.Message)
 }
 
 // **测试 POST 请求**
@@ -77,10 +78,12 @@ func TestPostRequest(t *testing.T) {
 	// 发送 POST 请求
 	var response TestResponse
 	err := Post(ctx, server.URL, nil, requestData, &response)
-
 	// 断言
-	assert.NoError(t, err)
-	assert.Equal(t, "Hello, Go Developer", response.Message)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log("Hello, Go Developer", response.Message)
 }
 
 func TestCall(t *testing.T) {

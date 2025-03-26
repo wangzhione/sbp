@@ -2,42 +2,13 @@ package chain
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"log/slog"
 	"os"
-	"path/filepath"
-	"runtime"
 	"time"
 
 	"gopkg.in/natefinch/lumberjack.v2"
 )
-
-type ContextHandler struct {
-	slog.Handler
-}
-
-func (h ContextHandler) Handle(ctx context.Context, r slog.Record) error {
-	// context 依赖 WithContext(ctx, id) or Request(r)
-	r.AddAttrs(slog.String(XRquestID, GetTraceID(ctx)))
-
-	// add source
-	// skip [Callers, Handle, Infof]
-	pc, file, line, ok := runtime.Caller(3)
-	if ok {
-		fullFuncName := runtime.FuncForPC(pc).Name()
-		i := len(fullFuncName) - 2
-		for ; i >= 0 && fullFuncName[i] != '/'; i-- {
-		}
-		// {short package name}.{func name}
-		funcName := fullFuncName[i+1:]
-
-		source := fmt.Sprintf("%s:%d %s", filepath.Base(file), line, funcName)
-		r.AddAttrs(slog.String(slog.SourceKey, source))
-	}
-
-	return h.Handler.Handle(ctx, r)
-}
 
 // EnableLevel 默认开启 slog.LevelDebug, 具体业务可以 init 通过配置日志等级
 var EnableLevel slog.Level = slog.LevelDebug
@@ -52,7 +23,7 @@ func InitSLog() {
 		handler = slog.NewTextHandler(os.Stdout, options)
 	}
 
-	logs := slog.New(&ContextHandler{handler})
+	logs := slog.New(&TraceHandler{handler})
 	slog.SetDefault(logs)
 }
 
@@ -114,7 +85,7 @@ func InitSLogRotatingFile(args ...*Logger) {
 		handler = slog.NewTextHandler(multiWriter, options)
 	}
 
-	logs := slog.New(&ContextHandler{handler})
+	logs := slog.New(&TraceHandler{handler})
 	slog.SetDefault(logs)
 }
 
