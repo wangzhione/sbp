@@ -92,6 +92,12 @@ func (k *Locker) TryLock() bool {
 }
 
 func (k *Locker) TimeoutLock(timeout time.Duration) bool {
+	select {
+	case <-k.ch:
+		return true
+	default:
+	}
+
 	timer := time.NewTimer(timeout)
 	defer timer.Stop()
 
