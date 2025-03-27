@@ -51,7 +51,7 @@ func BenchmarkPool(b *testing.B) {
 
 	// 重置定时器，不统计初始化开销
 
-	for b.Loop() {
+	for range 1000 {
 		var wg sync.WaitGroup
 		wg.Add(maxGoWorker) // 每次压测发送 maxGoWorker 个任务
 
@@ -70,15 +70,15 @@ pkg: github.com/wangzhione/sbp/helper/safego/chango
 cpu: AMD Ryzen 9 7945HX3D with Radeon Graphics
 BenchmarkPool
 BenchmarkPool-32
-     783	   1537854 ns/op	     358 B/op	       3 allocs/op
+       1	1524289700 ns/op	  273680 B/op	    2814 allocs/op
 
 BenchmarkRawGoroutine
 BenchmarkRawGoroutine-32
-     795	   1536995 ns/op	   11471 B/op	     201 allocs/op
+       1	1536055500 ns/op	11422928 B/op	  201430 allocs/op
 */
 
 func BenchmarkRawGoroutine(b *testing.B) {
-	for b.Loop() {
+	for range 1000 {
 		var wg sync.WaitGroup
 		wg.Add(maxGoWorker)
 
