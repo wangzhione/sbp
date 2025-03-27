@@ -3,6 +3,8 @@ package locallock
 import (
 	"sync"
 	"time"
+
+	"github.com/wangzhione/sbp/util/timer"
 )
 
 var defaultLocalLock LocalLock
@@ -98,7 +100,7 @@ func (k *Locker) TimeoutLock(timeout time.Duration) bool {
 	default:
 	}
 
-	timer := time.NewTimer(timeout)
+	timer := timer.NewTimer(timeout)
 	defer timer.Stop()
 
 	select {

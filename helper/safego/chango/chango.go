@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/wangzhione/sbp/chain"
+	"github.com/wangzhione/sbp/util/timer"
 )
 
 type Tasker interface {
@@ -61,8 +62,9 @@ func (p *Pool[T]) worker(task T) {
 	// 执行首次任务, 防止首次空转
 	task.Do()
 
-	timer := NewTimer(WokerLife)
+	timer := timer.NewTimer(WokerLife)
 	defer timer.Stop()
+
 	for {
 		select {
 		case task := <-p.oo:
