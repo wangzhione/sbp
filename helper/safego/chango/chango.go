@@ -15,10 +15,9 @@ type Tasker interface {
 
 func NewPool[T Tasker](maxgoworker int, buffersize int) *Pool[T] {
 	return &Pool[T]{
-		c:         chain.Context(),
-		oo:        make(chan T, buffersize),
-		sem:       make(chan struct{}, maxgoworker),
-		WokerLife: 10 * time.Second, // 1000 * 10ms
+		c:   chain.Context(),
+		oo:  make(chan T, buffersize),
+		sem: make(chan struct{}, maxgoworker),
 	}
 }
 
@@ -29,8 +28,6 @@ type Pool[T Tasker] struct {
 	oo  chan T
 	sem chan struct{} // make(chan struct{}, max go worker)
 	c   context.Context
-
-	WokerLife time.Duration // Pool[T].worker() 存活周期, 默认 10s
 }
 
 func (p *Pool[T]) Push(task T) {
@@ -47,6 +44,8 @@ func (p *Pool[T]) Push(task T) {
 	p.oo <- task
 }
 
+var WokerLife = 10 * time.Second // Pool[T].worker() 存活周期, 默认 10s = 1000 * 10ms
+
 func (p *Pool[T]) worker(task T) {
 	defer func() {
 		if cover := recover(); cover != nil {
@@ -62,27 +61,15 @@ func (p *Pool[T]) worker(task T) {
 	// 执行首次任务, 防止首次空转
 	task.Do()
 
-	timer := time.NewTimer(p.WokerLife)
+	timer := NewTimer(WokerLife)
 	defer timer.Stop()
 	for {
 		select {
 		case task := <-p.oo:
-			ResetTimer(timer, p.WokerLife)
+			timer.Reset()
 			task.Do()
 		case <-timer.C:
 			return
 		}
 	}
-}
-
-func ResetTimer(timer *time.Timer, life time.Duration) {
-	// For a Timer created with NewTimer,
-	// Reset should be invoked only on stopped or expired timers with drained channels.
-	if !timer.Stop() {
-		select {
-		case <-timer.C: // try to drain the channel
-		default:
-		}
-	}
-	timer.Reset(life)
 }
