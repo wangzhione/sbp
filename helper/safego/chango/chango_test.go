@@ -2,6 +2,7 @@ package chango
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 )
@@ -28,4 +29,66 @@ func TestNewPool(t *testing.T) {
 
 	// 等待所有任务完成（这里只是简单 sleep 模拟，正式应使用 sync.WaitGroup）
 	time.Sleep(5 * time.Second)
+}
+
+// mockTask 是用于性能测试的假任务，实现 Tasker 接口
+type mockTask struct {
+	wg *sync.WaitGroup
+}
+
+func (m mockTask) Do() {
+	time.Sleep(1 * time.Millisecond) // 模拟执行耗时
+	m.wg.Done()
+}
+
+const (
+	maxGoWorker = 100
+	bufferSize  = 1000
+)
+
+func BenchmarkPool(b *testing.B) {
+	pool := NewPool[mockTask](maxGoWorker, bufferSize)
+
+	// 重置定时器，不统计初始化开销
+
+	for b.Loop() {
+		var wg sync.WaitGroup
+		wg.Add(maxGoWorker) // 每次压测发送 maxGoWorker 个任务
+
+		for range maxGoWorker {
+			pool.Push(mockTask{wg: &wg})
+		}
+
+		wg.Wait()
+	}
+}
+
+/*
+goos: windows
+goarch: amd64
+pkg: github.com/wangzhione/sbp/helper/safego/chango
+cpu: AMD Ryzen 9 7945HX3D with Radeon Graphics
+BenchmarkPool
+BenchmarkPool-32
+     783	   1537854 ns/op	     358 B/op	       3 allocs/op
+
+BenchmarkRawGoroutine
+BenchmarkRawGoroutine-32
+     795	   1536995 ns/op	   11471 B/op	     201 allocs/op
+*/
+
+func BenchmarkRawGoroutine(b *testing.B) {
+	for b.Loop() {
+		var wg sync.WaitGroup
+		wg.Add(maxGoWorker)
+
+		for range maxGoWorker {
+			go func() {
+				time.Sleep(1 * time.Millisecond)
+				wg.Done()
+			}()
+		}
+
+		wg.Wait()
+	}
 }
