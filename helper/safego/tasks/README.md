@@ -23,7 +23,7 @@ var o = tasks.NewPool(8)
 
 // func: run Go
 // ctx 参照 chain.CopyTrace 去脱离 context cancel or 脱敏
-// https://github.com/wangzhione/sbp/blob/master/chain/trace.go#L30-L44
+// https://github.com/wangzhione/sbp/blob/master/chain/trace.go
 o.Go(ctx, func(ctx context.Context) {
     // Your business
 })
