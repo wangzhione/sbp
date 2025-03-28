@@ -15,7 +15,7 @@ type Tasker interface {
 
 func NewPool[T Tasker](maxgoworker int, buffersize int) *Pool[T] {
 	return &Pool[T]{
-		c:         chain.Context(),
+		C:         chain.Context(),
 		oo:        make(chan T, buffersize),
 		sem:       make(chan struct{}, maxgoworker),
 		WokerLife: 10 * time.Second, // 默认 10s = 1000 * 10ms
@@ -23,13 +23,14 @@ func NewPool[T Tasker](maxgoworker int, buffersize int) *Pool[T] {
 }
 
 type Pool[T Tasker] struct {
+	C         context.Context // 可以自行初始化时候设置 context
+	WokerLife time.Duration   // Pool[T].worker() 存活周期
+
 	// oo T 的任务池
 	// 1. T 中如果有 context.Context 请用 chain.CopyTrace
 	// 2. p.oo <- T 用于发送任务
-	oo        chan T
-	sem       chan struct{} // make(chan struct{}, max go worker)
-	c         context.Context
-	WokerLife time.Duration // Pool[T].worker() 存活周期
+	oo  chan T
+	sem chan struct{} // make(chan struct{}, max go worker)
 }
 
 func (p *Pool[T]) Push(task T) {
@@ -49,7 +50,7 @@ func (p *Pool[T]) Push(task T) {
 func (p *Pool[T]) worker(one T) {
 	defer func() {
 		if cover := recover(); cover != nil {
-			slog.ErrorContext(p.c, "Pool worker panic error",
+			slog.ErrorContext(p.C, "Pool worker panic error",
 				slog.Any("error", cover),
 				slog.String("stack", string(debug.Stack())),
 			)
