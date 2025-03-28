@@ -27,5 +27,5 @@ func (t *Timer) Stop() {
 
 func (t *Timer) Reset() {
 	t.Stop()
-	t.Timer.Stop()
+	t.Timer.Reset(t.Life)
 }
