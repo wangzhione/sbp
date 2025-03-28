@@ -47,7 +47,7 @@ func (p *Pool[T]) Push(task T) {
 	p.oo <- task
 }
 
-func (p *Pool[T]) worker(task T) {
+func (p *Pool[T]) worker(one T) {
 	defer func() {
 		if cover := recover(); cover != nil {
 			slog.ErrorContext(p.c, "Pool worker panic error",
@@ -60,17 +60,21 @@ func (p *Pool[T]) worker(task T) {
 	}()
 
 	// 执行首次任务, 防止首次空转
-	task.Do()
+	one.Do()
 
-	timer := timer.NewTimer(p.WokerLife)
-	defer timer.Stop()
+	// Go 1.23+ safe: Stop 无需 drain；defer 保证释放
+	r := timer.NewTimer(p.WokerLife)
+	defer r.Stop()
 
 	for {
 		select {
-		case task := <-p.oo:
-			timer.Reset()
-			task.Do()
-		case <-timer.C:
+		case two := <-p.oo:
+			// stop 保证 timer 不再触发 ticker
+			r.Stop()
+			two.Do()
+			// 重新来过, 为下次 循环准备
+			r.Reset()
+		case <-r.C:
 			return
 		}
 	}
