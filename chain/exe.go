@@ -10,6 +10,10 @@ var ExePath = os.Args[0]
 
 var ExeName = filepath.Base(ExePath)
 
+var ExeExt = filepath.Ext(ExeName)
+
+var ExeNameSuffixExt = strings.TrimSuffix(ExeName, ExeExt)
+
 // ExeDir 获取可执行文件所在目录, 结尾不带 '/'
 var ExeDir = filepath.Dir(ExePath)
 
@@ -23,12 +27,7 @@ func Hostname() string {
 	return UUID()
 }
 
-var DefaultRotatingFile string
+var ExeHostname = Hostname()
 
-func init() {
-	ext := filepath.Ext(ExeName)
-	ExeName = strings.TrimSuffix(ExeName, ext)
-
-	// {exe path dir}/logs/{exe name}-{hostname}.log
-	DefaultRotatingFile = filepath.Join(ExeDir, "logs", ExeName+"-"+Hostname()+".log")
-}
+// LogsDir 默认 logs dir
+var LogsDir = filepath.Join(ExeDir, "logs")

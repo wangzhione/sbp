@@ -24,6 +24,15 @@ func InitSLog() {
 	slog.SetDefault(logs)
 }
 
+func InitSlogRotatingFile() error {
+	err := os.MkdirAll(LogsDir, os.ModePerm)
+	if err != nil {
+		println("os.MkdirAll error", LogsDir)
+		return err
+	}
+	return starthourlylogger()
+}
+
 // LogStartEnd Wrapper function to log start and end times, and measure duration
 func LogStartEnd(ctx context.Context, name string, fn func(context.Context) error) (err error) {
 	start := time.Now()
