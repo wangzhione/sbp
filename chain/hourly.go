@@ -62,6 +62,10 @@ func (our *hourlylogger) rotate() error {
 
 	_ = our.Close() // os.OpenFile 有兜底 runtime.SetFinalizer(f.file, (*file).close) 😂
 	our.File = file
+
+	// 历史日志清理
+	our.sevenday()
+
 	return nil
 }
 
@@ -77,4 +81,7 @@ func (our *hourlylogger) rotateloop() {
 	}
 }
 
-var DefaultCleanDay = 15 // 15 天前
+var DefaultCleanDay = 15 // 15 天前, 有时候过 7 天假期, 回来 7 天日志没了 ...
+
+func (our *hourlylogger) sevenday() {
+}
