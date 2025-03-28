@@ -6,50 +6,58 @@ import (
 	"log/slog"
 	"runtime"
 	"runtime/debug"
-	"time"
-
-	"github.com/wangzhione/sbp/chain"
 )
 
-func Run(ctx context.Context, fn func() error) (err error) {
+// goroutine 是有成本, 并且存在泄露或崩溃的风险!
+// 你需要足够能力去驾驭它. 所以对于 下面模板代码应该形成肌肉记忆 or 了然于胸
+/*
+go func() {
 	defer func() {
 		if cover := recover(); cover != nil {
-			err = fmt.Errorf("panic: safego.Run %#v", cover)
-
 			// 遇到启动不起来, 异常退出, 打印堆栈方便排除问题
-			slog.ErrorContext(ctx, "Run panic error",
+			slog.ErrorContext(ctx, "Go panic error",
 				slog.Any("error", cover),
 				slog.String("stack", string(debug.Stack())), // 记录详细的堆栈信息
 			)
 		}
 	}()
 
-	return fn()
+	...
+}()
+*/
+
+func Run(ctx context.Context, fn func(context.Context) error) (err error) {
+	defer func() {
+		if cover := recover(); cover != nil {
+			err = fmt.Errorf("panic: safego.Run %#v", cover)
+
+			// 遇到启动不起来, 异常退出, 打印堆栈方便排除问题
+			slog.ErrorContext(ctx, "Run panic error",
+				slog.Any("error", err),
+				slog.String("stack", string(debug.Stack())), // 记录详细的堆栈信息
+			)
+		}
+	}()
+
+	return fn(ctx)
 }
 
-func Go(ctx context.Context, fn func(), keys ...any) {
-	begin := time.Now()
-	ctx = chain.CopyTrace(ctx, keys)
-	slog.InfoContext(ctx, "Go Run Begin", slog.Time("begin", begin))
-	go func() {
-		defer func() {
-			if cover := recover(); cover != nil {
-				// 遇到启动不起来, 异常退出, 打印堆栈方便排除问题
-				slog.ErrorContext(ctx, "Go panic error",
-					slog.Any("error", cover),
-					slog.String("stack", string(debug.Stack())), // 记录详细的堆栈信息
-				)
-			}
+func CoverGo(ctx context.Context) {
+	if cover := recover(); cover != nil {
+		// 遇到启动不起来, 异常退出, 打印堆栈方便排除问题
+		slog.ErrorContext(ctx, "covergo panic error",
+			slog.Any("error", cover),
+			slog.String("stack", string(debug.Stack())), // 记录详细的堆栈信息
+		)
+	}
+}
 
-			end := time.Now()
-			slog.InfoContext(ctx, "Go Run End",
-				slog.Time("begin", begin),
-				slog.Time("end", end),
-				slog.Float64("cost", end.Sub(begin).Seconds()))
-		}()
+func Go(c context.Context, fn func(context.Context)) {
+	go func(ctx context.Context) {
+		defer CoverGo(ctx)
 
-		fn()
-	}()
+		fn(ctx)
+	}(c)
 }
 
 func ID() (goroutineid string) {

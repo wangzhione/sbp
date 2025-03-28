@@ -12,7 +12,7 @@ func TestID_Concurrent(t *testing.T) {
 	var wg sync.WaitGroup
 	errCh := make(chan error, n)
 
-	for i := 0; i < n; i++ {
+	for range n {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -36,4 +36,24 @@ func TestID_Concurrent(t *testing.T) {
 	for err := range errCh {
 		t.Error(err)
 	}
+}
+
+func TestRun(t *testing.T) {
+	type abc struct {
+		a int
+		b string
+		c struct{}
+	}
+
+	panicfunc := func() {
+		defer func() {
+			if cover := recover(); cover != nil {
+				fmt.Printf("cover:%#v\n", cover)
+			}
+		}()
+
+		panic(abc{})
+	}
+
+	panicfunc()
 }
