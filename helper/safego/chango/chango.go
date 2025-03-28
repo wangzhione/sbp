@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/wangzhione/sbp/chain"
-	"github.com/wangzhione/sbp/util/timer"
 )
 
 type Tasker interface {
@@ -63,7 +62,7 @@ func (p *Pool[T]) worker(one T) {
 	one.Do()
 
 	// Go 1.23+ safe: Stop 无需 drain；defer 保证释放
-	r := timer.NewTimer(p.WokerLife)
+	r := time.NewTimer(p.WokerLife)
 	defer r.Stop()
 
 	for {
@@ -73,7 +72,7 @@ func (p *Pool[T]) worker(one T) {
 			r.Stop()
 			two.Do()
 			// 重新来过, 为下次 循环准备
-			r.Reset()
+			r.Reset(p.WokerLife)
 		case <-r.C:
 			return
 		}
