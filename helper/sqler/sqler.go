@@ -21,7 +21,7 @@ func (s *DB) Close(ctx context.Context) (err error) {
 	if s != nil {
 		err = s.DB().Close()
 		// 创建和关闭都是很重的操作需要格外小心
-		slog.InfoContext(ctx, "r.DB().Close() info", "reason", err)
+		slog.InfoContext(ctx, "r.DB().Close() info", "error", err)
 	}
 	return
 }
@@ -51,7 +51,7 @@ func (s *DB) Exec(ctx context.Context, query string, args ...any) (sql.Result, e
 
 	result, err := s.DB().ExecContext(ctx, query, args...)
 	if err != nil {
-		slog.ErrorContext(ctx, "SQLer Exec error", "query", query, "args", args, "reason", err)
+		slog.ErrorContext(ctx, "SQLer Exec error", "query", query, "args", args, "error", err)
 	}
 	return result, err
 }
@@ -63,13 +63,13 @@ func (s *DB) QueryCallBack(ctx context.Context, callback func(context.Context, *
 
 	rows, err := s.DB().QueryContext(ctx, query, args...)
 	if err != nil {
-		slog.ErrorContext(ctx, "SQLer QueryCallBack error", "query", query, "args", args, "reason", err)
+		slog.ErrorContext(ctx, "SQLer QueryCallBack error", "query", query, "args", args, "error", err)
 		return err
 	}
 	// recover panic and error rollback
 	defer func() {
 		if cover := recover(); cover != nil {
-			slog.ErrorContext(ctx, "SQLer QueryCallBack panic error", "recover", cover, "stack", debug.Stack())
+			slog.ErrorContext(ctx, "SQLer QueryCallBack panic error", "recover", cover, "stack", string(debug.Stack()))
 		}
 
 		newerr := rows.Close()
@@ -80,13 +80,13 @@ func (s *DB) QueryCallBack(ctx context.Context, callback func(context.Context, *
 
 	err = callback(ctx, rows)
 	if err != nil {
-		slog.ErrorContext(ctx, "SQLer QueryCallBack callback rows error", "query", query, "args", args, "reason", err)
+		slog.ErrorContext(ctx, "SQLer QueryCallBack callback rows error", "query", query, "args", args, "error", err)
 		return err
 	}
 
 	err = rows.Err()
 	if err != nil {
-		slog.ErrorContext(ctx, "SQLer QueryCallBack rows.Err() error", "query", query, "args", args, "reason", err)
+		slog.ErrorContext(ctx, "SQLer QueryCallBack rows.Err() error", "query", query, "args", args, "error", err)
 		return err
 	}
 
@@ -105,7 +105,7 @@ func (s *DB) QueryRow(ctx context.Context, query string, args []any, dest ...any
 		slog.InfoContext(ctx, "SQLer QueryRow sql.ErrNoRows", "query", query, "args", args)
 		return err // or empty 业务逻辑处理
 	default:
-		slog.ErrorContext(ctx, "SQLer QueryRow error", "query", query, "args", args, "reason", err)
+		slog.ErrorContext(ctx, "SQLer QueryRow error", "query", query, "args", args, "error", err)
 		return err
 	}
 }
@@ -116,7 +116,7 @@ func (s *DB) QueryOne(ctx context.Context, query string, args ...any) (result ma
 
 	rows, err := s.DB().QueryContext(ctx, query, args...)
 	if err != nil {
-		slog.ErrorContext(ctx, "SQLer QueryOne QueryContext error", "query", query, "args", args, "reason", err)
+		slog.ErrorContext(ctx, "SQLer QueryOne QueryContext error", "query", query, "args", args, "error", err)
 		return
 	}
 	defer rows.Close()
@@ -124,7 +124,7 @@ func (s *DB) QueryOne(ctx context.Context, query string, args ...any) (result ma
 	// 获取列名
 	columns, err := rows.Columns()
 	if err != nil {
-		slog.ErrorContext(ctx, "SQLer QueryOne rows.Columns() error", "query", query, "args", args, "reason", err)
+		slog.ErrorContext(ctx, "SQLer QueryOne rows.Columns() error", "query", query, "args", args, "error", err)
 		return
 	}
 
@@ -143,13 +143,13 @@ func (s *DB) QueryOne(ctx context.Context, query string, args ...any) (result ma
 	if rows.Next() {
 		// 读取数据
 		if err = rows.Scan(valuePtrs...); err != nil {
-			slog.ErrorContext(ctx, "SQLer QueryOne rows.Scan(valuePtrs...) error", "query", query, "args", args, "reason", err)
+			slog.ErrorContext(ctx, "SQLer QueryOne rows.Scan(valuePtrs...) error", "query", query, "args", args, "error", err)
 			return
 		}
 	}
 
 	if err = rows.Err(); err != nil {
-		slog.ErrorContext(ctx, "SQLer QueryOne rows.Err() error", "query", query, "args", args, "reason", err)
+		slog.ErrorContext(ctx, "SQLer QueryOne rows.Err() error", "query", query, "args", args, "error", err)
 		return
 	}
 
@@ -174,14 +174,14 @@ func (s *DB) QueryAll(ctx context.Context, query string, args ...any) (results [
 
 	rows, err := s.DB().QueryContext(ctx, query, args...)
 	if err != nil {
-		slog.ErrorContext(ctx, "SQLer QueryAll QueryContext error", "query", query, "args", args, "reason", err)
+		slog.ErrorContext(ctx, "SQLer QueryAll QueryContext error", "query", query, "args", args, "error", err)
 		return
 	}
 	defer rows.Close()
 
 	columns, err := rows.Columns()
 	if err != nil {
-		slog.ErrorContext(ctx, "SQLer QueryAll rows.Columns() error", "query", query, "args", args, "reason", err)
+		slog.ErrorContext(ctx, "SQLer QueryAll rows.Columns() error", "query", query, "args", args, "error", err)
 		return
 	}
 
@@ -199,7 +199,7 @@ func (s *DB) QueryAll(ctx context.Context, query string, args ...any) (results [
 
 		// 读取数据
 		if err = rows.Scan(valuePtrs...); err != nil {
-			slog.ErrorContext(ctx, "SQLer QueryAll rows.Scan(valuePtrs...) error", "query", query, "args", args, "reason", err)
+			slog.ErrorContext(ctx, "SQLer QueryAll rows.Scan(valuePtrs...) error", "query", query, "args", args, "error", err)
 			return
 		}
 
@@ -221,30 +221,28 @@ func (s *DB) QueryAll(ctx context.Context, query string, args ...any) (results [
 
 	// 检查迭代过程中是否出错
 	if err = rows.Err(); err != nil {
-		slog.ErrorContext(ctx, "SQLer QueryAll rows.Err() error", "query", query, "args", args, "reason", err)
+		slog.ErrorContext(ctx, "SQLer QueryAll rows.Err() error", "query", query, "args", args, "error", err)
 		return
 	}
 
 	return
 }
 
-type Tx sql.Tx
-
 // Transaction 开启事务
-func (s *DB) Transaction(ctx context.Context, transaction func(context.Context, *Tx) error) (err error) {
+func (s *DB) Transaction(ctx context.Context, transaction func(context.Context, *sql.Tx) error) (err error) {
 	defer After(ctx, Before(ctx, "Transaction"))
 
 	// opts *sql.TxOptions 用于指定事务的隔离级别和是否为只读事务。可选参数，可以传 nil 使用 mysql 默认配置。
 	tx, err := s.DB().BeginTx(ctx, nil)
 	if err != nil {
-		slog.ErrorContext(ctx, "SQLer Transaction error", "reason", err)
+		slog.ErrorContext(ctx, "SQLer Transaction error", "error", err)
 		return err
 	}
 
 	// recover panic and error rollback
 	defer func() {
 		if cover := recover(); cover != nil {
-			slog.ErrorContext(ctx, "SQLer Transaction panic error", "recover", cover, "stack", debug.Stack())
+			slog.ErrorContext(ctx, "SQLer Transaction panic error", "recover", cover, "stack", string(debug.Stack()))
 
 			newerr := tx.Rollback()
 			if newerr != nil && newerr != sql.ErrTxDone {
@@ -256,9 +254,9 @@ func (s *DB) Transaction(ctx context.Context, transaction func(context.Context, 
 		}
 	}()
 
-	err = transaction(ctx, (*Tx)(tx))
+	err = transaction(ctx, tx)
 	if err != nil {
-		slog.ErrorContext(ctx, "SQLer Transaction transaction error", "reason", err)
+		slog.ErrorContext(ctx, "SQLer Transaction transaction error", "error", err)
 
 		newerr := tx.Rollback()
 		if newerr != nil && newerr != sql.ErrTxDone {
@@ -275,81 +273,4 @@ func (s *DB) Transaction(ctx context.Context, transaction func(context.Context, 
 	}
 
 	return nil
-}
-
-// Exec 执行无返回的 SQL 语句等 例如（INSERT, UPDATE, DELETE）
-func (t *Tx) Exec(ctx context.Context, query string, args ...any) (sql.Result, error) {
-	// 主动注入日志模块
-	defer After(ctx, Before(ctx, query, args))
-
-	result, err := (*sql.Tx)(t).ExecContext(ctx, query, args...)
-	if err != nil {
-		slog.ErrorContext(ctx, "SQLer Transaction Exec error", "query", query, "args", args, "reason", err)
-	}
-	return result, err
-}
-
-// Query 执行查询，返回多行数据
-func (t *Tx) Query(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
-	defer After(ctx, Before(ctx, query, args))
-
-	rows, err := (*sql.Tx)(t).QueryContext(ctx, query, args...)
-	if err != nil {
-		slog.ErrorContext(ctx, "SQLer Transaction Query error", "query", query, "args", args, "reason", err)
-	}
-	return rows, err
-}
-
-// QueryCallBack 执行查询, 内部自行通过闭包来完成参数传递和返回值获取
-// callback is for rows.Next() {}
-func (t *Tx) QueryCallBack(ctx context.Context, callback func(context.Context, *sql.Rows) error, query string, args ...any) error {
-	defer After(ctx, Before(ctx, query, args))
-
-	rows, err := (*sql.Tx)(t).QueryContext(ctx, query, args...)
-	if err != nil {
-		slog.ErrorContext(ctx, "SQLer Transaction QueryCallBack error", "query", query, "args", args, "reason", err)
-		return err
-	}
-	// recover panic and error rollback
-	defer func() {
-		if cover := recover(); cover != nil {
-			slog.ErrorContext(ctx, "SQLer Transaction QueryCallBack panic error", "recover", cover, "stack", debug.Stack())
-		}
-
-		newerr := rows.Close()
-		if newerr != nil {
-			slog.ErrorContext(ctx, "SQLer Transaction QueryCallBack rows.Close() panic error", "newerr", newerr)
-		}
-	}()
-
-	err = callback(ctx, rows)
-	if err != nil {
-		slog.ErrorContext(ctx, "SQLer Transaction QueryCallBack callback rows error", "query", query, "args", args, "reason", err)
-		return err
-	}
-
-	err = rows.Err()
-	if err != nil {
-		slog.ErrorContext(ctx, "SQLer Transaction QueryCallBack rows.Err() error", "query", query, "args", args, "reason", err)
-		return err
-	}
-
-	return nil
-}
-
-// QueryRow FindOne
-func (t *Tx) QueryRow(ctx context.Context, query string, args []any, dest ...any) error {
-	defer After(ctx, Before(ctx, query, args))
-
-	err := (*sql.Tx)(t).QueryRowContext(ctx, query, args...).Scan(dest...)
-	switch err {
-	case nil: // success
-		return nil
-	case sql.ErrNoRows: // 没有记录，返回空值
-		slog.InfoContext(ctx, "SQLer Transaction QueryRow sql.ErrNoRows", "query", query, "args", args)
-		return err // or empty 业务逻辑处理
-	default:
-		slog.ErrorContext(ctx, "SQLer Transaction QueryRow error", "query", query, "args", args, "reason", err)
-		return err
-	}
 }
