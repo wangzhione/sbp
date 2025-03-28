@@ -36,9 +36,9 @@ func WithContext(ctx context.Context, id string) context.Context {
 // Request init http.Request and return request id
 func Request(r *http.Request) (req *http.Request, requestID string) {
 	// 获取或生成 requestID
-	requestID = r.Header.Get(Key)
+	requestID = r.Header.Get(XRquestID)
 	if requestID == "" {
-		requestID = idhash.UUID()
+		requestID = UUID()
 	}
 	// 注入 requestID 到 Context
 	ctx := WithContext(r.Context(), requestID)
