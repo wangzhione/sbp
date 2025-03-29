@@ -24,7 +24,7 @@ func (h TraceHandler) Handle(ctx context.Context, r slog.Record) error {
 	funcName := f.Function[i+1:]
 
 	// add short source
-	source := fmt.Sprintf("%s:%d:%s", filepath.Base(f.File), f.Line, funcName)
+	source := fmt.Sprintf("%s:%d.%s", filepath.Base(f.File), f.Line, funcName)
 	r.AddAttrs(slog.String(slog.SourceKey, source))
 	// context 依赖 WithContext(ctx, id) or Request(r)
 	r.AddAttrs(slog.String(XRquestID, GetTraceID(ctx)))

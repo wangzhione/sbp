@@ -53,6 +53,5 @@ func Request(r *http.Request) (req *http.Request, requestID string) {
 	ctx := WithContext(r.Context(), requestID)
 
 	req = r.WithContext(ctx)
-
 	return
 }

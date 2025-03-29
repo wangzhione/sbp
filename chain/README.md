@@ -16,7 +16,7 @@ import 后 可以无缝使用 slog 进行 InfoContext or WarnContext or ErrorCon
 
 ## UUID
 
-`chain.UUID()` 借助 `github.com/google/uuid` v4 random 算法, 默认返回不带 '`-`' 风格的小写串
+`chain.UUID()` 是 uuid version 4 random 算法, 默认返回不带 '`-`' 风格的小写串
 
 ## trace
 
