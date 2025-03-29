@@ -6,15 +6,6 @@ tasks is a simple goroutine pool which aims to reuse goroutines and limit the nu
 
 ## example
 
-**[optional] Step 0 : main.init update tasks.PanicHandler** 
-
-```Go
-// first register global panic handler
-tasks.PanicHandler = func (ctx context.Context, cover any) {
-    // ctx is tasks.Go func context, cover = recover()
-}
-```
-
 **Step 1 : Let's Go**
 
 ```Go

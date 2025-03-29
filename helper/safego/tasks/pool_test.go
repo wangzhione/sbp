@@ -104,15 +104,17 @@ goarch: amd64
 pkg: github.com/wangzhione/sbp/helper/safego/tasks
 cpu: AMD Ryzen 9 7945HX3D with Radeon Graphics
 
+BenchmarkPool
 BenchmarkPool-32
-     206	   6692212 ns/op	 1255430 B/op	   48432 allocs/op
+     200	   5297260 ns/op	  592224 B/op	   26981 allocs/op
 PASS
-ok  	github.com/wangzhione/sbp/helper/safego/tasks	2.140s
+ok  	github.com/wangzhione/sbp/helper/safego/tasks	1.847s
 
+BenchmarkGo
 BenchmarkGo-32
-     100	  12601970 ns/op	  165947 B/op	   10012 allocs/op
+     150	   8008901 ns/op	  160483 B/op	   10001 allocs/op
 PASS
-ok  	github.com/wangzhione/sbp/helper/safego/tasks	1.473s
+ok  	github.com/wangzhione/sbp/helper/safego/tasks	2.189s
 
 */
 
