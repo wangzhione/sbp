@@ -2,11 +2,14 @@ package linkedq
 
 import "testing"
 
+// Linux + GCC
+// go test -benchmem -race -run=^$ -bench ^BenchmarkLinkedQueue_EnqueueDequeue$ github.com/wangzhione/sbp/structs/linkedq -v -count=1
+
 func BenchmarkLinkedQueue_EnqueueDequeue(b *testing.B) {
 	q := New[int]()
 	for i := 0; i < b.N; i++ {
-		q.Enqueue(i)
-		q.Dequeue()
+		q.Push(i)
+		q.Pop()
 	}
 }
 

@@ -19,58 +19,52 @@ type linkedQueueNode[T any] struct {
 }
 
 // New 创建一个新的泛型队列
-func New[T any]() *LinkedQueue[T] {
-	node := new(linkedQueueNode[T]) // 哨兵节点（dummy node）
-	return &LinkedQueue[T]{head: node, tail: node}
-}
+func New[T any]() *LinkedQueue[T] { return &LinkedQueue[T]{} }
 
-// Enqueue 将一个元素加入队列尾部
-func (q *LinkedQueue[T]) Enqueue(value T) {
+// Push 将一个元素加入队列尾部
+func (q *LinkedQueue[T]) Push(value T) {
 	q.Lock()
-	q.tail.next = &linkedQueueNode[T]{value: value}
-	q.tail = q.tail.next
-	q.Unlock()
+	defer q.Unlock() // 很土, 但好用能用
 
-	// 业务在 Enqueue 后立即读取 Len()，是可能会提前看到不一致的数量
-	// 依赖业务最终一致性, 属于 一致性 vs 性能权衡
+	node := &linkedQueueNode[T]{value: value}
+	if q.tail == nil {
+		// 空队列，head 和 tail 都指向新节点
+		q.head = node
+	} else {
+		q.tail.next = node
+	}
+	q.tail = node
+
 	q.length.Add(1)
 }
 
-// Dequeue 从队列头部取出一个元素
-func (q *LinkedQueue[T]) Dequeue() (value T, ok bool) {
-	if q.length.Load() == 0 {
-		return
-	}
-
+// Pop 从队列头部取出一个元素
+func (q *LinkedQueue[T]) Pop() (value T, ok bool) {
 	q.Lock()
-	if q.head.next != nil {
-		value, ok = q.head.next.value, true
-		q.head = q.head.next
+	defer q.Unlock()
 
-		// ⚠️ 如果弹出的是最后一个节点，重置 tail 指回 dummy 节点
-		if q.head.next == nil {
-			q.tail = q.head
-		}
-
-		q.Unlock()
-
-		q.length.Add(-1)
+	if q.head == nil {
 		return
 	}
-	q.Unlock()
+
+	value, ok = q.head.value, true
+	q.head = q.head.next
+	if q.head == nil {
+		// 队列已空，tail 也要清空
+		q.tail = nil
+	}
+
+	q.length.Add(-1)
 	return
 }
 
 func (q *LinkedQueue[T]) Peek() (value T, ok bool) {
-	if q.length.Load() == 0 {
-		return
-	}
-
 	q.Lock()
-	if q.head.next != nil {
-		value, ok = q.head.next.value, true
+	defer q.Unlock()
+
+	if q.head != nil {
+		value, ok = q.head.value, true
 	}
-	q.Unlock()
 	return
 }
 
