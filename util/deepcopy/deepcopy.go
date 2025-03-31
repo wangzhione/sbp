@@ -10,6 +10,11 @@ import (
 	"unsafe"
 )
 
+// Interface for delegating copy process to type
+type Interface interface {
+	DeepCopy() any
+}
+
 func Clone[T any](src T) (dst T) {
 	i, err := Copy(src)
 	if err != nil {
@@ -54,6 +59,14 @@ func copyRecursive(original, cpy reflect.Value, state *callstate) error {
 	defer func() {
 		state.reference--
 	}()
+
+	// check for implement Interface
+	if original.CanInterface() {
+		if copier, ok := original.Interface().(Interface); ok {
+			cpy.Set(reflect.ValueOf(copier.DeepCopy()))
+			return nil
+		}
+	}
 
 	// handle according to original's Kind
 	switch original.Kind() {
