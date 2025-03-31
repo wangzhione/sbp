@@ -40,7 +40,7 @@ func (our *hourlylogger) rotate() error {
 	hours := now.Format("2006010215") // e.g. 2025032815
 
 	// {exe path dir}/logs/{exe name}-{2025032815}-{hostname}.log
-	filename := filepath.Join(LogsDir, ExeName+"-"+hours+"-"+Hostname()+".log")
+	filename := filepath.Join(LogsDir, ExeName+"-"+hours+"-"+Hostname+".log")
 
 	if our.File != nil && our.Name() == filename {
 		found, err := Exist(filename)
@@ -86,6 +86,9 @@ func (our *hourlylogger) rotateloop() {
 var DefaultCleanTime = 15 * 24 * time.Hour // 默认 15 天前, 有时候过 7 天假期, 回来 7 天日志没了 ...
 
 const DefaultCheckTime = 7 * time.Hour // sevenday 每次检查是否要清理历史日志时间间隔
+
+// LogsDir ★ 默认 log dir 在 {exe dir}/logs
+var LogsDir = filepath.Join(ExeDir, "logs")
 
 func (our *hourlylogger) sevenday(now time.Time) {
 	if now.Sub(our.lasttime) < DefaultCheckTime {

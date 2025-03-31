@@ -12,22 +12,27 @@ type TraceHandler struct {
 	slog.Handler
 }
 
-// Handle add trace id @see https://github.com/golang/go/issues/73054#event-16988835247
+// Handle add trace @see https://github.com/golang/go/issues/73054#event-16988835247
 func (h TraceHandler) Handle(ctx context.Context, r slog.Record) error {
-	fs := runtime.CallersFrames([]uintptr{r.PC})
-	f, _ := fs.Next()
+	frames := runtime.CallersFrames([]uintptr{r.PC})
+	frame, _ := frames.Next()
 
 	// {path}/{short package name}.{short func name} -> {short func name}
-	i := len(f.Function) - 2
-	for ; i >= 0 && f.Function[i] != '/' && f.Function[i] != '.'; i-- {
+	i := len(frame.Function) - 2
+	for i >= 0 && frame.Function[i] != '/' && frame.Function[i] != '.' {
+		i--
 	}
-	funcName := f.Function[i+1:]
+	funcName := frame.Function[i+1:]
 
-	// add short source
-	source := fmt.Sprintf("%s:%d.%s", filepath.Base(f.File), f.Line, funcName)
-	r.AddAttrs(slog.String(slog.SourceKey, source))
-	// context 依赖 WithContext(ctx, id) or Request(r)
-	r.AddAttrs(slog.String(XRquestID, GetTraceID(ctx)))
+	source := fmt.Sprintf("%s:%d.%s", filepath.Base(frame.File), frame.Line, funcName)
+
+	r.AddAttrs(
+		// context 依赖 WithContext(ctx, {trace id}) or Request(r)
+		slog.String(XRquestID, GetTraceID(ctx)),
+
+		// // short source, need slog.HandlerOptions::AddSource = false
+		slog.String(slog.SourceKey, source),
+	)
 
 	return h.Handler.Handle(ctx, r)
 }

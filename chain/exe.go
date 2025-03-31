@@ -17,7 +17,7 @@ var ExeNameSuffixExt = strings.TrimSuffix(ExeName, ExeExt)
 // ExeDir 获取可执行文件所在目录, 结尾不带 '/'
 var ExeDir = filepath.Dir(ExePath)
 
-func Hostname() string {
+func hostname() string {
 	// 获取容器的 hostname（通常是容器的短 ID）
 	hostname, err := os.Hostname()
 	if err == nil {
@@ -27,7 +27,4 @@ func Hostname() string {
 	return UUID()
 }
 
-var ExeHostname = Hostname()
-
-// LogsDir 默认 logs dir
-var LogsDir = filepath.Join(ExeDir, "logs")
+var Hostname = hostname()

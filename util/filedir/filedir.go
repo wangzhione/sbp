@@ -109,6 +109,22 @@ func CopyFile(ctx context.Context, src, dst string) error {
 	return CopyBodyFile(ctx, source, dst)
 }
 
+// OpenFile 打开文件, 低频率 api
+func OpenFile(ctx context.Context, path string) (file *os.File, err error) {
+	// 检查文件是否存在
+	err = CreateDir(ctx, path)
+	if err != nil {
+		return
+	}
+
+	// os.OpenFile 内部有 runtime.SetFinalizer(f.file, (*file).close), 对象释放时候会 GC 1 close -> GC 2 free
+	file, err = os.OpenFile(path, os.O_RDWR, 0o664)
+	if err != nil {
+		slog.ErrorContext(ctx, "os.OpenFile(path, os.O_RDWR, 0o664) error", "error", err, "path", path)
+	}
+	return
+}
+
 // FileList 收集完整的文件列表
 func FileList(ctx context.Context, dirname string) (files []string, err error) {
 	err = filepath.WalkDir(
@@ -128,23 +144,29 @@ func FileList(ctx context.Context, dirname string) (files []string, err error) {
 		},
 	)
 	if err != nil {
-		slog.ErrorContext(ctx, "filepath.WalkDir error", "error", err, "dirname", dirname)
+		slog.ErrorContext(ctx, "FileList error", "error", err, "dirname", dirname)
 	}
 	return
 }
 
-// OpenFile 打开文件, 低频率 api
-func OpenFile(ctx context.Context, path string) (file *os.File, err error) {
-	// 检查文件是否存在
-	err = CreateDir(ctx, path)
-	if err != nil {
-		return
-	}
+func WalkDir(ctx context.Context, dirname string, fn func(path string) error) (err error) {
+	err = filepath.WalkDir(
+		dirname,
+		func(path string, dir os.DirEntry, direrr error) error {
+			if direrr != nil {
+				return direrr
+			}
 
-	// os.OpenFile 内部有 runtime.SetFinalizer(f.file, (*file).close), 对象释放时候会 GC 1 close -> GC 2 free
-	file, err = os.OpenFile(path, os.O_RDWR, 0o664)
+			// 只收集文件，跳过目录
+			if dir.IsDir() {
+				return nil
+			}
+
+			return fn(path)
+		},
+	)
 	if err != nil {
-		slog.ErrorContext(ctx, "os.OpenFile(path, os.O_RDWR, 0o664) error", "error", err, "path", path)
+		slog.ErrorContext(ctx, "WalkDir error", "error", err, "dirname", dirname)
 	}
 	return
 }

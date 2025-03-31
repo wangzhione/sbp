@@ -27,8 +27,8 @@ import "github.com/wangzhione/sbp/chain"
 // step 1: First 注入 trace id
 
 // WithContext add trace id to context
-func WithContext(ctx context.Context, id string) context.Context {
-	return context.WithValue(ctx, key, id)
+func WithContext(ctx context.Context, traceID string) context.Context {
+	return context.WithValue(ctx, xRquestID, traceID)
 }
 
 // or 
