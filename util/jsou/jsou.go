@@ -3,6 +3,7 @@ package jsou
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"reflect"
 )
@@ -16,6 +17,15 @@ func String(obj any) string {
 // Unmarshal 将 JSON 字符串解析为结构体（泛型）
 func Unmarshal[T any](stj string) (obj T, err error) {
 	err = json.Unmarshal([]byte(stj), &obj)
+	return
+}
+
+func DeepCopy[T any](src T) (dst T, err error) {
+	data, err := json.Marshal(src)
+	if err != nil {
+		return
+	}
+	err = json.Unmarshal(data, &dst)
 	return
 }
 
@@ -54,20 +64,13 @@ func ReadWriteFile[T any](src, dst string) (err error) {
 	}
 	defer source.Close()
 
-	// 创建目标文件
-	destination, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer destination.Close()
-
 	var obj T
 	err = json.NewDecoder(source).Decode(&obj)
 	if err != nil {
 		return
 	}
 
-	return json.NewEncoder(destination).Encode(obj)
+	return WriteFile(dst, obj)
 }
 
 // Valid 判断字符串 or []byte 是否为合法 json
@@ -87,31 +90,42 @@ func Slice[T ~string | ~[]byte](dj T) (obj []any, err error) {
 	return
 }
 
-// DEBUG json + fmt printf 简单打印测试
+// DEBUG json + fmt printf 简单打印测试, args[0] 可以传入 io.Writer, 不传入默认 os.Stdout
 func DEBUG(args ...any) {
-	for _, arg := range args {
-		fmt.Println()
+	if len(args) == 0 {
+		return
+	}
 
+	i := 0
+	var w io.Writer = os.Stdout
+	if writer, ok := args[i].(io.Writer); ok {
+		w = writer
+		i++
+	}
+	for ; i < len(args); i++ {
+		fmt.Fprintln(w, "")
+
+		arg := args[i]
 		if arg == nil {
-			fmt.Println("DEBUG nil\nnil")
+			fmt.Fprintln(w, "DEBUG nil\nnil")
 			continue
 		}
 
 		t := reflect.TypeOf(arg)
 		if t.PkgPath() != "" {
-			fmt.Printf("DEBUG %s.%s\n", t.PkgPath(), t.Name())
+			fmt.Fprintf(w, "DEBUG %s.%s\n", t.PkgPath(), t.Name())
 		} else {
-			fmt.Printf("DEBUG %s\n", t.Name())
+			fmt.Fprintf(w, "DEBUG %s\n", t.Name())
 		}
 
 		// 尝试格式化 JSON
 		data, err := json.MarshalIndent(arg, "", "\t")
 		if err != nil {
-			fmt.Printf("%#v\n", arg) // 备用输出，防止 JSON 失败时无法查看数据
+			fmt.Fprintf(w, "%+v\n", arg) // 备用输出，防止 JSON 失败时无法查看数据
 		} else {
-			fmt.Println(string(data))
+			fmt.Fprintln(w, string(data))
 		}
 	}
 
-	fmt.Println()
+	fmt.Fprintln(w, "")
 }

@@ -10,11 +10,7 @@ import (
 
 // NewPool creates a new pool with the given name, cap and config.
 func NewPool(capacity int32) *pool {
-	dummy := &task{} // 哨兵节点
-	p := &pool{
-		head: dummy,
-		tail: dummy,
-	}
+	p := &pool{}
 	p.Capacity.Store(capacity)
 	return p
 }
@@ -43,9 +39,15 @@ type task struct {
 }
 
 func (p *pool) Push(tail *task) {
-	// tail push
 	p.Lock()
-	p.tail.next = tail
+	// tail push
+	if p.tail != nil {
+		// normal case, tail push
+		p.tail.next = tail
+	} else {
+		// first push, head = tail
+		p.head = tail
+	}
 	p.tail = tail
 	p.Unlock()
 
@@ -54,18 +56,17 @@ func (p *pool) Push(tail *task) {
 
 func (p *pool) Pop() (head *task) {
 	p.Lock()
-	head = p.head.next
+	head = p.head
 	if head != nil {
-		p.head.next = head.next
-		if p.head.next == nil {
-			p.tail = p.head // 队列为空，tail 指回哨兵
+		// normal case head != nil
+		p.head = head.next
+		if p.head == nil {
+			p.tail = nil // 队列为空，tail 随同 head 指回 nil
 		}
-		p.Unlock()
-
-		p.length.Add(-1)
-		return
 	}
 	p.Unlock()
+
+	p.length.Add(-1)
 	return
 }
 
