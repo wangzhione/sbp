@@ -46,6 +46,12 @@ func (q *LinkedQueue[T]) Dequeue() (value T, ok bool) {
 	if q.head.next != nil {
 		value, ok = q.head.next.value, true
 		q.head = q.head.next
+
+		// ⚠️ 如果弹出的是最后一个节点，重置 tail 指回 dummy 节点
+		if q.head.next == nil {
+			q.tail = q.head
+		}
+
 		q.Unlock()
 
 		q.length.Add(-1)
