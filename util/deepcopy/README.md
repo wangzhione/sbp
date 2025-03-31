@@ -3,12 +3,15 @@
 
 # deepcopy
 
-用法
+用户举例
 
 ```Go
-func Clone[T any](src T) (dst T) {
-	i, err := Copy(src)
+import "github.com/wangzhione/sbp/util/deepcopy"
+
+func deepcopy.Clone[T any](ctx context.Context, src T) (dst T) {
+	i, err := deepcopy.Copy(src)
 	if err != nil {
+		slog.ErrorContext(ctx, "deepcopy.Copy panic error", "error", err, "src", src)
 		return
 	}
 	dst, _ = i.(T)
