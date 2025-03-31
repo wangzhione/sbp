@@ -63,10 +63,12 @@ func (p *pool) Pop() (head *task) {
 		if p.head == nil {
 			p.tail = nil // 队列为空，tail 随同 head 指回 nil
 		}
+
+		p.Unlock()
+		p.length.Add(-1)
+		return
 	}
 	p.Unlock()
-
-	p.length.Add(-1)
 	return
 }
 
