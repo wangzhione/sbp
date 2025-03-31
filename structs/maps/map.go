@@ -5,7 +5,7 @@ import (
 	"slices"
 )
 
-// Keys returns all keys from a map as a slice
+// Keys returns all keys from a map as a sort slice
 func Keys[K cmp.Ordered, V any](m map[K]V) []K {
 	keys := make([]K, 0, len(m))
 	for k := range m {
@@ -30,6 +30,16 @@ func RandValues[K comparable, V any](m map[K]V) []V {
 	for _, v := range m {
 		values = append(values, v)
 	}
+	return values
+}
+
+// Values returns all values from a map as a sort slice
+func Values[K comparable, V cmp.Ordered](m map[K]V) []V {
+	values := make([]V, 0, len(m))
+	for _, v := range m {
+		values = append(values, v)
+	}
+	slices.Sort(values) // 对 values 进行排序
 	return values
 }
 

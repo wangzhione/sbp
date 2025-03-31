@@ -1,37 +1,28 @@
 package arrays
 
+// go std slices 很 strong
+
+// Contains checks if a value exists in a slice
+// func Contains[S ~[]E, E comparable](s S, v E) bool
+
+// func Clone[S ~[]E, E any](s S) S
+
+// Index returns the index of the first occurrence of value, or -1 if not found
+// func Index[S ~[]E, E comparable](s S, v E) int
+// func IndexFunc[S ~[]E, E any](s S, f func(E) bool) int
+
 // Unique 去重 slice 并保持原顺序
 func Unique[T comparable](a []T) (result []T) {
 	seen := make(map[T]struct{}) // 存储已见过的元素
 
 	for _, item := range a {
-		if _, exists := seen[item]; !exists {
+		if _, ok := seen[item]; !ok {
 			seen[item] = struct{}{}
 			result = append(result, item)
 		}
 	}
 
-	return result
-}
-
-// Contains checks if a value exists in a slice
-func Contains[T comparable](arr []T, value T) bool {
-	for _, v := range arr {
-		if v == value {
-			return true
-		}
-	}
-	return false
-}
-
-// IndexOf returns the index of the first occurrence of value, or -1 if not found
-func IndexOf[T comparable](arr []T, value T) int {
-	for i, v := range arr {
-		if v == value {
-			return i
-		}
-	}
-	return -1
+	return
 }
 
 // Set array to set[]struct{}

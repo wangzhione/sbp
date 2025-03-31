@@ -20,12 +20,12 @@ func TestThreadUnsafeSet_MarshalJSON(t *testing.T) {
 		t.Errorf("Error should be nil: %v", err)
 	}
 
-	if !expected.EQual(actual) {
-		t.Errorf("Expected no difference, got: %v", expected.RemoveSet(actual))
+	if !expected.Equal(actual) {
+		t.Errorf("Expected no difference, got: %v", expected.Remove(actual))
 	}
 
 	// test Marshal from json package
-	b, err = json.Marshal(expected)
+	b, err = json.Marshal(&expected)
 	if err != nil {
 		t.Errorf("Error should be nil: %v", err)
 	}
@@ -35,8 +35,8 @@ func TestThreadUnsafeSet_MarshalJSON(t *testing.T) {
 		t.Errorf("Error should be nil: %v", err)
 	}
 
-	if !expected.EQual(actual) {
-		t.Errorf("Expected no difference, got: %v", expected.RemoveSet(actual))
+	if !expected.Equal(actual) {
+		t.Errorf("Expected no difference, got: %v", expected.Remove(actual))
 	}
 }
 
@@ -49,8 +49,8 @@ func TestThreadUnsafeSet_UnmarshalJSON(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error should be nil: %v", err)
 	}
-	if !expected.EQual(actual) {
-		t.Errorf("Expected no difference, got: %v", expected.RemoveSet(actual))
+	if !expected.Equal(actual) {
+		t.Errorf("Expected no difference, got: %v", expected.Remove(actual))
 	}
 
 	// test Unmarshal from json package
@@ -59,8 +59,8 @@ func TestThreadUnsafeSet_UnmarshalJSON(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error should be nil: %v", err)
 	}
-	if !expected.EQual(actual) {
-		t.Errorf("Expected no difference, got: %v", expected.RemoveSet(actual))
+	if !expected.Equal(actual) {
+		t.Errorf("Expected no difference, got: %v", expected.Remove(actual))
 	}
 }
 
@@ -78,8 +78,8 @@ func TestThreadUnsafeSet_MarshalJSON_Struct(t *testing.T) {
 		t.Errorf("Error should be nil: %v", err)
 	}
 
-	if expected.Other != actual.Other || !expected.Set.EQual(actual.Set) {
-		t.Errorf("Expected no difference, got: %v", expected.Set.RemoveSet(actual.Set))
+	if expected.Other != actual.Other || !expected.Set.Equal(actual.Set) {
+		t.Errorf("Expected no difference, got: %v", expected.Set.Remove(actual.Set))
 	}
 }
 
@@ -91,8 +91,8 @@ func TestThreadUnsafeSet_UnmarshalJSON_Struct(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error should be nil: %v", err)
 	}
-	if expected.Other != actual.Other || !expected.Set.EQual(actual.Set) {
-		t.Errorf("Expected no difference, got: %v", expected.Set.RemoveSet(actual.Set))
+	if expected.Other != actual.Other || !expected.Set.Equal(actual.Set) {
+		t.Errorf("Expected no difference, got: %v", expected.Set.Remove(actual.Set))
 	}
 
 	expectedComplex := NewSet(struct{ Val string }{Val: "a"}, struct{ Val string }{Val: "b"})
@@ -102,8 +102,8 @@ func TestThreadUnsafeSet_UnmarshalJSON_Struct(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error should be nil: %v", err)
 	}
-	if !expectedComplex.EQual(actualComplex) {
-		t.Errorf("Expected no difference, got: %v", expectedComplex.RemoveSet(actualComplex))
+	if !expectedComplex.Equal(actualComplex) {
+		t.Errorf("Expected no difference, got: %v", expectedComplex.Remove(actualComplex))
 	}
 
 	actualComplex = NewSet[struct{ Val string }]()
@@ -111,8 +111,8 @@ func TestThreadUnsafeSet_UnmarshalJSON_Struct(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error should be nil: %v", err)
 	}
-	if !expectedComplex.EQual(actualComplex) {
-		t.Errorf("Expected no difference, got: %v", expectedComplex.RemoveSet(actualComplex))
+	if !expectedComplex.Equal(actualComplex) {
+		t.Errorf("Expected no difference, got: %v", expectedComplex.Remove(actualComplex))
 	}
 }
 

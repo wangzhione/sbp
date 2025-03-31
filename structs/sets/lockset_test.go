@@ -13,7 +13,7 @@ const N = 1000
 func Test_AddConcurrent(t *testing.T) {
 	runtime.GOMAXPROCS(2)
 
-	s := NewTSet[int]()
+	s := NewLockSet[int]()
 	ints := rand.Perm(N)
 
 	var wg sync.WaitGroup
@@ -27,7 +27,7 @@ func Test_AddConcurrent(t *testing.T) {
 
 	wg.Wait()
 	for _, i := range ints {
-		if !s.Contain(i) {
+		if !s.Contains(i) {
 			t.Errorf("Set is missing element: %v", i)
 		}
 	}
@@ -36,7 +36,7 @@ func Test_AddConcurrent(t *testing.T) {
 func Test_AppendConcurrent(t *testing.T) {
 	runtime.GOMAXPROCS(2)
 
-	s := NewTSet[int]()
+	s := NewLockSet[int]()
 	ints := rand.Perm(N)
 
 	n := len(ints) >> 1
@@ -51,7 +51,7 @@ func Test_AppendConcurrent(t *testing.T) {
 
 	wg.Wait()
 	for _, i := range ints {
-		if !s.Contain(i) {
+		if !s.Contains(i) {
 			t.Errorf("Set is missing element: %v", i)
 		}
 	}
@@ -60,7 +60,7 @@ func Test_AppendConcurrent(t *testing.T) {
 func Test_CardinalityConcurrent(t *testing.T) {
 	runtime.GOMAXPROCS(2)
 
-	s := NewTSet[int]()
+	s := NewLockSet[int]()
 
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -84,7 +84,7 @@ func Test_CardinalityConcurrent(t *testing.T) {
 func Test_ClearConcurrent(t *testing.T) {
 	runtime.GOMAXPROCS(2)
 
-	s := NewTSet[int]()
+	s := NewLockSet[int]()
 	ints := rand.Perm(N)
 
 	var wg sync.WaitGroup
@@ -105,7 +105,7 @@ func Test_ClearConcurrent(t *testing.T) {
 func Test_CloneConcurrent(t *testing.T) {
 	runtime.GOMAXPROCS(2)
 
-	s := NewTSet[int]()
+	s := NewLockSet[int]()
 	ints := rand.Perm(N)
 
 	for _, v := range ints {
@@ -116,7 +116,7 @@ func Test_CloneConcurrent(t *testing.T) {
 	wg.Add(len(ints))
 	for i := range ints {
 		go func(i int) {
-			s.Remove(i)
+			s.Delete(i)
 			wg.Done()
 		}(i)
 	}
@@ -124,32 +124,10 @@ func Test_CloneConcurrent(t *testing.T) {
 	wg.Wait()
 }
 
-func Test_ContainssConcurrent(t *testing.T) {
-	runtime.GOMAXPROCS(2)
-
-	s := NewTSet[int]()
-	ints := rand.Perm(N)
-	integers := make([]int, 0)
-	for _, v := range ints {
-		s.Add(v)
-		integers = append(integers, v)
-	}
-
-	var wg sync.WaitGroup
-	for range ints {
-		wg.Add(1)
-		go func() {
-			s.Exist(integers...)
-			wg.Done()
-		}()
-	}
-	wg.Wait()
-}
-
 func Test_ContainssOneConcurrent(t *testing.T) {
 	runtime.GOMAXPROCS(2)
 
-	s := NewTSet[int]()
+	s := NewLockSet[int]()
 	ints := rand.Perm(N)
 	for _, v := range ints {
 		s.Add(v)
@@ -160,7 +138,7 @@ func Test_ContainssOneConcurrent(t *testing.T) {
 		number := v
 		wg.Add(1)
 		go func() {
-			s.Contain(number)
+			s.Contains(number)
 			wg.Done()
 		}()
 	}
@@ -170,7 +148,7 @@ func Test_ContainssOneConcurrent(t *testing.T) {
 func Test_EqualConcurrent(t *testing.T) {
 	runtime.GOMAXPROCS(2)
 
-	s, ss := NewTSet[int](), NewTSet[int]()
+	s, ss := NewLockSet[int](), NewLockSet[int]()
 	ints := rand.Perm(N)
 	for _, v := range ints {
 		s.Add(v)
@@ -181,41 +159,17 @@ func Test_EqualConcurrent(t *testing.T) {
 	for range ints {
 		wg.Add(1)
 		go func() {
-			s.EQual(ss)
+			s.Equal(ss)
 			wg.Done()
 		}()
 	}
 	wg.Wait()
 }
 
-func Test_RemoveConcurrent(t *testing.T) {
-	runtime.GOMAXPROCS(2)
-
-	s := NewTSet[int]()
-	ints := rand.Perm(N)
-	for _, v := range ints {
-		s.Add(v)
-	}
-
-	var wg sync.WaitGroup
-	wg.Add(len(ints))
-	for _, v := range ints {
-		go func(i int) {
-			s.Remove(i)
-			wg.Done()
-		}(v)
-	}
-	wg.Wait()
-
-	if s.Len() != 0 {
-		t.Errorf("Expected cardinality 0; got %v", s.Len())
-	}
-}
-
 func Test_StringConcurrent(t *testing.T) {
 	runtime.GOMAXPROCS(2)
 
-	s := NewTSet[int]()
+	s := NewLockSet[int]()
 	ints := rand.Perm(N)
 	for _, v := range ints {
 		s.Add(v)
@@ -235,7 +189,7 @@ func Test_StringConcurrent(t *testing.T) {
 func Test_ToSlice(t *testing.T) {
 	runtime.GOMAXPROCS(2)
 
-	s := NewTSet[int]()
+	s := NewLockSet[int]()
 	ints := rand.Perm(N)
 
 	var wg sync.WaitGroup
@@ -254,7 +208,7 @@ func Test_ToSlice(t *testing.T) {
 	}
 
 	for _, i := range setAsSlice {
-		if !s.Exist(i) {
+		if !s.Contains(i) {
 			t.Errorf("Set is missing element: %v", i)
 		}
 	}
@@ -266,12 +220,12 @@ func Test_ToSliceDeadlock(t *testing.T) {
 	runtime.GOMAXPROCS(2)
 
 	var wg sync.WaitGroup
-	set := NewTSet[int]()
+	set := NewLockSet[int]()
 	workers := 10
 	wg.Add(workers)
 	for i := 1; i <= workers; i++ {
 		go func() {
-			for j := 0; j < 1000; j++ {
+			for range 1000 {
 				set.Add(1)
 				set.ToSlice()
 			}
@@ -283,7 +237,7 @@ func Test_ToSliceDeadlock(t *testing.T) {
 
 func Test_UnmarshalJSON(t *testing.T) {
 	s := []byte(`["test", "1", "2", "3"]`) //,["4,5,6"]]`)
-	expected := NewTSet(
+	expected := NewLockSet(
 		[]string{
 			string(json.Number("1")),
 			string(json.Number("2")),
@@ -292,19 +246,21 @@ func Test_UnmarshalJSON(t *testing.T) {
 		}...,
 	)
 
-	actual := NewTSet[string]()
+	actual := NewLockSet[string]()
 	err := json.Unmarshal(s, actual)
 	if err != nil {
 		t.Errorf("Error should be nil: %v", err)
 	}
 
-	if !expected.EQual(actual) {
-		t.Errorf("Expected no difference, got: %v", expected.RemoveSet(actual))
+	if !expected.Equal(actual) {
+		t.Errorf("Expected no difference, got: %v", expected.Remove(actual))
 	}
+
+	t.Log(expected.String())
 }
 
 func Test_MarshalJSON(t *testing.T) {
-	expected := NewTSet(
+	expected := NewLockSet(
 		[]string{
 			string(json.Number("1")),
 			"test",
@@ -312,7 +268,7 @@ func Test_MarshalJSON(t *testing.T) {
 	)
 
 	b, err := json.Marshal(
-		NewTSet(
+		NewLockSet(
 			[]string{
 				"1",
 				"test",
@@ -323,13 +279,13 @@ func Test_MarshalJSON(t *testing.T) {
 		t.Errorf("Error should be nil: %v", err)
 	}
 
-	actual := NewTSet[string]()
+	actual := NewLockSet[string]()
 	err = json.Unmarshal(b, actual)
 	if err != nil {
 		t.Errorf("Error should be nil: %v", err)
 	}
 
-	if !expected.EQual(actual) {
-		t.Errorf("Expected no difference, got: %v", expected.RemoveSet(actual))
+	if !expected.Equal(actual) {
+		t.Errorf("Expected no difference, got: %v", expected.Remove(actual))
 	}
 }

@@ -3,6 +3,7 @@ package sets
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 )
 
 // Set[T] map set
@@ -35,65 +36,30 @@ func (s Set[T]) Append(vals ...T) {
 	}
 }
 
-func (s Set[T]) AddSet(other Set[T]) {
-	for key := range other {
-		s[key] = struct{}{}
-	}
+func (s Set[T]) Contains(v T) (ok bool) {
+	_, ok = s[v]
+	return
 }
 
 func (s Set[T]) Len() int { return len(s) }
 
-func (s Set[T]) Exist(vals ...T) bool {
-	for _, key := range vals {
-		if _, ok := s[key]; !ok {
-			return false
-		}
-	}
-	return true
-}
-
-func (s Set[T]) Contain(v T) bool {
-	_, ok := s[v]
-	return ok
-}
-
-func (s Set[T]) ContainSet(other Set[T]) bool {
-	if len(s) < len(other) {
-		return false
-	}
-
-	for key := range other {
-		if _, ok := s[key]; !ok {
-			return false
-		}
-	}
-	return true
-}
-
 func (s Set[T]) Delete(v T) { delete(s, v) }
 
-func (s Set[T]) Remove(vals ...T) {
-	for _, key := range vals {
-		delete(s, key)
-	}
-}
-
-func (s Set[T]) RemoveSet(other Set[T]) Set[T] {
+// Remove delete other set & return source set, 主要用于 unit test
+func (s Set[T]) Remove(other Set[T]) Set[T] {
 	for key := range other {
-		if s.Contain(key) {
-			delete(s, key)
-		}
+		s.Delete(key)
 	}
 	return s
 }
 
-func (s Set[T]) EQual(other Set[T]) bool {
+func (s Set[T]) Equal(other Set[T]) bool {
 	if len(s) != other.Len() {
 		return false
 	}
 
-	for key := range s {
-		if !other.Contain(key) {
+	for key := range other {
+		if !s.Contains(key) {
 			return false
 		}
 	}
@@ -101,33 +67,30 @@ func (s Set[T]) EQual(other Set[T]) bool {
 }
 
 func (s Set[T]) Clone() Set[T] {
-	newset := make(Set[T], len(s))
-	for elem := range s {
-		newset[elem] = struct{}{}
-	}
-	return newset
+	return maps.Clone(s)
 }
 
-func (s Set[T]) ToSlice() []T {
-	keys := make([]T, 0, s.Len())
+func (s Set[T]) ToSlice() (keys []T) {
 	for elem := range s {
 		keys = append(keys, elem)
 	}
-	return keys
+	return
 }
 
-func (s Set[T]) String() string {
+func (s Set[T]) setstring(name string) string {
 	if len(s) == 0 {
-		return "Set{}"
+		return name + "{}"
 	}
+
 	if len(s) == 1 {
 		for elem := range s {
-			return fmt.Sprintf("Set{%v}", elem)
+			return fmt.Sprintf("%s{%v}", name, elem)
 		}
 	}
 
 	var buf []byte
-	buf = append(buf, "Set{"...)
+	buf = append(buf, name...)
+	buf = append(buf, '{')
 	for elem := range s {
 		buf = append(buf, fmt.Sprintf("%v,", elem)...)
 	}
@@ -135,20 +98,27 @@ func (s Set[T]) String() string {
 	return string(buf)
 }
 
+func (s Set[T]) String() string {
+	return s.setstring("Set")
+}
+
+// MarshalJSON Set[T] Go 支持值接收者方法在指针上调用
 func (s Set[T]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(s.ToSlice())
 }
 
-func (s *Set[T]) UnmarshalJSON(buf []byte) error {
+// UnmarshalJSON Go 的 JSON 解码器 json.Unmarshal 只能调用指针接收者的方法
+func (s *Set[T]) UnmarshalJSON(buf []byte) (err error) {
+	// unmarshal set key slice
 	var keys []T
-	err := json.Unmarshal(buf, &keys)
+	err = json.Unmarshal(buf, &keys)
 	if err != nil {
-		return err
+		return
 	}
 
 	*s = make(Set[T], len(keys))
 	for _, key := range keys {
 		(*s)[key] = struct{}{}
 	}
-	return nil
+	return
 }
