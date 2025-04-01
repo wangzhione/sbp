@@ -9,7 +9,7 @@ import (
 // Set[T] map set
 type Set[T comparable] map[T]struct{}
 
-func NewSet[T comparable](vals ...T) Set[T] {
+func New[T comparable](vals ...T) Set[T] {
 	s := make(Set[T], len(vals))
 	for _, elem := range vals {
 		s.Add(elem)

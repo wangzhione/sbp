@@ -25,7 +25,7 @@ type LockSet[T comparable] struct {
 }
 
 func NewLockSet[T comparable](vals ...T) *LockSet[T] {
-	return &LockSet[T]{S: NewSet(vals...)}
+	return &LockSet[T]{S: New(vals...)}
 }
 
 func (r *LockSet[T]) Add(v T) {
@@ -123,6 +123,6 @@ func (r *LockSet[T]) UnmarshalJSON(buf []byte) error {
 	r.Lock()
 	defer r.Unlock()
 
-	r.S = NewSet(keys...)
+	r.S = New(keys...)
 	return nil
 }
