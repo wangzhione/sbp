@@ -70,10 +70,9 @@ func ParseINTE[T INT](s string) (i T, err error) {
 // 其中 strconv.FormatBool returns "true" or "false" according to the value of b.
 func ParseBool(s string) bool {
 	switch s {
-	case "1", "t", "T",
-		"true", "TRUE", "True",
-		"truE",
-		"trUe", "trUE",
+	case "1", "T", "t",
+		"TRUE", "true", "True",
+		"truE", "trUe", "trUE",
 		"tRue", "tRuE", "tRUe", "tRUE",
 		"TruE", "TrUe", "TrUE", "TRue", "TRuE", "TRUe":
 		return true

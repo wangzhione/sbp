@@ -20,15 +20,6 @@ func Unmarshal[T any](stj string) (obj T, err error) {
 	return
 }
 
-func DeepCopy[T any](src T) (dst T, err error) {
-	data, err := json.Marshal(src)
-	if err != nil {
-		return
-	}
-	err = json.Unmarshal(data, &dst)
-	return
-}
-
 // ReadFile 读取 src 文件, 尝试生成 json T 对象
 func ReadFile[T any](src string) (obj T, err error) {
 	data, err := os.ReadFile(src)
@@ -87,6 +78,16 @@ func Map[T ~string | ~[]byte](dj T) (obj map[string]any, err error) {
 // Slice json 字符串 or []byte 数据集转为 []any
 func Slice[T ~string | ~[]byte](dj T) (obj []any, err error) {
 	err = json.Unmarshal([]byte(dj), &obj)
+	return
+}
+
+// DeepCopy json 深拷贝, 临时救济一下. !!! 用深拷贝时候, 认真思考下, 能否不用这种影式深拷贝 !!!
+func DeepCopy[T any](src T) (dst T, err error) {
+	data, err := json.Marshal(src)
+	if err != nil {
+		return
+	}
+	err = json.Unmarshal(data, &dst)
 	return
 }
 
