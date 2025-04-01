@@ -56,9 +56,7 @@ func copyRecursive(original, cpy reflect.Value, state *callstate) error {
 	if state.reference > maxreferencechainlength {
 		return errors.New("error: panic excessive reference chain happened via " + original.Type().String())
 	}
-	defer func() {
-		state.reference--
-	}()
+	defer func() { state.reference-- }()
 
 	// check for implement Interface
 	if original.CanInterface() {
@@ -219,5 +217,5 @@ const (
 	startdetectingcyclesafter uint = 1024
 
 	// maxreferencechainlength is used to avoid fatal error stack overflow if the reference chain is too long.
-	maxreferencechainlength uint = 2 * startdetectingcyclesafter
+	maxreferencechainlength uint = 2048
 )
