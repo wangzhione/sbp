@@ -18,3 +18,11 @@ func deepcopy.Clone[T any](ctx context.Context, src T) (dst T) {
 	return
 }
 ```
+
+## 介绍 
+
+deep copy 覆盖各种语法层面 case 写正确很困难, 这里也这是投机取消, 遇到循环引用, 和深度过深的 any 直接中断报错. 
+
+**!!!当前想用 deep copy 时候一定要去思考, 能不能不用!!!**
+
+很难找到一个案例, 非用不可, 未来会重新思考是否有保留的必要. 如果临时一用一次, json marshal unmarshal 未尝不可. 是吧

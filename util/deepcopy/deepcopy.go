@@ -214,8 +214,8 @@ type callstate struct {
 
 const (
 	// startdetectingcyclesafter is used to check circular reference once the counter exceeds it.
-	startdetectingcyclesafter uint = 1024
+	startdetectingcyclesafter uint = 768
 
 	// maxreferencechainlength is used to avoid fatal error stack overflow if the reference chain is too long.
-	maxreferencechainlength uint = 2048
+	maxreferencechainlength uint = 2 * startdetectingcyclesafter
 )
