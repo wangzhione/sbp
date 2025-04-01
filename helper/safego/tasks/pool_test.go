@@ -83,8 +83,8 @@ func BenchmarkPool(b *testing.B) {
 
 	var wg sync.WaitGroup
 	b.ReportAllocs()
-	b.ResetTimer()
-	for range b.N {
+
+	for b.Loop() {
 		wg.Add(benchmarkTimes)
 		for range benchmarkTimes {
 			p.Go(ctx, func(context.Context) {
@@ -121,8 +121,8 @@ ok  	github.com/wangzhione/sbp/helper/safego/tasks	2.189s
 func BenchmarkGo(b *testing.B) {
 	var wg sync.WaitGroup
 	b.ReportAllocs()
-	b.ResetTimer()
-	for range b.N {
+
+	for b.Loop() {
 		wg.Add(benchmarkTimes)
 		for range benchmarkTimes {
 			go func() {

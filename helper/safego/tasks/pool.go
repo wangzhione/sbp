@@ -57,18 +57,19 @@ func (p *pool) Push(tail *task) {
 func (p *pool) Pop() (head *task) {
 	p.Lock()
 	head = p.head
-	if head != nil {
-		// normal case head != nil
-		p.head = head.next
-		if p.head == nil {
-			p.tail = nil // 队列为空，tail 随同 head 指回 nil
-		}
-
+	if head == nil {
 		p.Unlock()
-		p.length.Add(-1)
 		return
 	}
+
+	// normal case head != nil
+	p.head = head.next
+	if p.head == nil {
+		p.tail = nil // 队列为空，tail 随同 head 指回 nil
+	}
+
 	p.Unlock()
+	p.length.Add(-1)
 	return
 }
 
