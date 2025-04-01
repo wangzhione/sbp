@@ -10,7 +10,7 @@ type LinkedQueue[T any] struct {
 	sync.Mutex
 	head   *linkedQueueNode[T]
 	tail   *linkedQueueNode[T]
-	length atomic.Int32
+	length atomic.Int32 // 单纯统计监控维度
 }
 
 type linkedQueueNode[T any] struct {
@@ -24,8 +24,6 @@ func New[T any]() *LinkedQueue[T] { return &LinkedQueue[T]{} }
 // Push 将一个元素加入队列尾部
 func (q *LinkedQueue[T]) Push(value T) {
 	q.Lock()
-	defer q.Unlock() // 很土, 但好用能用
-
 	node := &linkedQueueNode[T]{value: value}
 	if q.tail == nil {
 		// 空队列，head 和 tail 都指向新节点
@@ -34,6 +32,7 @@ func (q *LinkedQueue[T]) Push(value T) {
 		q.tail.next = node
 	}
 	q.tail = node
+	q.Unlock()
 
 	q.length.Add(1)
 }
@@ -41,9 +40,8 @@ func (q *LinkedQueue[T]) Push(value T) {
 // Pop 从队列头部取出一个元素
 func (q *LinkedQueue[T]) Pop() (value T, ok bool) {
 	q.Lock()
-	defer q.Unlock()
-
 	if q.head == nil {
+		q.Unlock()
 		return
 	}
 
@@ -53,6 +51,7 @@ func (q *LinkedQueue[T]) Pop() (value T, ok bool) {
 		// 队列已空，tail 也要清空
 		q.tail = nil
 	}
+	q.Unlock()
 
 	q.length.Add(-1)
 	return

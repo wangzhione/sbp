@@ -7,7 +7,7 @@ import "testing"
 
 func BenchmarkLinkedQueue_EnqueueDequeue(b *testing.B) {
 	q := New[int]()
-	for i := 0; i < b.N; i++ {
+	for i := 0; b.Loop(); i++ {
 		q.Push(i)
 		q.Pop()
 	}
@@ -31,7 +31,7 @@ BenchmarkChannel_SendRecv-32
 
 func BenchmarkChannel_SendRecv(b *testing.B) {
 	ch := make(chan int, 1024)
-	for i := 0; i < b.N; i++ {
+	for i := 0; b.Loop(); i++ {
 		ch <- i
 		<-ch
 	}
