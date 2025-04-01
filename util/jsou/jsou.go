@@ -81,7 +81,9 @@ func Slice[T ~string | ~[]byte](dj T) (obj []any, err error) {
 	return
 }
 
-// DeepCopy json 深拷贝, 临时救济一下. !!! 用深拷贝时候, 认真思考下, 能否不用这种影式深拷贝 !!!
+// !!! 用深拷贝时候, 认真思考下, 能否真的有必要, 如果不用这种隐式深拷贝是否也可以 !!!
+
+// DeepCopy json 深拷贝
 func DeepCopy[T any](src T) (dst T, err error) {
 	data, err := json.Marshal(src)
 	if err != nil {
