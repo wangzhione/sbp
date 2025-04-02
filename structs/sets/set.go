@@ -36,9 +36,9 @@ func (s Set[T]) Append(vals ...T) {
 	}
 }
 
-func (s Set[T]) Contains(v T) (ok bool) {
-	_, ok = s[v]
-	return
+func (s Set[T]) Contains(v T) bool {
+	_, ok := s[v]
+	return ok
 }
 
 func (s Set[T]) Len() int { return len(s) }
@@ -63,6 +63,7 @@ func (s Set[T]) Equal(other Set[T]) bool {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -70,41 +71,43 @@ func (s Set[T]) Clone() Set[T] {
 	return maps.Clone(s)
 }
 
-func (s Set[T]) ToSlice() (keys []T) {
+func (s Set[T]) Slice() []T {
+	keys := make([]T, 0, len(s)) // 预分配容量
 	for elem := range s {
 		keys = append(keys, elem)
 	}
-	return
-}
-
-func (s Set[T]) setstring(name string) string {
-	if len(s) == 0 {
-		return name + "{}"
-	}
-
-	if len(s) == 1 {
-		for elem := range s {
-			return fmt.Sprintf("%s{%v}", name, elem)
-		}
-	}
-
-	var buf []byte
-	buf = append(buf, name...)
-	buf = append(buf, '{')
-	for elem := range s {
-		buf = append(buf, fmt.Sprintf("%v,", elem)...)
-	}
-	buf[len(buf)-1] = '}'
-	return string(buf)
+	return keys
 }
 
 func (s Set[T]) String() string {
-	return s.setstring("Set")
+	n := len(s)
+	if n == 0 {
+		return "{}"
+	}
+
+	if n == 1 {
+		for elem := range s {
+			return fmt.Sprintf("{%v}", elem)
+		}
+	}
+
+	// === 预估容量，避免多次 append 扩容 ===
+	// '{' + 每个元素平均长度估算 + 逗号 * (n - 1) + '}'
+	// avg elem len = 13 经验值（整数、短字符串等）拍脑门
+	estimatedcap := 1 + n*13 + (n - 1) + 1
+
+	b := make([]byte, 0, estimatedcap)
+	b = append(b, '{')
+	for elem := range s {
+		b = append(b, fmt.Sprintf("%v,", elem)...)
+	}
+	b[len(b)-1] = '}'
+	return string(b)
 }
 
 // MarshalJSON Set[T] Go 支持值接收者方法在指针上调用
 func (s Set[T]) MarshalJSON() ([]byte, error) {
-	return json.Marshal(s.ToSlice())
+	return json.Marshal(s.Slice())
 }
 
 // UnmarshalJSON Go 的 JSON 解码器 json.Unmarshal 只能调用指针接收者的方法

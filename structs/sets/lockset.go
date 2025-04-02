@@ -100,13 +100,13 @@ func (r *LockSet[T]) Clone() (news *LockSet[T]) {
 func (r *LockSet[T]) ToSlice() []T {
 	r.RLock()
 	defer r.RUnlock()
-	return r.S.ToSlice()
+	return r.S.Slice()
 }
 
 func (r *LockSet[T]) String() string {
 	r.RLock()
 	defer r.RUnlock()
-	return r.S.setstring("LockSet")
+	return r.S.String()
 }
 
 func (r *LockSet[T]) MarshalJSON() ([]byte, error) {
