@@ -33,6 +33,7 @@ type LocalLock struct {
 // 内部方法：获取或创建对应 key 的锁
 func (l *LocalLock) mutex(key string) *Locker {
 	actual, _ := l.local.LoadOrStore(key, NewLocker())
+	// 如果不能 断言 会 panic
 	return actual.(*Locker)
 }
 
@@ -54,6 +55,9 @@ func (l *LocalLock) TimeoutLock(key string, timeout time.Duration) bool {
 func (l *LocalLock) Unlock(key string) {
 	if val, ok := l.local.Load(key); ok {
 		val.(*Locker).Unlock()
+	} else {
+		// 提醒 case
+		println("panic: multiple Unlock")
 	}
 }
 
