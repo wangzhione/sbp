@@ -3,11 +3,13 @@ package arrays
 // go std slices 很 strong
 
 // Contains checks if a value exists in a slice
+//
 // func Contains[S ~[]E, E comparable](s S, v E) bool
 
 // func Clone[S ~[]E, E any](s S) S
 
 // Index returns the index of the first occurrence of value, or -1 if not found
+//
 // func Index[S ~[]E, E comparable](s S, v E) int
 // func IndexFunc[S ~[]E, E any](s S, f func(E) bool) int
 
