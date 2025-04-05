@@ -12,7 +12,8 @@ type TraceHandler struct {
 	slog.Handler
 }
 
-// Handle add trace @see https://github.com/golang/go/issues/73054#event-16988835247
+// Handle add trace
+// @see https://github.com/golang/go/issues/73054#event-16988835247
 func (h TraceHandler) Handle(ctx context.Context, r slog.Record) error {
 	frames := runtime.CallersFrames([]uintptr{r.PC})
 	frame, _ := frames.Next()

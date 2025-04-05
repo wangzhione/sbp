@@ -91,12 +91,7 @@ func (s Set[T]) String() string {
 		}
 	}
 
-	// === 预估容量，避免多次 append 扩容 ===
-	// '{' + 每个元素平均长度估算 + 逗号 * (n - 1) + '}'
-	// avg elem len = 13 经验值（整数、短字符串等）拍脑门
-	estimatedcap := 1 + n*13 + (n - 1) + 1
-
-	b := make([]byte, 0, estimatedcap)
+	var b []byte
 	b = append(b, '{')
 	for elem := range s {
 		b = append(b, fmt.Sprintf("%v,", elem)...)
