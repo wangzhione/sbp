@@ -43,10 +43,6 @@ func Atoi(s []byte) (int, error) {
 //
 // The string may begin with a leading sign: "+" or "-".
 /*
- 	if len(s) == 0 {
-		return 0, nil
-	}
-
 	if bitSize == 0 {
 		bitSize = strconv.IntSize
 	} else if bitSize < 0 || bitSize > 64 {
@@ -56,6 +52,10 @@ func Atoi(s []byte) (int, error) {
 	u, err := ParseUint([]byte(s), bitSize)
 */
 func ParseInt(s []byte, bitSize int) (int64, error) {
+	if len(s) == 0 {
+		return 0, nil
+	}
+
 	// Pick off leading sign.
 	neg := false
 	switch s[0] {
