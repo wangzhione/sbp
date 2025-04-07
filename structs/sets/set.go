@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"maps"
+	"strings"
 )
 
 // Set[T] map set
@@ -91,13 +92,21 @@ func (s Set[T]) String() string {
 		}
 	}
 
-	var b []byte
-	b = append(b, '{')
+	// @see https://github.com/golang/go/issues/73189
+	var b strings.Builder
+	b.WriteByte('{')
+
+	i := 0
 	for elem := range s {
-		b = append(b, fmt.Sprintf("%v,", elem)...)
+		if i > 0 {
+			b.WriteByte(',')
+		}
+		fmt.Fprintf(&b, "%v", elem)
+		i++
 	}
-	b[len(b)-1] = '}'
-	return string(b)
+
+	b.WriteByte('}')
+	return b.String()
 }
 
 // MarshalJSON Set[T] Go 支持值接收者方法在指针上调用
