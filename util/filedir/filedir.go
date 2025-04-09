@@ -1,6 +1,7 @@
 package filedir
 
 import (
+	"archive/zip"
 	"context"
 	"io"
 	"log/slog"
@@ -149,24 +150,90 @@ func FileList(ctx context.Context, dirname string) (files []string, err error) {
 	return
 }
 
-func WalkDir(ctx context.Context, dirname string, fn func(path string) error) (err error) {
-	err = filepath.WalkDir(
-		dirname,
-		func(path string, dir os.DirEntry, direrr error) error {
-			if direrr != nil {
-				return direrr
-			}
-
-			// 只收集文件，跳过目录
-			if dir.IsDir() {
-				return nil
-			}
-
-			return fn(path)
-		},
-	)
+// AddFileToZip 将指定文件以 relPath 写入 zipWriter
+func AddFileToZip(ctx context.Context, zipWriter *zip.Writer, filePath string, relPath string) error {
+	// 打开文件
+	f, err := os.Open(filePath)
 	if err != nil {
-		slog.ErrorContext(ctx, "WalkDir error", "error", err, "dirname", dirname)
+		slog.ErrorContext(ctx, "Open file failed", "error", err, "file", filePath)
+		return err
 	}
-	return
+	defer f.Close() // 确保文件关闭，防止 fd 泄漏
+
+	// 创建 zip 条目
+	fw, err := zipWriter.Create(relPath)
+	if err != nil {
+		slog.ErrorContext(ctx, "Create zip file entry failed", "error", err, "file", filePath)
+		return err
+	}
+
+	// 写入文件内容
+	if _, err := io.Copy(fw, f); err != nil {
+		slog.ErrorContext(ctx, "Copy file content failed", "error", err, "file", filePath)
+		return err
+	}
+
+	return nil
 }
+
+/*
+
+// filepath.Walk 实际案例
+err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {})
+
+func ResponseWriterZipDir(ctx context.Context, w http.ResponseWriter, zipname string, dir string) {
+	// 设置响应头，提前发送 attachment 信息
+	w.Header().Set("Content-Disposition", "attachment; filename="+zipname)
+	w.Header().Set("Content-Type", "application/zip")
+
+	// 创建 ZIP writer，直接写入 HTTP 响应流
+	zipWriter := zip.NewWriter(w)
+	defer func() {
+		// 尝试关闭 zipWriter，刷新缓存
+		if err := zipWriter.Close(); err != nil {
+			// 如果 zipWriter 关闭失败
+			slog.ErrorContext(ctx, "Failed to finalize zipWriter", "error", err, "zipname", zipname)
+			return
+		}
+	}()
+
+	// 遍历目录
+	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			slog.ErrorContext(ctx, "Walk error", "error", err, "path", path)
+			return err
+		}
+
+		// 构造 zip 文件中的相对路径（保留目录结构）
+		relPath, err := filepath.Rel(dir, path)
+		if err != nil {
+			slog.ErrorContext(ctx, "Path Rel error", "error", err, "path", path)
+			return err
+		}
+
+		// 忽略根路径（.）
+		if relPath == "." {
+			return nil
+		}
+
+		if info.IsDir() {
+			// 是目录则创建空目录条目
+			_, err := zipWriter.Create(relPath + "/")
+			if err != nil {
+				slog.ErrorContext(ctx, "Create zip folder entry failed", "error", err, "folder", relPath)
+				return err
+			}
+			return nil
+		}
+
+		// 文件处理
+		return AddFileToZip(ctx, zipWriter, path, relPath)
+	})
+	// 如果 Walk 过程中出错
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to walk and zip directory", "error", err, "dir", dir, "zipname", zipname)
+		// 注意：不能再使用 http.Error，因为响应头已发，部分内容已写入
+		return
+	}
+}
+*/

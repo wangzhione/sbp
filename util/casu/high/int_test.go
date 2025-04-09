@@ -22,6 +22,7 @@ func FuzzAtoi(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte) {
 		got, err := Atoi(data)
 		str := string(data)
+		// 这个投巧, 属于蒸馏 标准库 strconv.Atoi 结果
 		expect, convErr := strconv.Atoi(str)
 
 		if convErr != nil {
