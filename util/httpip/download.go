@@ -13,7 +13,7 @@ import (
 
 // Download 下载 uri 到本地文件 outputPath
 func Download(ctx context.Context, uri, outputpath string, headerargs ...map[string]string) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri, nil)
+	req, err := http.NewRequest(http.MethodGet, uri, nil)
 	if err != nil {
 		slog.ErrorContext(ctx, "http.NewRequestWithContext error", "error", err, "uri", uri)
 		return err
@@ -29,7 +29,7 @@ func Download(ctx context.Context, uri, outputpath string, headerargs ...map[str
 		}
 	}
 
-	resp, err := HTTPClient.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		// 超时错误 case : errors.Is(err, context.DeadlineExceeded)
 		slog.ErrorContext(ctx, "HTTPClient.Do error", "error", err, "uri", uri)
