@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/wangzhione/sbp/chain"
+	"github.com/wangzhione/sbp/util/filedir"
 )
 
 // Download 下载 uri 到本地文件 outputPath
@@ -63,4 +64,28 @@ func Download(ctx context.Context, uri, outputpath string, headerargs ...map[str
 	}
 
 	return nil
+}
+
+// DownloadIfNotExists 下载文件（如果文件已存在则跳过），失败时清理临时文件
+func DownloadIfNotExists(ctx context.Context, uri, outputPath string, headerargs ...map[string]string) (err error) {
+	// 如果目标文件已存在，直接跳过
+	found, err := filedir.Exist(ctx, outputPath)
+	if err != nil {
+		return
+	}
+	if found {
+		// 文件存在直接返回
+		return
+	}
+
+	err = Download(ctx, uri, outputPath, headerargs...)
+	if err != nil {
+		// 下载失败则尝试删除输出文件
+		if rmErr := os.Remove(outputPath); rmErr != nil && !os.IsNotExist(rmErr) {
+			slog.WarnContext(ctx, "failed to remove output file", "path", outputPath, "error", rmErr)
+		}
+		return
+	}
+
+	return
 }
