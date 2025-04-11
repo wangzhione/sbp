@@ -80,7 +80,7 @@ func (down *DownloadGroup) Download(ctx context.Context) (err error) {
 			slog.InfoContext(ctx, "Download task end",
 				"uri", task.URL,
 				"path", task.Path,
-				"duration", duration.String(), // 可选 .Milliseconds() 输出整数
+				"duration", duration.Seconds(),
 				"reason", taskerr,
 			)
 
