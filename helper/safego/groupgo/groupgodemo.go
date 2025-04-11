@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"time"
 
 	"github.com/wangzhione/sbp/util/httpip"
 )
@@ -65,10 +66,24 @@ func (down *DownloadGroup) Download(ctx context.Context) (err error) {
 
 	for _, task := range down.Task {
 		group.Go(func(ctx context.Context) error {
-			// 下载是比较重操作, 增加多一点业务打点, 这是个 demo 库, 至少介绍 groupgo 用法
-			slog.InfoContext(ctx, "Download task start", "uri", task.URL, "path", task.Path)
+			start := time.Now()
+			slog.InfoContext(ctx, "Download task start",
+				"uri", task.URL,
+				"path", task.Path,
+			)
+
 			taskerr := httpip.DownloadIfNotExists(ctx, task.URL, task.Path, task.Headers)
-			slog.InfoContext(ctx, "Download task End", "uri", task.URL, "path", task.Path, "reason", taskerr)
+
+			duration := time.Since(start)
+
+			// 下载是比较重操作, 增加多一点业务打点, 这是个 demo 库, 至少介绍 groupgo 用法
+			slog.InfoContext(ctx, "Download task end",
+				"uri", task.URL,
+				"path", task.Path,
+				"duration", duration.String(), // 可选 .Milliseconds() 输出整数
+				"reason", taskerr,
+			)
+
 			return taskerr
 		})
 	}
