@@ -14,6 +14,8 @@ type DownloadTask struct {
 	Path string // 目标地址
 
 	Headers map[string]string // http download head
+
+	Log bool // 是否打开打点日志
 }
 
 func (task *DownloadTask) Check() error {
@@ -65,26 +67,27 @@ func (down *DownloadGroup) Download(ctx context.Context) (err error) {
 	group := NewGroup(ctx, down.MaxConcurrent)
 
 	for _, task := range down.Task {
-		group.Go(func(ctx context.Context) error {
-			start := time.Now()
-			slog.InfoContext(ctx, "Download task start",
-				"uri", task.URL,
-				"path", task.Path,
-			)
+		group.Go(func(ctx context.Context) (taskerr error) {
+			if task.Log {
+				start := time.Now()
+				slog.InfoContext(ctx, "Download task start",
+					"uri", task.URL,
+					"path", task.Path,
+				)
 
-			taskerr := httpip.DownloadIfNotExists(ctx, task.URL, task.Path, task.Headers)
+				defer func() {
+					duration := time.Since(start)
+					// 这是个 demo 库, 至少介绍 groupgo 用法
+					slog.InfoContext(ctx, "Download task end",
+						"uri", task.URL,
+						"path", task.Path,
+						"duration", duration.Seconds(),
+						"reason", taskerr,
+					)
+				}()
+			}
 
-			duration := time.Since(start)
-
-			// 下载是比较重操作, 增加多一点业务打点, 这是个 demo 库, 至少介绍 groupgo 用法
-			slog.InfoContext(ctx, "Download task end",
-				"uri", task.URL,
-				"path", task.Path,
-				"duration", duration.Seconds(),
-				"reason", taskerr,
-			)
-
-			return taskerr
+			return httpip.DownloadIfNotExists(ctx, task.URL, task.Path, task.Headers)
 		})
 	}
 
