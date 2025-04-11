@@ -15,7 +15,8 @@ type DownloadTask struct {
 
 	Headers map[string]string // http download head
 
-	Log bool // 是否打开打点日志
+	Log   bool // 是否打开打点日志, 默认不打开
+	Force bool // 是否强制更新下载
 }
 
 func (task *DownloadTask) Check() error {
@@ -73,6 +74,7 @@ func (down *DownloadGroup) Download(ctx context.Context) (err error) {
 				slog.InfoContext(ctx, "Download task start",
 					"uri", task.URL,
 					"path", task.Path,
+					"force", task.Force,
 				)
 
 				defer func() {
@@ -82,11 +84,16 @@ func (down *DownloadGroup) Download(ctx context.Context) (err error) {
 						"uri", task.URL,
 						"path", task.Path,
 						"duration", duration.Seconds(),
+						"force", task.Force,
 						"reason", taskerr,
 					)
 				}()
 			}
 
+			// Force 强制下载
+			if task.Force {
+				return httpip.Download(ctx, task.URL, task.Path, task.Headers)
+			}
 			return httpip.DownloadIfNotExists(ctx, task.URL, task.Path, task.Headers)
 		})
 	}
