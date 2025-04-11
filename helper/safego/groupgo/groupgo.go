@@ -37,6 +37,11 @@ func NewGroup(ctx context.Context, n int) *Group {
 // Wait blocks until all function calls from the Go method have returned, then
 // returns the first non-nil error (if any) from them.
 func (g *Group) Wait() error {
+	// 兼容, nil Group wait 模式
+	if g == nil {
+		return nil
+	}
+
 	g.wg.Wait()
 	return g.err
 }
