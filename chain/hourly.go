@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -35,12 +36,14 @@ func Exist(path string) (exists bool, err error) {
 	return false, err // 其他错误（如权限问题）, 但对当前用户而言是不存在
 }
 
+var Hostnamelog = Hostname + ".log"
+
 func (our *hourlylogger) rotate() error {
 	now := time.Now()
 	hours := now.Format("2006010215") // e.g. 2025032815
 
 	// {exe path dir}/logs/{exe name}-{2025032815}-{hostname}.log
-	filename := filepath.Join(LogsDir, ExeName+"-"+hours+"-"+Hostname+".log")
+	filename := filepath.Join(LogsDir, ExeName+"-"+hours+"-"+Hostnamelog)
 
 	if our.File != nil && our.Name() == filename {
 		found, err := Exist(filename)
@@ -51,7 +54,7 @@ func (our *hourlylogger) rotate() error {
 
 	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
 	if err != nil {
-		println("hourlylogger os.OpenFile error", err, filename)
+		println("hourlylogger os.OpenFile error", err.Error(), filename)
 		return err
 	}
 
@@ -112,6 +115,9 @@ func (our *hourlylogger) sevenday(now time.Time) {
 				return nil
 			}
 
+			// fix `logs/segmentclips-2025041115-nb-1282427673004035712-9qrao4gnd4e8.log` bug
+			path = strings.TrimSuffix(path, Hostnamelog)
+
 			// {exe path dir}/logs/{exe name}-{2025032815}-{hostname}.log
 			// 从后往前找两个 '-' 的位置
 			// 第一次循环，从后往前找第一个 '-'（end）
@@ -144,7 +150,7 @@ func (our *hourlylogger) sevenday(now time.Time) {
 			// 解析时间
 			t, err := time.Parse("2006010215", timeStr)
 			if err != nil {
-				println("hourlylogger filepath.WalkDir time.Parse error", err, path)
+				println("hourlylogger filepath.WalkDir time.Parse error", err.Error(), path)
 				return nil
 			}
 
@@ -163,12 +169,12 @@ func (our *hourlylogger) sevenday(now time.Time) {
 		},
 	)
 	if err != nil {
-		println("hourlylogger filepath.WalkDir error", err, LogsDir)
+		println("hourlylogger filepath.WalkDir error", err.Error(), LogsDir)
 		return
 	}
 
 	for _, file := range files {
 		err = os.Remove(file)
-		println("hourlylogger os.Remove error", err, file)
+		println("hourlylogger os.Remove error", err.Error(), file)
 	}
 }
