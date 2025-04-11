@@ -65,10 +65,10 @@ func (down *DownloadGroup) Download(ctx context.Context) (err error) {
 
 	for _, task := range down.Task {
 		group.Go(func(ctx context.Context) error {
+			// 下载是比较重操作, 增加多一点业务打点, 这是个 demo 库, 至少介绍 groupgo 用法
+			slog.InfoContext(ctx, "Download task start", "uri", task.URL, "path", task.Path)
 			taskerr := httpip.DownloadIfNotExists(ctx, task.URL, task.Path, task.Headers)
-			if err != nil {
-				slog.ErrorContext(ctx, "download failed", "uri", task.URL, "path", task.Path, "error", taskerr)
-			}
+			slog.InfoContext(ctx, "Download task End", "uri", task.URL, "path", task.Path, "reason", taskerr)
 			return taskerr
 		})
 	}
