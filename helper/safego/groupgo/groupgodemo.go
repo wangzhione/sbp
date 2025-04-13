@@ -16,7 +16,7 @@ type DownloadTask struct {
 	Headers map[string]string // http download head
 
 	Log   bool // 是否打开打点日志, 默认不打开
-	Force bool // 是否强制更新下载
+	Force bool // 是否强制更新下载, 默认不强制下载
 }
 
 func (task *DownloadTask) Check() error {
@@ -36,7 +36,7 @@ type DownloadGroup struct {
 
 func (down *DownloadGroup) Check(ctx context.Context) error { // Check and init
 	if down.MaxConcurrent <= 0 {
-		down.MaxConcurrent = 16 // 二八芳龄, 很多魔法数字, 猛拍脑门
+		down.MaxConcurrent = 16 // 拍脑门, 魔法数字
 	}
 
 	// 参数 check
