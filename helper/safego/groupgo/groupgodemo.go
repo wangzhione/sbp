@@ -10,9 +10,8 @@ import (
 )
 
 type DownloadTask struct {
-	URL  string // 待下载 url
-	Path string // 目标地址
-
+	URL     string            // 待下载 url
+	Path    string            // 目标地址
 	Headers map[string]string // http download head
 
 	Log   bool // 是否打开打点日志, 默认不打开
@@ -28,13 +27,11 @@ func (task *DownloadTask) Check() error {
 
 // DownloadTask 表示单个下载任务, 这里这种模式类似对象函数
 type DownloadGroup struct {
-	Task []DownloadTask
-
-	Headers       map[string]string // http download head
-	MaxConcurrent int               // group go max 并发
+	Task          []DownloadTask
+	MaxConcurrent int // group go max 并发
 }
 
-func (down *DownloadGroup) Check(ctx context.Context) error { // Check and init
+func (down *DownloadGroup) Check(ctx context.Context) error {
 	if down.MaxConcurrent <= 0 {
 		down.MaxConcurrent = 16 // 拍脑门, 魔法数字
 	}
@@ -44,10 +41,6 @@ func (down *DownloadGroup) Check(ctx context.Context) error { // Check and init
 		if err := down.Task[i].Check(); err != nil {
 			slog.ErrorContext(ctx, "down.Task[i].Check() error", "error", err, "task", down.Task[i])
 			return err
-		}
-
-		if down.Headers != nil && down.Task[i].Headers == nil {
-			down.Task[i].Headers = down.Headers
 		}
 	}
 
