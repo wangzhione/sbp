@@ -237,3 +237,29 @@ func ResponseWriterZipDir(ctx context.Context, w http.ResponseWriter, zipname st
 	}
 }
 */
+
+// WriteFileIfNotExists 写入文件, 必须不存在才会写入
+func WriteFileIfNotExists(ctx context.Context, path string, content []byte) (err error) {
+	found, err := Exist(ctx, path)
+	if err != nil {
+		return
+	}
+
+	// 文件存在不再处理
+	if found {
+		return
+	}
+
+	// init 目录
+	err = CreateDir(ctx, path)
+	if err != nil {
+		return
+	}
+
+	// 创建文件
+	err = os.WriteFile(path, content, os.ModePerm)
+	if err != nil {
+		slog.ErrorContext(ctx, "os.WriteFile error", "error", err, "path", path, "len(content)", len(content))
+	}
+	return err
+}
