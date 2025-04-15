@@ -32,7 +32,7 @@ func (h TraceHandler) Handle(ctx context.Context, r slog.Record) error {
 		slog.String(XRquestID, GetTraceID(ctx)),
 
 		// // short source, need slog.HandlerOptions::AddSource = false
-		slog.String(slog.SourceKey, source),
+		slog.String("code", source),
 	)
 
 	return h.Handler.Handle(ctx, r)
