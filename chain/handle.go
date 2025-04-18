@@ -31,7 +31,7 @@ func (h TraceHandler) Handle(ctx context.Context, r slog.Record) error {
 		// context 依赖 WithContext(ctx, {trace id}) or Request(r)
 		slog.String(XRquestID, GetTraceID(ctx)),
 
-		// // short source, need slog.HandlerOptions::AddSource = false
+		// short code source, 和 slog.HandlerOptions::AddSource 可以共存, 推荐 设置 AddSource = false
 		slog.String("code", source),
 	)
 
