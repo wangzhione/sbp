@@ -12,10 +12,10 @@ import (
 	"github.com/wangzhione/sbp/util/jsou"
 )
 
-var connects = "mysql -u root -p123456 -h 127.0.0.1 -P 3306 demo"
+var connects = "mysql -u root -p123456 -h 127.0.0.1 -P 3306 resource_ai_drama"
 
 func TestNewDB(t *testing.T) {
-	connects = "mysql -u root -p123456 demo"
+	connects = "mysql -u root -p123456 resource_ai_drama"
 
 	s, err := NewDB(chain.Background, connects)
 	if err != nil {
@@ -34,7 +34,7 @@ func TestNewDB(t *testing.T) {
 	// 必须主动 close 后才能被回收, 所以 runtime.SetFinalizer(s, (*DB).Close) 永远不会执行
 	s = nil
 
-	for i := 0; i < 6; i++ {
+	for i := range 6 {
 		runtime.GC()
 		t.Log(i+1, "runtime.GC()")
 		time.Sleep(time.Second)
@@ -113,7 +113,8 @@ func TestDB_QueryAll(t *testing.T) {
 		t.Fatal("NewDB fatal", err)
 	}
 
-	query := "SELECT id, user_name, password, password_salt, email_not_verified, user_email, update_time, create_time, delete_time FROM t_user WHERE delete_time = 0"
+	// query := "SELECT id, user_name, password, password_salt, email_not_verified, user_email, update_time, create_time, delete_time FROM t_user WHERE delete_time = 0"
+	query := "select * from `t_split_resource_task`"
 	results, err := s.QueryAll(chain.Background, query)
 	if err != nil {
 		t.Fatal("s.QueryAll fatal", err)

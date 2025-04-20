@@ -61,6 +61,7 @@ func (s *DB) Exec(ctx context.Context, query string, args ...any) (sql.Result, e
 func (s *DB) QueryCallBack(ctx context.Context, callback func(context.Context, *sql.Rows) error, query string, args ...any) error {
 	defer After(ctx, Before(ctx, query, args))
 
+	// 如果 rows return empty , err == nil, 在 rows.Next() 返回 false
 	rows, err := s.DB().QueryContext(ctx, query, args...)
 	if err != nil {
 		slog.ErrorContext(ctx, "SQLer QueryCallBack error", "query", query, "args", args, "error", err)
@@ -114,6 +115,7 @@ func (s *DB) QueryRow(ctx context.Context, query string, args []any, dest ...any
 func (s *DB) QueryOne(ctx context.Context, query string, args ...any) (result map[string]any, err error) {
 	defer After(ctx, Before(ctx, query, args))
 
+	// 如果 rows return empty , err == nil, 在 rows.Next() 返回 false
 	rows, err := s.DB().QueryContext(ctx, query, args...)
 	if err != nil {
 		slog.ErrorContext(ctx, "SQLer QueryOne QueryContext error", "query", query, "args", args, "error", err)
@@ -172,6 +174,7 @@ func (s *DB) QueryOne(ctx context.Context, query string, args ...any) (result ma
 func (s *DB) QueryAll(ctx context.Context, query string, args ...any) (results []map[string]any, err error) {
 	defer After(ctx, Before(ctx, query, args))
 
+	// 如果 rows return empty , err == nil, 在 rows.Next() 返回 false
 	rows, err := s.DB().QueryContext(ctx, query, args...)
 	if err != nil {
 		slog.ErrorContext(ctx, "SQLer QueryAll QueryContext error", "query", query, "args", args, "error", err)
