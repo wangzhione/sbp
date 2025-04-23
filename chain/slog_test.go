@@ -19,6 +19,8 @@ func TestInitSLog(t *testing.T) {
 func TestInitSlogRotatingFile(t *testing.T) {
 	t.Log(ExeNameSuffixExt)
 
+	LOG_FORMAT = "text"
+
 	InitSlogRotatingFile()
 
 	slog.DebugContext(ctx, "测试 debug")

@@ -62,7 +62,14 @@ func (our *hourlylogger) rotate() error {
 		Level: EnableLevel,
 	}
 
-	hourly := slog.NewJSONHandler(io.MultiWriter(os.Stdout, file), options)
+	stdoutandfile := io.MultiWriter(os.Stdout, file)
+
+	var hourly slog.Handler
+	if isText() {
+		hourly = slog.NewTextHandler(stdoutandfile, options)
+	} else {
+		hourly = slog.NewJSONHandler(stdoutandfile, options)
+	}
 
 	slog.SetDefault(slog.New(&TraceHandler{hourly}))
 

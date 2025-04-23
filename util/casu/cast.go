@@ -11,13 +11,12 @@ type INT interface {
 		~uintptr
 }
 
-// FormatINT int to string 默认都是 10 进制数
+// FormatINT int to string 默认都是 10 进制数, fast quickly
 func FormatINT[T INT](i T) string {
 	if 0 <= i && i < nSmalls {
 		return small(int(i))
 	}
-	_, s := formatBits(nil, uint64(i), 10, i < 0, false)
-	return s
+	return format10(uint64(i), i < 0)
 }
 
 // ParseINT string to int 默认都是 10 进制, 内部吃掉 error
@@ -92,3 +91,5 @@ func ParseFloat(s string) float64 {
 	f, _ := strconv.ParseFloat(s, 64)
 	return f
 }
+
+var a = strconv.Itoa

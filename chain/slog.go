@@ -7,6 +7,12 @@ import (
 	"time"
 )
 
+var LOG_FORMAT string = "json" // "json" or "text"
+
+func isText() bool {
+	return LOG_FORMAT == "text" || os.Getenv("LOG_FORMAT") == "text"
+}
+
 // EnableLevel 默认开启 slog.LevelDebug, 具体业务可以 init 通过配置日志等级
 var EnableLevel slog.Level = slog.LevelDebug
 
@@ -15,9 +21,11 @@ func InitSLog() {
 		Level: EnableLevel,
 	}
 
-	var handler slog.Handler = slog.NewJSONHandler(os.Stdout, options)
-	if os.Getenv("LOG_FORMAT") == "text" {
+	var handler slog.Handler
+	if isText() {
 		handler = slog.NewTextHandler(os.Stdout, options)
+	} else {
+		handler = slog.NewJSONHandler(os.Stdout, options)
 	}
 
 	logs := slog.New(&TraceHandler{handler})

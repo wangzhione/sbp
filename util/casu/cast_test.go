@@ -71,3 +71,23 @@ func FuzzStringToIntE(f *testing.F) {
 		}
 	})
 }
+
+// 假设 FormatINT 支持 int64 和 uint64（你可加其他类型）
+func FuzzFormatINT(f *testing.F) {
+	// 添加初始种子值
+	f.Add(int64(0))
+	f.Add(int64(42))
+	f.Add(int64(-99999))
+	f.Add(int64(1844674407370955161))
+
+	f.Fuzz(func(t *testing.T, i int64) {
+		// 调用你要测试的函数
+		s := FormatINT(i)
+
+		// 使用 strconv 验证一致性（默认十进制）
+		want := strconv.FormatInt(i, 10)
+		if s != want {
+			t.Errorf("FormatINT(%d) = %q; want %q", i, s, want)
+		}
+	})
+}
