@@ -29,20 +29,13 @@ func (h TraceHandler) Handle(ctx context.Context, r slog.Record) error {
 	// go debug test : slog_test.go:27:TestInitSlogRotatingFile
 	source := fmt.Sprintf("%s:%d:%s", filepath.Base(frame.File), frame.Line, funcName)
 
-	if isText() {
-		r.AddAttrs(
-			// short code source 配合 {trace id}
-			slog.String(source, GetTraceID(ctx)),
-		)
-	} else {
-		r.AddAttrs(
-			// context 依赖 WithContext(ctx, {trace id}) or Request(r)
-			slog.String(XRquestID, GetTraceID(ctx)),
+	r.AddAttrs(
+		// context 依赖 WithContext(ctx, {trace id}) or Request(r)
+		slog.String(XRquestID, GetTraceID(ctx)),
 
-			// short code source, 和 slog.HandlerOptions::AddSource 可以共存, 推荐 设置 AddSource = false
-			slog.String("code", source),
-		)
-	}
+		// short code source, 和 slog.HandlerOptions::AddSource 可以共存, 推荐 设置 AddSource = false
+		slog.String("code", source),
+	)
 
 	return h.Handler.Handle(ctx, r)
 }

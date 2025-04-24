@@ -39,27 +39,6 @@ func IsExist(ctx context.Context, filename string) bool {
 	return false
 }
 
-// CreateDir 根据 path 创建 dir
-func CreateDir(ctx context.Context, path string) error {
-	// 如果文件不存在，尝试创建文件所在的目录
-	dir := filepath.Dir(path)
-
-	// 检查文件是否存在
-	found, _ := Exist(ctx, path)
-
-	// 已经存在, 直接返回
-	if found {
-		return nil
-	}
-
-	// 确保目录存在，如果不存在则创建; 0o777	rwxrwxrwx	全执行+读写权限
-	err := os.MkdirAll(dir, os.ModePerm)
-	if err != nil {
-		slog.ErrorContext(ctx, "os.MkdirAll error", "error", err, "path", path, "dir", dir)
-	}
-	return err
-}
-
 // CopyWriter src file copy io.Writer
 func CopyWriter(ctx context.Context, src string, writer io.Writer) error {
 	// 打开源文件
