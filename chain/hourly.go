@@ -65,7 +65,7 @@ func (our *hourlylogger) rotate() error {
 	stdoutandfile := io.MultiWriter(os.Stdout, file)
 
 	var hourly slog.Handler
-	if isText() {
+	if EnableText() {
 		hourly = slog.NewTextHandler(stdoutandfile, options)
 	} else {
 		hourly = slog.NewJSONHandler(stdoutandfile, options)

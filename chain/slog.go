@@ -4,13 +4,14 @@ import (
 	"context"
 	"log/slog"
 	"os"
+	"strings"
 	"time"
 )
 
-var LOG_FORMAT string = "json" // "json" or "text"
-
-func isText() bool {
-	return LOG_FORMAT == "text" || os.Getenv("LOG_FORMAT") == "text"
+// EnableText 日志给专业人士看的, 当前行业显学, 还是以 json 格式为主流.
+// 设计上越独裁, 使用方越自由, 要么简单用, 要么不用
+func EnableText() bool {
+	return strings.EqualFold(os.Getenv("LOG_FORMAT"), "text")
 }
 
 // EnableLevel 默认开启 slog.LevelDebug, 具体业务可以 init 通过配置日志等级
@@ -22,7 +23,7 @@ func InitSLog() {
 	}
 
 	var handler slog.Handler
-	if isText() {
+	if EnableText() {
 		handler = slog.NewTextHandler(os.Stdout, options)
 	} else {
 		handler = slog.NewJSONHandler(os.Stdout, options)
