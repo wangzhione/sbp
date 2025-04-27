@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-var Background = Context()
+var BC = Context()
 
 func Context() context.Context {
 	return context.WithValue(context.Background(), xRquestID, UUID())

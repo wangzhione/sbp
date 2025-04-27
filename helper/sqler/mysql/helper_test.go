@@ -17,7 +17,7 @@ var connects = "mysql -u root -p123456 -h 127.0.0.1 -P 3306 resource_ai_drama"
 func TestNewDB(t *testing.T) {
 	connects = "mysql -u root -p123456 resource_ai_drama"
 
-	s, err := NewDB(chain.Background, connects)
+	s, err := NewDB(chain.BC, connects)
 	if err != nil {
 		t.Fatal("NewDB fatal", err)
 	}
@@ -30,7 +30,7 @@ func TestNewDB(t *testing.T) {
 
 	runtime.AddCleanup(s, func(fd uintptr) { println("runtime.AddCleanup close", fd) }, 0)
 
-	s.Close(chain.Background)
+	s.Close(chain.BC)
 	// 必须主动 close 后才能被回收, 所以 runtime.SetFinalizer(s, (*DB).Close) 永远不会执行
 	s = nil
 
@@ -42,19 +42,19 @@ func TestNewDB(t *testing.T) {
 }
 
 func TestQueryRow(t *testing.T) {
-	s, err := NewDB(chain.Background, connects)
+	s, err := NewDB(chain.BC, connects)
 	if err != nil {
 		t.Fatal("NewDB fatal", err)
 	}
 
 	var count int
-	err = s.QueryRow(chain.Background, "select count(*) from t_user", nil, &count)
+	err = s.QueryRow(chain.BC, "select count(*) from t_user", nil, &count)
 	if err != nil {
 		t.Fatal("s.QueryRow fatal", err)
 	}
 	t.Log("count = ", count)
 
-	err = s.QueryRow(chain.Background, "select count(*) from t_user where id > ?", []any{6}, &count)
+	err = s.QueryRow(chain.BC, "select count(*) from t_user where id > ?", []any{6}, &count)
 	if err != nil {
 		t.Fatal("s.QueryRow fatal", err)
 	}
@@ -75,7 +75,7 @@ type User struct {
 }
 
 func TestDB_QueryCallBack(t *testing.T) {
-	s, err := NewDB(chain.Background, connects)
+	s, err := NewDB(chain.BC, connects)
 	if err != nil {
 		t.Fatal("NewDB fatal", err)
 	}
@@ -83,7 +83,7 @@ func TestDB_QueryCallBack(t *testing.T) {
 	// 现代 Go 开发, 一定要集合 AI, 例如 ChatGPT 辅助, 很多工作都好节省
 	var users []User
 	query := "SELECT id, user_name, password, password_salt, email_not_verified, user_email, update_time, create_time, delete_time FROM t_user WHERE delete_time = 0"
-	err = s.QueryCallBack(chain.Background, func(ctx context.Context, rows *sql.Rows) error {
+	err = s.QueryCallBack(chain.BC, func(ctx context.Context, rows *sql.Rows) error {
 		// 遍历查询结果
 		for rows.Next() {
 			var user User
@@ -108,14 +108,14 @@ func TestDB_QueryCallBack(t *testing.T) {
 }
 
 func TestDB_QueryAll(t *testing.T) {
-	s, err := NewDB(chain.Background, connects)
+	s, err := NewDB(chain.BC, connects)
 	if err != nil {
 		t.Fatal("NewDB fatal", err)
 	}
 
 	// query := "SELECT id, user_name, password, password_salt, email_not_verified, user_email, update_time, create_time, delete_time FROM t_user WHERE delete_time = 0"
 	query := "select * from `t_split_resource_task`"
-	results, err := s.QueryAll(chain.Background, query)
+	results, err := s.QueryAll(chain.BC, query)
 	if err != nil {
 		t.Fatal("s.QueryAll fatal", err)
 	}
