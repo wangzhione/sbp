@@ -2,6 +2,8 @@ package casu
 
 import (
 	"strconv"
+
+	"github.com/wangzhione/sbp/util/casu/high"
 )
 
 // INT int or uint numbers type
@@ -20,24 +22,9 @@ func FormatINT[T INT](i T) string {
 }
 
 // ParseINT string to int 默认都是 10 进制, 内部吃掉 error
-func ParseINT[T INT](s string) T {
-	if s == "" {
-		return 0
-	}
-
-	if s[0] == '-' || s[0] == '+' {
-		v, err := strconv.ParseInt(s, 10, 64)
-		if err != nil {
-			return 0
-		}
-		return T(v)
-	}
-
-	u, err := strconv.ParseUint(s, 10, 64)
-	if err != nil {
-		return 0
-	}
-	return T(u)
+func ParseINT[T INT](s string) (i T) {
+	i, _ = ParseINTE[T](s)
+	return
 }
 
 // ParseINTE string to int 默认都是 10 进制, 返回给外部需要处理的 Error
@@ -48,7 +35,7 @@ func ParseINTE[T INT](s string) (i T, err error) {
 
 	if s[0] == '-' || s[0] == '+' {
 		var v int64
-		v, err = strconv.ParseInt(s, 10, 64)
+		v, err = high.ParseInt([]byte(s), 64)
 		if err != nil {
 			return
 		}
@@ -57,11 +44,16 @@ func ParseINTE[T INT](s string) (i T, err error) {
 	}
 
 	var u uint64
-	u, err = strconv.ParseUint(s, 10, 64)
+	u, err = high.ParseUint([]byte(s), 64)
 	if err != nil {
 		return
 	}
 	i = T(u)
+
+	// fix : 18446744073709551615
+	if i < 0 || uint64(i) != u {
+		return 0, strconv.ErrRange
+	}
 	return
 }
 

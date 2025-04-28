@@ -4,7 +4,7 @@ Simple Beautiful Package 高频使用的 Go 代码工具包合集
 
 `sbp` is a universal utility collection for Go, it complements offerings such as Boost, Better std, Helper tools.
 
-这个库为工程实战服务的, 重度依赖 Go slog 日志库, 纪录线上业务 内部状态. 
+这个库为工程实战服务的, 重度依赖 Go slog 日志库, 纪录线上业务 内部状态. 目前线上几个项目用的还凑合.
 
 ## Table of Contents
 
@@ -16,11 +16,11 @@ Simple Beautiful Package 高频使用的 Go 代码工具包合集
 
 ## Introduction
 
-`sbp` is a universal utility collection for Go, it complements offerings such as Boost, Better std, Helper tools. It is migrated from the 实战项目使用util or tool 体验提升.
+`sbp` is a universal utility collection for Go, it complements offerings such as Boost, Better std, Helper tools. It is migrated from the 实战项目使用 util or tool 体验提升.
 
 We depend on the same code(this repo) in our production environment.
 
-## Catalogs
+## Catalogs 粗略介绍
 
 * [chain](https://github.com/wangzhione/sbp/tree/master/chain): trace and log
 * [util](https://github.com/wangzhione/sbp/tree/master/util): Utilities Useful across Domains
@@ -124,6 +124,3 @@ You can use go get -u github.com/wangzhione/sbp@latest to get or update onepkg
 
 万籁此都寂，但余钟磬音。(都寂 一作：俱寂；但余 一作：惟余)
 
-|   |   |
-|---|---|
-| ![](god.webp)  |   |

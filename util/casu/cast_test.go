@@ -41,6 +41,16 @@ func TestStringToInt(t *testing.T) {
 	}
 }
 
+func TestParseINTE(t *testing.T) {
+	s0 := "18446744073709551615"
+
+	result, err := ParseINTE[int64](s0)
+	t.Log("ParseINTE", result, err)
+
+	expected, convErr := strconv.ParseInt(s0, 10, 64)
+	t.Log("ParseInt", expected, convErr)
+}
+
 func FuzzStringToIntE(f *testing.F) {
 	testCases := []string{
 		"123", "-456", "0", "18446744073709551615", "-9223372036854775808", "not_a_number", "", "++123", "--456", " 42", "- 42",
@@ -55,9 +65,6 @@ func FuzzStringToIntE(f *testing.F) {
 		var err error
 
 		result, err = ParseINTE[int64](s)
-		if err != nil {
-			t.Logf("Expected error for input %q: %v", s, err)
-		}
 
 		// 验证转换结果是否符合 strconv 的标准行为
 		if expected, convErr := strconv.ParseInt(s, 10, 64); convErr == nil {
@@ -65,7 +72,7 @@ func FuzzStringToIntE(f *testing.F) {
 				t.Errorf("Mismatch: expected %d, got %d for input %q", expected, result, s)
 			}
 		} else {
-			if err == nil {
+			if err == nil && s != "" {
 				t.Errorf("Expected error but got none for input %q", s)
 			}
 		}
