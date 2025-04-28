@@ -14,7 +14,7 @@ var GitVersion string
 func init() {
 	info, ok := debug.ReadBuildInfo()
 	if !ok {
-		println("debug.ReadBuildInfo() return not ok")
+		println("debug.ReadBuildInfo() return no ok")
 	} else {
 		for _, setting := range info.Settings {
 			if setting.Key == "vcs.revision" {
