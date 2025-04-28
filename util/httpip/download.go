@@ -45,7 +45,7 @@ func Download(ctx context.Context, uri, outputpath string, headerargs ...map[str
 	}
 
 	// 创建文件所在目录（如果不存在）
-	if err = os.MkdirAll(filepath.Dir(outputpath), 0o664); err != nil {
+	if err = os.MkdirAll(filepath.Dir(outputpath), os.ModePerm); err != nil {
 		slog.ErrorContext(ctx, "os.MkdirAll error", "error", err, "outputpath", outputpath, "uri", uri)
 		return err
 	}
