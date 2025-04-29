@@ -42,7 +42,7 @@ func Run(ctx context.Context, fn func(context.Context) error) (err error) {
 	return fn(ctx)
 }
 
-func CoverGo(ctx context.Context) {
+func Cover(ctx context.Context) {
 	if cover := recover(); cover != nil {
 		// 遇到启动不起来, 异常退出, 打印堆栈方便排除问题
 		slog.ErrorContext(ctx, "covergo panic error",
@@ -54,7 +54,7 @@ func CoverGo(ctx context.Context) {
 
 func Go(c context.Context, fn func(context.Context)) {
 	go func(ctx context.Context) {
-		defer CoverGo(ctx)
+		defer Cover(ctx)
 
 		fn(ctx)
 	}(c)
