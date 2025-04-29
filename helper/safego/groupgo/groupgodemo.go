@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/wangzhione/sbp/util/filedir"
 	"github.com/wangzhione/sbp/util/httpip"
 )
 
@@ -62,6 +63,16 @@ func (down *DownloadGroup) Download(ctx context.Context) (err error) {
 
 	for _, task := range down.Task {
 		group.Go(func(ctx context.Context) (taskerr error) {
+			// 如果目标文件已存在，直接跳过
+			found, err := filedir.Exist(ctx, task.Path)
+			if err != nil {
+				return
+			}
+			if found && !task.Force {
+				// 文件存在, 并且不需要强制下载 直接返回
+				return
+			}
+
 			if task.Log {
 				start := time.Now()
 				slog.InfoContext(ctx, "Download task start",
@@ -83,11 +94,7 @@ func (down *DownloadGroup) Download(ctx context.Context) (err error) {
 				}()
 			}
 
-			// Force 强制下载
-			if task.Force {
-				return httpip.Download(ctx, task.URL, task.Path, task.Headers)
-			}
-			return httpip.DownloadIfNotExists(ctx, task.URL, task.Path, task.Headers)
+			return httpip.Download(ctx, task.URL, task.Path, task.Headers)
 		})
 	}
 
