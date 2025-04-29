@@ -60,6 +60,12 @@ func Download(ctx context.Context, uri, outputpath string, headerargs ...map[str
 	_, err = io.Copy(outfile, resp.Body)
 	if err != nil {
 		slog.ErrorContext(ctx, "io.Copy error", "error", err, "outputpath", outputpath, "uri", uri)
+
+		// Download 默认不支持断点续下载, 下载失败则会尝试删除输出文件, 方便后续 二次重试
+		if rmErr := os.Remove(outputpath); rmErr != nil && !os.IsNotExist(rmErr) {
+			slog.WarnContext(ctx, "failed to remove output file", "path", outputpath, "error", rmErr)
+		}
+
 		return err
 	}
 
@@ -67,9 +73,9 @@ func Download(ctx context.Context, uri, outputpath string, headerargs ...map[str
 }
 
 // DownloadIfNotExists 下载文件（如果文件已存在则跳过），失败时清理临时文件
-func DownloadIfNotExists(ctx context.Context, uri, outputPath string, headerargs ...map[string]string) (err error) {
+func DownloadIfNotExists(ctx context.Context, uri, outputpath string, headerargs ...map[string]string) (err error) {
 	// 如果目标文件已存在，直接跳过
-	found, err := filedir.Exist(ctx, outputPath)
+	found, err := filedir.Exist(ctx, outputpath)
 	if err != nil {
 		return
 	}
@@ -78,14 +84,5 @@ func DownloadIfNotExists(ctx context.Context, uri, outputPath string, headerargs
 		return
 	}
 
-	err = Download(ctx, uri, outputPath, headerargs...)
-	if err != nil {
-		// 下载失败则尝试删除输出文件
-		if rmErr := os.Remove(outputPath); rmErr != nil && !os.IsNotExist(rmErr) {
-			slog.WarnContext(ctx, "failed to remove output file", "path", outputPath, "error", rmErr)
-		}
-		return
-	}
-
-	return
+	return Download(ctx, uri, outputpath, headerargs...)
 }
