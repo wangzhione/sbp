@@ -9,8 +9,6 @@ import (
 var ctx = chain.Context()
 
 func TestClient_Eval(t *testing.T) {
-	command := "redis-cli"
-
 	r, err := NewDefaultRedis(ctx, command)
 	if err != nil {
 		t.Fatal("fatal new redis", err, command)
