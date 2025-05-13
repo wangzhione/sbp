@@ -4,6 +4,8 @@ import (
 	"context"
 	"log/slog"
 	"time"
+
+	"github.com/wangzhione/sbp/structs"
 )
 
 // Limiter 限制固定时间内最多请求 N 次
@@ -20,13 +22,8 @@ func NewLimiter(r *Client, key string, ttl time.Duration, limit ...int64) (rate 
 		R:   r,
 		Key: key,
 		TTL: ttl,
-		N:   1, // 默认 ttl 时间内, 只能有一次请求
+		N:   structs.Max(1, structs.Max(limit...)), // 默认 ttl 时间内, 只能有一次请求
 	}
-
-	if len(limit) > 0 && limit[0] > 0 {
-		rate.N = limit[0]
-	}
-
 	return
 }
 
