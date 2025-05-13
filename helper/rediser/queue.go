@@ -3,7 +3,6 @@ package rediser
 import (
 	"context"
 	"log/slog"
-	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -14,6 +13,7 @@ import (
 // stream 模拟 分布式 queue
 
 // Queue represents a Redis Stream task queue with single group.
+// Queue 内部设计, 默认给服务做简单解耦操作, 不是消息发布和订阅, 而是类似 任务队列概念, 发布任务, 执行任务, 任务执行完毕
 type Queue struct {
 	R        *Client // *redis.Client
 	Stream   string
@@ -22,39 +22,47 @@ type Queue struct {
 	MaxLen   int64 // 默认 0, 无限
 }
 
-func IsStreamGroupExists(err error) bool {
-	// XGROUP CREATE task_stream worker_group [0 or $]
-	// (error) BUSYGROUP Consumer Group name already exists
-	return strings.HasPrefix(err.Error(), "BUSYGROUP")
-}
+func (q *Queue) Init(ctx context.Context) (err error) {
+	if q.Consumer == "" {
+		// 内部定义启动这个 队列 随后 Queue.Consume 发给 redis 的消费者名称
+		q.Consumer = chain.Hostname + "." + chain.UUID()[:6]
+	}
 
-// NewQueue initializes the stream queue, ensuring stream & group exist.
-// maxLen 默认填写 0
-func (r *Client) NewQueue(ctx context.Context, stream, group string, maxLen ...int64) (q *Queue, err error) {
-	result, err := r.XGroupCreateMkStream(ctx, stream, group, "0").Result()
+	if q.Group == "" {
+		q.Group = q.Stream
+	}
+
+	result, err := q.R.XGroupCreateMkStream(ctx, q.Stream, q.Group, "0").Result()
 	if err != nil {
 		if IsStreamGroupExists(err) {
 			// 如果提示已经创建了 Group 默认吃掉这个 error
 			err = nil
 		} else {
 			slog.ErrorContext(ctx, "XGroupCreateMkStream stream group error",
-				"Stream", stream, "Group", group, "MaxLen", maxLen, "result", result)
+				"Stream", q.Stream, "Group", q.Group, "MaxLen", q.MaxLen, "result", result)
 			return
 		}
 	}
 
-	consumer := chain.Hostname + "." + chain.UUID()
+	return
+}
 
+// NewQueue initializes the {name} stream queue, ensuring stream & group exist.
+// maxLen 默认不填写 , 默认设置为 0 , 这个 queue 理论上不受长度限制
+// 有 maxLen 当超长时候, 会丢弃早期消息
+func (r *Client) NewQueue(ctx context.Context, name string, maxLen ...int64) (*Queue, error) {
 	// 没有错误, 或者 group 已经存在
-	q = &Queue{
-		R:        r,
-		Stream:   stream,
-		Group:    group,
-		Consumer: consumer,
-		MaxLen:   structs.Max(maxLen...),
+	q := &Queue{
+		R:      r,
+		Stream: name,
+		MaxLen: structs.Max(maxLen...),
 	}
 
-	return
+	err := q.Init(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return q, err
 }
 
 // Produce pushes a new task into the stream. return insert stream id
@@ -62,7 +70,7 @@ func (q *Queue) Produce(ctx context.Context, values map[string]any) (msgID strin
 	xaddargs := &redis.XAddArgs{
 		Stream: q.Stream,
 		MaxLen: q.MaxLen, // MaxLen = 0, Redis 会一直保留所有历史消息, Stream 会无限增长, 不会触发裁剪策略
-		Approx: true,     // 默认 MaxLen + Approx 策略, 近似修剪（~）
+		Approx: true,     // 默认 MaxLen + Approx 策略, 近似修剪（~）🧹 删除规则：从最早的消息开始（左边裁剪）
 		Values: values,
 	}
 
@@ -90,61 +98,20 @@ func (q *Queue) Produce(ctx context.Context, values map[string]any) (msgID strin
 	return
 }
 
-func (r *Client) XDel(ctx context.Context, stream string, ids ...string) (err error) {
-	result, err := r.RDB().XDel(ctx, stream, ids...).Result()
-	if err != nil {
-		slog.ErrorContext(ctx, "r.RDB().XDel error",
-			"Stream", stream, "ids", ids, "err", err, "result", result)
-		return err
-	}
-
-	return
-}
-
-func (r *Client) XAck(ctx context.Context, stream, group string, ids ...string) (err error) {
-	result, err := r.RDB().XAck(ctx, stream, group, ids...).Result()
-	if err != nil {
-		slog.ErrorContext(ctx, "q.R.XAck error",
-			"Stream", stream, "Group", group, "ids", ids, "err", err, "result", result)
-		return err
-	}
-
-	return
-}
-
 func (q *Queue) XAck(ctx context.Context, msgID string) (err error) {
 	err = q.R.XAck(ctx, q.Stream, q.Group, msgID)
 	if err != nil {
-		slog.ErrorContext(ctx, "q.R.XAck error", "err", err, "Consumer", q.Consumer)
+		slog.ErrorContext(ctx, "q.R.XAck panic error", "err", err, "Consumer", q.Consumer)
 	}
 
 	// 在 Queue 中 ack 应答是 集合 delete 业务一起的
 	err = q.R.XDel(ctx, q.Stream, msgID)
 	if err != nil {
-		slog.ErrorContext(ctx, "q.R.XDel error",
+		slog.ErrorContext(ctx, "q.R.XDel panic error",
 			"Group", q.Group, "Consumer", q.Consumer, "err", err)
 		return err
 	}
 
-	return
-}
-
-func (r *Client) XReadGroup(ctx context.Context, xreadgroupargs *redis.XReadGroupArgs) (msg redis.XMessage, err error) {
-	// 开放 XReadGroup XAck XDel 自行去定义操作
-
-	res, err := r.RDB().XReadGroup(ctx, xreadgroupargs).Result()
-	if err != nil {
-		slog.ErrorContext(ctx, "r.RDB().XReadGroup error",
-			"Streams", xreadgroupargs.Streams, "Group", xreadgroupargs.Group, "Consumer", xreadgroupargs.Consumer, "err", err)
-		return
-	}
-	if len(res) == 0 || len(res[0].Messages) == 0 {
-		slog.InfoContext(ctx, "r.RDB().XReadGroup returned no message",
-			"Streams", xreadgroupargs.Streams, "Group", xreadgroupargs.Group, "Consumer", xreadgroupargs.Consumer, "err", err)
-		return
-	}
-
-	msg = res[0].Messages[0]
 	return
 }
 
@@ -174,6 +141,8 @@ func (q *Queue) Consume(ctx context.Context, block time.Duration, handler func(v
 	defer func() {
 		slog.InfoContext(ctx, "Consume handler end", "msgID", msg.ID, "reason", err)
 	}()
+
+	// 默认 return err != nil, 消费失败, 不 XAck + XDel
 	if err := handler(msg.Values); err != nil {
 		slog.ErrorContext(ctx, "Consume handler end error",
 			"Stream", q.Stream, "Group", q.Group, "Consumer", q.Consumer, "msgID", msg.ID, "values", msg.Values, "err", err)
@@ -183,9 +152,3 @@ func (q *Queue) Consume(ctx context.Context, block time.Duration, handler func(v
 	// XReadGroup -> XAck 随后 清理 stream 中 msg.ID
 	return q.XAck(ctx, msg.ID)
 }
-
-// 删除 Stream（即整个消息队列）
-// err := r.RDB().Del(ctx, stream).Err()
-// 删除某个 Group
-// err := r.RDB().Do(ctx, "XGROUP", "DESTROY", stream, group).Err()
-// 一般现实业务, 不知道什么时候需要程序主动去清理清理这些信息. 往往依赖资深开放手工操作

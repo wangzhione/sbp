@@ -10,6 +10,11 @@ import (
 	"github.com/wangzhione/sbp/util/httpip"
 )
 
+// groupgodemo.go :: DownloadTask 适合自行 Ctrl + C -> Ctrl + V 用于实际并发下载业务中.
+// 需要注意是 context 生命周期, 因为有些 http 服务 call 结束适合, context 会被取消
+//
+//
+
 type DownloadTask struct {
 	URL     string            // 待下载 url
 	Path    string            // 目标地址

@@ -8,11 +8,6 @@ import (
 	"github.com/wangzhione/sbp/chain"
 )
 
-// groupgodemo 结构适合你们自行 Ctrl + C -> Ctrl + V 用于实际业务中.
-// 需要注意是 context 生命周期, 因为有些 http 服务 call 结束适合, context 会被取消
-//
-//
-
 var ctx = chain.Context()
 
 func TestDownloadGroup_Download(t *testing.T) {
