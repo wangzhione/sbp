@@ -15,7 +15,7 @@ import (
 // Queue represents a Redis Stream task queue with single group.
 // Queue 内部设计, 默认给服务做简单解耦操作, 不是消息发布和订阅, 而是类似 任务队列概念, 发布任务, 执行任务, 任务执行完毕
 type Queue struct {
-	R        *Client // *redis.Client
+	R        *Client // *rediser.Client
 	Stream   string
 	Group    string
 	Consumer string
@@ -98,7 +98,8 @@ func (q *Queue) Produce(ctx context.Context, values map[string]any) (msgID strin
 	return
 }
 
-func (q *Queue) XAck(ctx context.Context, msgID string) (err error) {
+// Ack Acknowledge character 执行完任务消息, 之后需要应答, 通知远端消费完成
+func (q *Queue) Ack(ctx context.Context, msgID string) (err error) {
 	err = q.R.XAck(ctx, q.Stream, q.Group, msgID)
 	if err != nil {
 		slog.ErrorContext(ctx, "q.R.XAck panic error", "err", err, "Consumer", q.Consumer)
@@ -117,7 +118,7 @@ func (q *Queue) XAck(ctx context.Context, msgID string) (err error) {
 
 // Consume reads one task and calls handler, then ACK + DEL.
 // block time.Duration  默认 -1 无限等待数据到来; 0 zero, 有无结果都立即返回 XReadGroup
-func (q *Queue) Consume(ctx context.Context, block time.Duration, handler func(values map[string]any) error) (err error) {
+func (q *Queue) Consume(ctx context.Context, block time.Duration, consume func(values map[string]any) error) (err error) {
 	xreadgroupargs := &redis.XReadGroupArgs{
 		Group:    q.Group,
 		Consumer: q.Consumer,
@@ -143,12 +144,12 @@ func (q *Queue) Consume(ctx context.Context, block time.Duration, handler func(v
 	}()
 
 	// 默认 return err != nil, 消费失败, 不 XAck + XDel
-	if err := handler(msg.Values); err != nil {
-		slog.ErrorContext(ctx, "Consume handler end error",
+	if err := consume(msg.Values); err != nil {
+		slog.ErrorContext(ctx, "Consume consume handler end error",
 			"Stream", q.Stream, "Group", q.Group, "Consumer", q.Consumer, "msgID", msg.ID, "values", msg.Values, "err", err)
 		return err
 	}
 
 	// XReadGroup -> XAck 随后 清理 stream 中 msg.ID
-	return q.XAck(ctx, msg.ID)
+	return q.Ack(ctx, msg.ID)
 }

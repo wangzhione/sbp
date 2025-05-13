@@ -9,9 +9,9 @@ import (
 )
 
 // 删除 Stream（即整个消息队列）
-// err := r.RDB().Del(ctx, stream).Err()
+// err := r.Del(ctx, stream).Err()
 // 删除某个 Group
-// err := r.RDB().Do(ctx, "XGROUP", "DESTROY", stream, group).Err()
+// err := r.Do(ctx, "XGROUP", "DESTROY", stream, group).Err()
 // 一般现实业务, 不知道什么时候需要程序主动去清理清理这些信息. 往往依赖资深开放手工操作
 
 func IsStreamGroupExists(err error) bool {
@@ -21,9 +21,9 @@ func IsStreamGroupExists(err error) bool {
 }
 
 func (r *Client) XDel(ctx context.Context, stream string, ids ...string) (err error) {
-	result, err := r.RDB().XDel(ctx, stream, ids...).Result()
+	result, err := r.UniversalClient.XDel(ctx, stream, ids...).Result()
 	if err != nil {
-		slog.ErrorContext(ctx, "r.RDB().XDel error",
+		slog.ErrorContext(ctx, "r.UniversalClient.XDel error",
 			"Stream", stream, "ids", ids, "err", err, "result", result)
 		return err
 	}
@@ -32,9 +32,9 @@ func (r *Client) XDel(ctx context.Context, stream string, ids ...string) (err er
 }
 
 func (r *Client) XAck(ctx context.Context, stream, group string, ids ...string) (err error) {
-	result, err := r.RDB().XAck(ctx, stream, group, ids...).Result()
+	result, err := r.UniversalClient.XAck(ctx, stream, group, ids...).Result()
 	if err != nil {
-		slog.ErrorContext(ctx, "q.R.XAck error",
+		slog.ErrorContext(ctx, "r.UniversalClient.XAck error",
 			"Stream", stream, "Group", group, "ids", ids, "err", err, "result", result)
 		return err
 	}
@@ -45,14 +45,14 @@ func (r *Client) XAck(ctx context.Context, stream, group string, ids ...string) 
 func (r *Client) XReadGroup(ctx context.Context, xreadgroupargs *redis.XReadGroupArgs) (msg redis.XMessage, err error) {
 	// 开放 XReadGroup XAck XDel 自行去定义操作
 
-	res, err := r.RDB().XReadGroup(ctx, xreadgroupargs).Result()
+	res, err := r.UniversalClient.XReadGroup(ctx, xreadgroupargs).Result()
 	if err != nil {
-		slog.ErrorContext(ctx, "r.RDB().XReadGroup error",
+		slog.ErrorContext(ctx, "r.UniversalClient.XReadGroup error",
 			"Streams", xreadgroupargs.Streams, "Group", xreadgroupargs.Group, "Consumer", xreadgroupargs.Consumer, "err", err)
 		return
 	}
 	if len(res) == 0 || len(res[0].Messages) == 0 {
-		slog.InfoContext(ctx, "r.RDB().XReadGroup returned no message",
+		slog.InfoContext(ctx, "r.UniversalClient.XReadGroup returned no message",
 			"Streams", xreadgroupargs.Streams, "Group", xreadgroupargs.Group, "Consumer", xreadgroupargs.Consumer, "err", err)
 		return
 	}

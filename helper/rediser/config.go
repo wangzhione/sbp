@@ -11,7 +11,27 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func NewRedis(ctx context.Context, options *redis.Options) (c *Client, err error) {
+// NewClusterClient redis cluster 集群模式
+//
+//	redis.NewClusterClient(&redis.ClusterOptions{
+//	    Addrs: []string{":7000", ":7001", ":7002", ":7003", ":7004", ":7005"},
+//	})
+func NewClusterClient(ctx context.Context, options *redis.ClusterOptions) (r *Client, err error) {
+	cluster := redis.NewClusterClient(options)
+
+	err = cluster.ForEachShard(ctx, func(ctx context.Context, shard *redis.Client) error {
+		return shard.Ping(ctx).Err()
+	})
+	if err != nil {
+		slog.ErrorContext(ctx, "rdb.ForEachShard error", "error", err, "Addr", options.Addrs)
+		return nil, err
+	}
+
+	r = &Client{cluster}
+	return
+}
+
+func NewRedis(ctx context.Context, options *redis.Options) (r *Client, err error) {
 	rdb := redis.NewClient(options)
 
 	// 测试连接
@@ -22,12 +42,12 @@ func NewRedis(ctx context.Context, options *redis.Options) (c *Client, err error
 	}
 	slog.InfoContext(ctx, "Redis Success "+options.Addr, "result", result)
 
-	c = (*Client)(rdb)
+	r = &Client{rdb}
 	return
 }
 
 // NewDefaultRedis 构建默认的 redis client
-func NewDefaultRedis(ctx context.Context, command string) (rdb *Client, err error) {
+func NewDefaultRedis(ctx context.Context, command string) (r *Client, err error) {
 	options, err := ParseRedisCommand(command)
 	if err != nil {
 		slog.ErrorContext(ctx, "ParseRedisCommand is error", "error", err, "command", command)
