@@ -102,7 +102,7 @@ func (k *Locker) TimeoutLock(timeout time.Duration) bool {
 	default:
 	}
 
-	timer := time.NewTimer(timeout)
+	timer := time.NewTimer(timeout) // 请用新一点 Go 版本, timer 相关操作更安全, 老的不再维护, 需要可翻阅当前文件老代码
 	defer timer.Stop()
 
 	select {
