@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -102,7 +103,7 @@ const DefaultCheckTime = 7 * time.Hour // sevenday 每次检查是否要清理�
 // LogsDir ★ 默认 log dir 在 {exe dir}/logs
 var LogsDir = filepath.Join(ExeDir, "logs")
 
-var reD = regexp.MustCompile(`logs/(?:[^/-]+-)*(\d{10,12})-`)
+var reD = regexp.MustCompile(`(?:[^/-]+-)*(\d{10,12})-`)
 
 func (our *hourlylogger) sevenday(now time.Time) {
 	if now.Sub(our.lasttime) < DefaultCheckTime {
@@ -132,7 +133,7 @@ func (our *hourlylogger) sevenday(now time.Time) {
 			// 正则：匹配 logs/... 中的 10 位数字段
 			matches := reD.FindStringSubmatch(path)
 			if len(matches) < 2 {
-				println("hourlylogger reD.FindStringSubmatch error", matches, Hostnamelog, path)
+				println("hourlylogger reD.FindStringSubmatch error", strings.Join(matches, " "), Hostnamelog, path)
 				files = append(files, path)
 				return nil
 			}
