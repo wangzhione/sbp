@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"strings"
+	"regexp"
 	"time"
 )
 
@@ -44,6 +44,8 @@ func (our *hourlylogger) rotate() error {
 
 	// {exe path dir}/logs/{exe name}-{2025032815}-{hostname}.log
 	filename := filepath.Join(LogsDir, ExeName+"-"+hours+"-"+Hostnamelog)
+
+	print("rotate init log", Hostnamelog, filename)
 
 	if our.File != nil && our.Name() == filename {
 		found, err := Exist(filename)
@@ -100,6 +102,8 @@ const DefaultCheckTime = 7 * time.Hour // sevenday 每次检查是否要清理�
 // LogsDir ★ 默认 log dir 在 {exe dir}/logs
 var LogsDir = filepath.Join(ExeDir, "logs")
 
+var reD = regexp.MustCompile(`logs/(?:[^/-]+-)*(\d{10,12})-`)
+
 func (our *hourlylogger) sevenday(now time.Time) {
 	if now.Sub(our.lasttime) < DefaultCheckTime {
 		// 时间间隔太小直接返回
@@ -122,42 +126,24 @@ func (our *hourlylogger) sevenday(now time.Time) {
 				return nil
 			}
 
+			// fix `logs/materialefficiencytool-2025051404-ms-2scj6hpg-1-6c44dcc954-rfnhf.log` bug
 			// fix `logs/segmentclips-2025041115-nb-1282427673004035712-9qrao4gnd4e8.log` bug
-			path = strings.TrimSuffix(path, Hostnamelog)
 
-			// {exe path dir}/logs/{exe name}-{2025032815}-{hostname}.log
-			// 从后往前找两个 '-' 的位置
-			// 第一次循环，从后往前找第一个 '-'（end）
-			end := -1
-			for i := len(path) - 1; i >= 0; i-- {
-				if path[i] == '-' {
-					end = i
-					break
-				}
-			}
-			if end == -1 {
-				return nil
-			}
-
-			// 第二次循环，从 end-2 开始往前找第二个 '-'（start）
-			start := -1
-			for i := end - 2; i >= 0; i-- {
-				if path[i] == '-' {
-					start = i
-					break
-				}
-			}
-			if start == -1 {
+			// 正则：匹配 logs/... 中的 10 位数字段
+			matches := reD.FindStringSubmatch(path)
+			if len(matches) < 2 {
+				println("hourlylogger reD.FindStringSubmatch error", matches, Hostnamelog, path)
+				files = append(files, path)
 				return nil
 			}
 
 			// 提取中间的时间字符串
-			timeStr := path[start+1 : end]
+			timeStr := matches[1]
 
 			// 解析时间
 			t, err := time.Parse("2006010215", timeStr)
 			if err != nil {
-				println("hourlylogger filepath.WalkDir time.Parse error", err.Error(), path)
+				println("hourlylogger filepath.WalkDir time.Parse error", err.Error(), Hostnamelog, path)
 				return nil
 			}
 

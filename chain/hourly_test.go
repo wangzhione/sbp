@@ -1,10 +1,29 @@
 package chain
 
 import (
+	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
 )
+
+func Test_search(t *testing.T) {
+	text := `
+logs/abc-materialefficiencytool-2025051404-ms-2scj6hpg-1-6c44dcc954-rfnhf.log
+logs/segmentclips-2025041115-nb-1282427673004035712-9qrao4gnd4e8.log
+`
+
+	// 正则：匹配 logs/... 中的 10 位数字段
+	re := regexp.MustCompile(`logs/(?:[^/-]+-)*(\d{10,12})-`)
+	matches := re.FindAllStringSubmatch(text, -1)
+
+	for _, match := range matches {
+		if len(match) > 1 {
+			fmt.Println(match[1]) // 输出 2025051404、2025041115 等
+		}
+	}
+}
 
 func Test_hourlylogger_sevenday(t *testing.T) {
 	DefaultCleanTime = 0
