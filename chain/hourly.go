@@ -168,6 +168,10 @@ func (our *hourlylogger) sevenday(now time.Time) {
 
 	for _, file := range files {
 		err = os.Remove(file)
-		println("hourlylogger os.Remove error", err.Error(), file)
+		if err != nil {
+			println("hourlylogger os.Remove error", err.Error(), file)
+		} else {
+			println("hourlylogger os.Remove success", file)
+		}
 	}
 }
