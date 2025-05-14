@@ -16,3 +16,13 @@ func RelPath(ctx context.Context, basepath, targpath string) (relPath string, er
 	relPath = filepath.ToSlash(relPath)
 	return
 }
+
+// AbsPath 解析相对路径, 得到绝对路径. 例如 . -> os.Getwd()
+func AbsPath(ctx context.Context, path string) (abspath string, err error) {
+	abspath, err = filepath.Abs(path)
+	if err != nil {
+		slog.ErrorContext(ctx, "filepath.Abs", "error", err, "path", path, "abspath", abspath)
+		return
+	}
+	return
+}
