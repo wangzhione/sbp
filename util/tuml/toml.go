@@ -9,10 +9,10 @@ import (
 )
 
 // Unmarshal 将 JSON 字符串解析为结构体（泛型）
-func Unmarshal[T any](ctx context.Context, str string) (obj T, err error) {
+func Unmarshal[T any, I ~string | ~[]byte](ctx context.Context, str I) (obj T, err error) {
 	err = toml.Unmarshal([]byte(str), &obj)
 	if err != nil {
-		slog.ErrorContext(ctx, "toml.Unmarshal error", "error", err, "toml", str)
+		slog.ErrorContext(ctx, "toml.Unmarshal error", "error", err, "toml", string(str))
 	}
 	return
 }
@@ -45,4 +45,11 @@ func WriteFile(ctx context.Context, dst string, obj any) error {
 		slog.ErrorContext(ctx, "os.WriteFile 0o644 error", "error", err, "dst", dst)
 	}
 	return err
+}
+
+// Valid 判断字符串 or []byte 是否为合法 json
+func Valid[I ~string | ~[]byte](data I) bool {
+	var v any
+	err := toml.Unmarshal([]byte(data), &v)
+	return err == nil
 }
