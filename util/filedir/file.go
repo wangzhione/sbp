@@ -241,6 +241,10 @@ func WriteFileIfNotExists(ctx context.Context, path string, content []byte) (err
 		return
 	}
 
+	return WriteFile(ctx, path, content)
+}
+
+func WriteFile(ctx context.Context, path string, content []byte) (err error) {
 	// init 目录
 	err = CreateDir(ctx, path)
 	if err != nil {
