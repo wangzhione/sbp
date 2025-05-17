@@ -9,10 +9,10 @@ import (
 )
 
 // Unmarshal 将 JSON 字符串解析为结构体（泛型）
-func Unmarshal[T any, I ~string | ~[]byte](ctx context.Context, str I) (obj T, err error) {
-	err = toml.Unmarshal([]byte(str), &obj)
+func Unmarshal[I ~string | ~[]byte, T any](ctx context.Context, data I) (obj T, err error) {
+	err = toml.Unmarshal([]byte(data), &obj)
 	if err != nil {
-		slog.ErrorContext(ctx, "toml.Unmarshal error", "error", err, "toml", string(str))
+		slog.ErrorContext(ctx, "toml.Unmarshal error", "error", err, "toml", string(data))
 	}
 	return
 }

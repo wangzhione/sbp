@@ -12,6 +12,8 @@ type TraceHandler struct {
 	slog.Handler
 }
 
+var CodeKey = "code"
+
 // Handle add trace
 // @see https://github.com/golang/go/issues/73054#event-16988835247
 func (h TraceHandler) Handle(ctx context.Context, r slog.Record) error {
@@ -34,7 +36,7 @@ func (h TraceHandler) Handle(ctx context.Context, r slog.Record) error {
 		slog.String(XRquestID, GetTraceID(ctx)),
 
 		// short code source, 和 slog.HandlerOptions::AddSource 可以共存, 推荐 设置 AddSource = false
-		slog.String("code", source),
+		slog.String(CodeKey, source),
 	)
 
 	return h.Handler.Handle(ctx, r)

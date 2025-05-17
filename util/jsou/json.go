@@ -8,6 +8,8 @@ import (
 	"reflect"
 )
 
+// 这个库继承自 "encoding/json", 特殊情况存在 panic, 依赖程序最外层去捕获
+
 // String 结构体转换为 JSON 字符串
 func String(obj any) string {
 	data, _ := json.Marshal(obj)
@@ -15,8 +17,8 @@ func String(obj any) string {
 }
 
 // Unmarshal 将 JSON 字符串解析为结构体（泛型）
-func Unmarshal[T any](stj string) (obj T, err error) {
-	err = json.Unmarshal([]byte(stj), &obj)
+func Unmarshal[I ~string | ~[]byte, T any](data I) (obj T, err error) {
+	err = json.Unmarshal([]byte(data), &obj)
 	return
 }
 
@@ -65,19 +67,19 @@ func ReadWriteFile[T any](src, dst string) (err error) {
 }
 
 // Valid 判断字符串 or []byte 是否为合法 json
-func Valid[T ~string | ~[]byte](dj T) bool {
-	return json.Valid([]byte(dj))
+func Valid[I ~string | ~[]byte](data I) bool {
+	return json.Valid([]byte(data))
 }
 
 // Map json 字符串 or []byte 数据集转为 map[string]any 类似 Unmarshal[map[string]any](dj)
-func Map[T ~string | ~[]byte](dj T) (obj map[string]any, err error) {
-	err = json.Unmarshal([]byte(dj), &obj)
+func Map[I ~string | ~[]byte](data I) (obj map[string]any, err error) {
+	err = json.Unmarshal([]byte(data), &obj)
 	return
 }
 
 // Slice json 字符串 or []byte 数据集转为 []any
-func Slice[T ~string | ~[]byte](dj T) (obj []any, err error) {
-	err = json.Unmarshal([]byte(dj), &obj)
+func Slice[I ~string | ~[]byte](data I) (obj []any, err error) {
+	err = json.Unmarshal([]byte(data), &obj)
 	return
 }
 
