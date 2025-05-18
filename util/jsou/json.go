@@ -17,7 +17,7 @@ func String(obj any) string {
 }
 
 // Unmarshal 将 JSON 字符串解析为结构体（泛型）
-func Unmarshal[I ~string | ~[]byte, T any](data I) (obj T, err error) {
+func Unmarshal[T any](data string) (obj T, err error) {
 	err = json.Unmarshal([]byte(data), &obj)
 	return
 }
@@ -66,19 +66,20 @@ func ReadWriteFile[T any](src, dst string) (err error) {
 	return WriteFile(dst, obj)
 }
 
-// Valid 判断字符串 or []byte 是否为合法 json
-func Valid[I ~string | ~[]byte](data I) bool {
+// Valid 判断字符串 是否为合法 json
+// 当你想要用 []byte 当成参数时候, 默认你是有一定选择能力开放人员, 这时候可以自行选定 json.Valid ...
+func Valid(data string) bool {
 	return json.Valid([]byte(data))
 }
 
-// Map json 字符串 or []byte 数据集转为 map[string]any 类似 Unmarshal[map[string]any](dj)
-func Map[I ~string | ~[]byte](data I) (obj map[string]any, err error) {
+// Map json 字符串 数据集转为 map[string]any 类似 Unmarshal[map[string]any](dj)
+func Map(data string) (obj map[string]any, err error) {
 	err = json.Unmarshal([]byte(data), &obj)
 	return
 }
 
-// Slice json 字符串 or []byte 数据集转为 []any
-func Slice[I ~string | ~[]byte](data I) (obj []any, err error) {
+// Slice json 字符串 数据集转为 []any
+func Slice(data string) (obj []any, err error) {
 	err = json.Unmarshal([]byte(data), &obj)
 	return
 }
