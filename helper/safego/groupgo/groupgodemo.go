@@ -12,7 +12,7 @@ import (
 
 // groupgodemo.go :: DownloadTask 适合自行 Ctrl + C -> Ctrl + V 用于实际并发下载业务中.
 // 需要注意是 context 生命周期, 因为有些 http 服务 call 结束适合, context 会被取消
-//
+// 还要注意, 下载业务并不是多线程, 多进程安全的. 你应该审视你的业务为什么下载还需要多进程安全进行浪费?
 //
 
 type DownloadTask struct {
