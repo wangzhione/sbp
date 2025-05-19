@@ -26,9 +26,9 @@ logs/segmentclips-2025041115-nb-1282427673004035712-9qrao4gnd4e8.log
 
 	path := `F:\zhi.wang\cutoff\logs\segmentclips.exe-2025050617-MSI.log`
 	// 正则：匹配 logs/... 中的 10 位数字段
-	onematches := reD.FindStringSubmatch(path)
+	onematches := Dre.FindStringSubmatch(path)
 	if len(onematches) < 2 {
-		println("hourlylogger reD.FindStringSubmatch error", strings.Join(onematches, " "), Hostnamelog, path)
+		println("hourlylogger reD.FindStringSubmatch error", strings.Join(onematches, " "), Hostname, path)
 	}
 	println(onematches[1])
 }

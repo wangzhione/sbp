@@ -8,12 +8,6 @@ import (
 	"time"
 )
 
-// EnableText 日志给专业人士看的, 当前行业显学, 还是以 json 格式为主流.
-// 设计上越独裁, 使用方越自由, 要么简单用, 要么不用
-func EnableText() bool {
-	return strings.EqualFold(os.Getenv("LOG_FORMAT"), "text")
-}
-
 // EnableLevel 默认开启 slog.LevelDebug, 具体业务可以 init 通过配置日志等级
 var EnableLevel slog.Level = slog.LevelDebug
 
@@ -34,12 +28,13 @@ func InitSLog() {
 }
 
 func InitSlogRotatingFile() error {
-	err := os.MkdirAll(LogsDir, os.ModePerm)
-	if err != nil {
-		println("os.MkdirAll error", LogsDir)
-		return err
-	}
 	return starthourlylogger()
+}
+
+// EnableText 日志给专业人士看的, 当前行业显学, 还是以 json 格式为主流.
+// 设计上越独裁, 使用方越自由, 要么简单用, 要么不用
+func EnableText() bool {
+	return strings.EqualFold(os.Getenv("LOG_FORMAT"), "text")
 }
 
 // LogStartEnd Wrapper function to log start and end times, and measure duration

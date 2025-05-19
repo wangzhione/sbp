@@ -13,10 +13,21 @@ import (
 type hourlylogger struct {
 	*os.File
 	lasttime time.Time
+
+	LogsDir string // LogsDir ★ 默认 log dir 在 {exe dir}/logs
 }
 
 func starthourlylogger() error {
-	our := &hourlylogger{} // our 类似跨函数闭包
+	our := &hourlylogger{ // our 类似跨函数闭包
+		LogsDir: filepath.Join(ExeDir, "logs"),
+	}
+
+	err := os.MkdirAll(our.LogsDir, os.ModePerm)
+	if err != nil {
+		println("os.MkdirAll error", our.LogsDir)
+		return err
+	}
+
 	if err := our.rotate(); err != nil {
 		return err
 	}
@@ -37,16 +48,13 @@ func Exist(path string) (exists bool, err error) {
 	return false, err // 其他错误（如权限问题）, 但对当前用户而言是不存在
 }
 
-var Hostnamelog = Hostname + ".log"
-
 func (our *hourlylogger) rotate() error {
 	now := time.Now()
+
 	hours := now.Format("2006010215") // e.g. 2025032815
-
 	// {exe path dir}/logs/{exe name}-{2025032815}-{hostname}.log
-	filename := filepath.Join(LogsDir, ExeName+"-"+hours+"-"+Hostnamelog)
-
-	print("rotate init log", Hostnamelog, filename)
+	filename := filepath.Join(our.LogsDir, ExeName+"-"+hours+"-"+Hostname+".log")
+	print("rotate init log", Hostname, filename)
 
 	if our.File != nil && our.Name() == filename {
 		found, err := Exist(filename)
@@ -98,12 +106,9 @@ func (our *hourlylogger) rotateloop() {
 
 var DefaultCleanTime = 15 * 24 * time.Hour // 默认 15 天前, 有时候过 7 天假期, 回来 7 天日志没了 ...
 
-const DefaultCheckTime = 7 * time.Hour // sevenday 每次检查是否要清理历史日志时间间隔
+var DefaultCheckTime = 7 * time.Hour // sevenday 每次检查是否要清理历史日志时间间隔
 
-// LogsDir ★ 默认 log dir 在 {exe dir}/logs
-var LogsDir = filepath.Join(ExeDir, "logs")
-
-var reD = regexp.MustCompile(`(?:[^/-]+-)*(\d{10,12})-`)
+var Dre = regexp.MustCompile(`(?:[^/-]+-)*(\d{10,12})-`)
 
 func (our *hourlylogger) sevenday(now time.Time) {
 	if now.Sub(our.lasttime) < DefaultCheckTime {
@@ -116,7 +121,7 @@ func (our *hourlylogger) sevenday(now time.Time) {
 	// 尝试清理历史文件
 	var files []string
 	err := filepath.WalkDir(
-		LogsDir,
+		our.LogsDir,
 		func(path string, dir os.DirEntry, direrr error) error {
 			if direrr != nil {
 				return direrr
@@ -131,9 +136,9 @@ func (our *hourlylogger) sevenday(now time.Time) {
 			// fix `logs/segmentclips-2025041115-nb-1282427673004035712-9qrao4gnd4e8.log` bug
 
 			// 正则：匹配 logs/... 中的 10 位数字段
-			matches := reD.FindStringSubmatch(path)
+			matches := Dre.FindStringSubmatch(path)
 			if len(matches) < 2 {
-				println("hourlylogger reD.FindStringSubmatch error", strings.Join(matches, " "), Hostnamelog, path)
+				println("hourlylogger reD.FindStringSubmatch error", strings.Join(matches, " "), Hostname, path)
 				files = append(files, path)
 				return nil
 			}
@@ -144,7 +149,7 @@ func (our *hourlylogger) sevenday(now time.Time) {
 			// 解析时间
 			t, err := time.Parse("2006010215", timeStr)
 			if err != nil {
-				println("hourlylogger filepath.WalkDir time.Parse error", err.Error(), Hostnamelog, path)
+				println("hourlylogger filepath.WalkDir time.Parse error", err.Error(), Hostname, path)
 				return nil
 			}
 
@@ -163,7 +168,7 @@ func (our *hourlylogger) sevenday(now time.Time) {
 		},
 	)
 	if err != nil {
-		println("hourlylogger filepath.WalkDir error", err.Error(), LogsDir)
+		println("hourlylogger filepath.WalkDir error", err.Error(), our.LogsDir)
 		return
 	}
 

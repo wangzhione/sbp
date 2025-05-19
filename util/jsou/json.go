@@ -22,6 +22,12 @@ func Unmarshal[T any](data string) (obj T, err error) {
 	return
 }
 
+// Valid 判断字符串 是否为合法 json
+// 当你想要用 []byte 当成参数时候, 默认你是有一定选择能力开放人员, 这时候可以自行选定 json.Valid ...
+func Valid(data string) bool {
+	return json.Valid([]byte(data))
+}
+
 // ReadFile 读取 src 文件, 尝试生成 json T 对象
 func ReadFile[T any](src string) (obj T, err error) {
 	data, err := os.ReadFile(src)
@@ -66,12 +72,6 @@ func ReadWriteFile[T any](src, dst string) (err error) {
 	return WriteFile(dst, obj)
 }
 
-// Valid 判断字符串 是否为合法 json
-// 当你想要用 []byte 当成参数时候, 默认你是有一定选择能力开放人员, 这时候可以自行选定 json.Valid ...
-func Valid(data string) bool {
-	return json.Valid([]byte(data))
-}
-
 // Map json 字符串 数据集转为 map[string]any 类似 Unmarshal[map[string]any](dj)
 func Map(data string) (obj map[string]any, err error) {
 	err = json.Unmarshal([]byte(data), &obj)
@@ -87,7 +87,7 @@ func Slice(data string) (obj []any, err error) {
 // !!! 用深拷贝时候, 认真思考下, 能否真的有必要, 如果不用这种隐式深拷贝是否也可以 !!!
 
 // DeepCopy json 深拷贝
-func DeepCopy[T any](src T) (dst T, err error) {
+func DeepCopy[I any, T any](src I) (dst T, err error) {
 	data, err := json.Marshal(src)
 	if err != nil {
 		return
