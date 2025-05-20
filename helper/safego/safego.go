@@ -45,7 +45,7 @@ func Run(ctx context.Context, fn func(context.Context) error) (err error) {
 func Cover(ctx context.Context) {
 	if cover := recover(); cover != nil {
 		// 遇到启动不起来, 异常退出, 打印堆栈方便排除问题
-		slog.ErrorContext(ctx, "covergo panic error",
+		slog.ErrorContext(ctx, "recover go panic error",
 			slog.Any("error", cover),
 			slog.String("stack", string(debug.Stack())), // 记录详细的堆栈信息
 		)
