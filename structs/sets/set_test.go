@@ -152,3 +152,10 @@ func TestSet_String(t *testing.T) {
 	mySet := New[any]()
 	t.Log(mySet.String())
 }
+
+func TestSet_Operator(t *testing.T) {
+	var s Set[string] = nil
+
+	found := s.Contains("123")
+	t.Log(found)
+}
