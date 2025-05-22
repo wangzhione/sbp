@@ -146,6 +146,20 @@ func (r *Client) RPop(ctx context.Context, key string) (value string, ok bool, e
 	return value, true, nil
 }
 
+// LRange 获取列表 key 中指定区间 [start, stop] 的元素
+func (r *Client) LRange(ctx context.Context, key string, start, stop int64) ([]string, error) {
+	values, err := r.UniversalClient.LRange(ctx, key, start, stop).Result()
+	if err != nil {
+		slog.ErrorContext(ctx, "Redis LRange error",
+			slog.String("key", key),
+			slog.Int64("start", start),
+			slog.Int64("stop", stop),
+			slog.String("error", err.Error()))
+		return nil, err
+	}
+	return values, nil
+}
+
 // Eval 执行 Lua 脚本
 func (r *Client) Eval(ctx context.Context, script string, keys []string, args ...any) (result any, err error) {
 	result, err = r.UniversalClient.Eval(ctx, script, keys, args...).Result()
