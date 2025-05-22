@@ -16,7 +16,7 @@ type daylogger struct {
 	LogsDir string // LogsDir ★ 默认 log dir 在 {exe dir}/logs
 }
 
-func startdaylogger() error {
+func Startdaylogger() error {
 	our := &daylogger{ // our 类似跨函数闭包
 		LogsDir: filepath.Join(ExeDir, "logs"),
 	}
