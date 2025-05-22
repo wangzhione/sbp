@@ -43,13 +43,13 @@ func End(ctx context.Context) {
 // ServeLoop 服务启动 loop 主流程
 // addr 类似 fmt.Sprintf("0.0.0.0:%d", config.G.Serve.Port) ; 0.0.0.0 默认 ipv4 绑定本机地址
 // handler 类似 middleware.MainMiddleware(http.DefaultServeMux)
-func ServeLoop(ctx context.Context, addr string, handler http.Handler, stopTime time.Duration) {
+func ServeLoop(ctx context.Context, addr string, handler http.Handler, stopTime time.Duration, stopfunc ...func(context.Context, os.Signal)) {
 	serve := &http.Server{
 		Addr:    addr,
 		Handler: handler,
 	}
 
-	go ServeShutdown(ctx, serve, stopTime)
+	go ServeShutdown(ctx, serve, stopTime, stopfunc...)
 
 	// main server 启动
 	slog.InfoContext(ctx, "Server running", slog.String("addr", serve.Addr))
@@ -66,7 +66,7 @@ func ServeLoop(ctx context.Context, addr string, handler http.Handler, stopTime 
 	}
 }
 
-func ServeShutdown(ctx context.Context, server *http.Server, stopTime time.Duration) {
+func ServeShutdown(ctx context.Context, server *http.Server, stopTime time.Duration, stopfunc ...func(context.Context, os.Signal)) {
 	defer func() {
 		if cover := recover(); cover != nil {
 			// 遇到启动不起来, 异常退出, 打印堆栈方便排除问题
@@ -88,8 +88,12 @@ func ServeShutdown(ctx context.Context, server *http.Server, stopTime time.Durat
 
 	// 等待终止信号
 	sig := <-sc
-
 	slog.InfoContext(ctx, "Server Received Shutting down...", "signal", sig)
+
+	// 这部分处理 sig 信号退出
+	for _, stopfn := range stopfunc {
+		stopfn(ctx, sig)
+	}
 
 	// 优雅 stop HTTP 服务器, 设置超时时间的上下文
 	timeoutctx, cancel := context.WithTimeout(ctx, stopTime)
