@@ -22,3 +22,7 @@ const Linux bool = runtime.GOOS == "linux"
  plan9
  solaris
 */
+
+const Windows bool = runtime.GOOS == "windows"
+
+const Darwin bool = runtime.GOOS == "darwin"
