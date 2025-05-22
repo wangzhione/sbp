@@ -28,7 +28,7 @@ func InitSLog() {
 }
 
 func InitSlogRotatingFile() error {
-	return starthourlylogger()
+	return startdaylogger()
 }
 
 // EnableText 日志给专业人士看的, 当前行业显学, 还是以 json 格式为主流.

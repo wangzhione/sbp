@@ -5,20 +5,19 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 )
 
-type hourlylogger struct {
+type daylogger struct {
 	*os.File
 	lasttime time.Time
 
 	LogsDir string // LogsDir ★ 默认 log dir 在 {exe dir}/logs
 }
 
-func starthourlylogger() error {
-	our := &hourlylogger{ // our 类似跨函数闭包
+func startdaylogger() error {
+	our := &daylogger{ // our 类似跨函数闭包
 		LogsDir: filepath.Join(ExeDir, "logs"),
 	}
 
@@ -35,26 +34,13 @@ func starthourlylogger() error {
 	return nil
 }
 
-// Exist 判断路径（文件或目录）是否存在
-func Exist(path string) (exists bool, err error) {
-	_, err = os.Stat(path)
-	if err == nil {
-		return true, nil // 路径存在（无论是文件还是目录）
-	}
-
-	if os.IsNotExist(err) {
-		return false, nil // 路径不存在
-	}
-	return false, err // 其他错误（如权限问题）, 但对当前用户而言是不存在
-}
-
-func (our *hourlylogger) rotate() error {
+func (our *daylogger) rotate() error {
 	now := time.Now()
 
-	hours := now.Format("2006010215") // e.g. 2025032815
-	// {exe path dir}/logs/{exe name}-{2025032815}-{hostname}.log
-	filename := filepath.Join(our.LogsDir, ExeName+"-"+hours+"-"+Hostname+".log")
-	print("rotate init log", Hostname, filename)
+	days := now.Format("20060102") // e.g. 20250522
+	// {exe path dir}/logs/{exe name}-{20250522}-{hostname}.log
+	filename := filepath.Join(our.LogsDir, ExeName+"-"+days+"-"+Hostname+".log")
+	print("rotate day init log", Hostname, filename)
 
 	if our.File != nil && our.Name() == filename {
 		found, err := Exist(filename)
@@ -65,7 +51,7 @@ func (our *hourlylogger) rotate() error {
 
 	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
 	if err != nil {
-		println("hourlylogger os.OpenFile error", err.Error(), filename)
+		println("daylogger os.OpenFile error", err.Error(), filename)
 		return err
 	}
 
@@ -93,7 +79,7 @@ func (our *hourlylogger) rotate() error {
 	return nil
 }
 
-func (our *hourlylogger) rotateloop() {
+func (our *daylogger) rotateloop() {
 	for {
 		now := time.Now()
 		// 下一个整点, 计算需要 sleep 时间
@@ -104,13 +90,7 @@ func (our *hourlylogger) rotateloop() {
 	}
 }
 
-var DefaultCleanTime = 15 * 24 * time.Hour // 默认 15 天前, 有时候过 7 天假期, 回来 7 天日志没了 ...
-
-var DefaultCheckTime = 7 * time.Hour // sevenday 每次检查是否要清理历史日志时间间隔
-
-var Dre = regexp.MustCompile(`(?:[^/-]+-)*(\d{8,12})-`)
-
-func (our *hourlylogger) sevenday(now time.Time) {
+func (our *daylogger) sevenday(now time.Time) {
 	if now.Sub(our.lasttime) < DefaultCheckTime {
 		// 时间间隔太小直接返回
 		return
@@ -132,24 +112,27 @@ func (our *hourlylogger) sevenday(now time.Time) {
 				return nil
 			}
 
-			// fix `logs/materialefficiencytool-2025051404-ms-2scj6hpg-1-6c44dcc954-rfnhf.log` bug
-			// fix `logs/segmentclips-2025041115-nb-1282427673004035712-9qrao4gnd4e8.log` bug
+			// fix `logs/materialefficiencytool-20250514-ms-2scj6hpg-1-6c44dcc954-rfnhf.log` bug
+			// fix `logs/segmentclips-20250411-nb-1282427673004035712-9qrao4gnd4e8.log` bug
 
-			// 正则：匹配 logs/... 中的 10 位数字段
+			// 正则：匹配 logs/... 中的 8 位数字段
 			matches := Dre.FindStringSubmatch(path)
 			if len(matches) < 2 {
-				println("hourlylogger reD.FindStringSubmatch error", strings.Join(matches, " "), Hostname, path)
+				println("daylogger reD.FindStringSubmatch error", strings.Join(matches, " "), Hostname, path)
 				files = append(files, path)
 				return nil
 			}
 
 			// 提取中间的时间字符串
 			timeStr := matches[1]
+			if len(timeStr) > 8 {
+				timeStr = timeStr[:8]
+			}
 
 			// 解析时间
-			t, err := time.Parse("2006010215", timeStr)
+			t, err := time.Parse("20060102", timeStr)
 			if err != nil {
-				println("hourlylogger filepath.WalkDir time.Parse error", err.Error(), Hostname, path)
+				println("daylogger filepath.WalkDir time.Parse error", err.Error(), Hostname, path)
 				return nil
 			}
 
@@ -168,16 +151,16 @@ func (our *hourlylogger) sevenday(now time.Time) {
 		},
 	)
 	if err != nil {
-		println("hourlylogger filepath.WalkDir error", err.Error(), our.LogsDir)
+		println("daylogger filepath.WalkDir error", err.Error(), our.LogsDir)
 		return
 	}
 
 	for _, file := range files {
 		err = os.Remove(file)
 		if err != nil {
-			println("hourlylogger os.Remove error", err.Error(), file)
+			println("daylogger os.Remove error", err.Error(), file)
 		} else {
-			println("hourlylogger os.Remove success", file)
+			println("daylogger os.Remove success", file)
 		}
 	}
 }
