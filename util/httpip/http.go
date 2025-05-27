@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"time"
 
 	"github.com/wangzhione/sbp/chain"
 )
@@ -28,7 +27,6 @@ var HTTPTransport = func() *http.Transport {
 }()
 
 var HTTPClient = &http.Client{
-	Timeout:   120 * time.Second, // 设置全局超时, 可以自行根据业务 or 配置 main init 中修改
 	Transport: HTTPTransport,
 }
 
