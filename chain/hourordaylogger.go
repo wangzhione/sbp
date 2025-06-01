@@ -10,16 +10,34 @@ import (
 	"time"
 )
 
-type hourlylogger struct {
-	*os.File
-	lasttime time.Time
+func GetfilefieldByDay(logsDir string) (now time.Time, filename string) {
+	now = time.Now()
 
-	LogsDir string // LogsDir ★ 默认 log dir 在 {exe dir}/logs
+	days := now.Format("20060102") // e.g. 20250522
+	// {exe path dir}/logs/{exe name}-{20250522}-{hostname}.log
+	filename = filepath.Join(logsDir, ExeName+"-"+days+"-"+Hostname+".log")
+	print("getfilefieldByDay day init log", Hostname, filename)
+	return
 }
 
-func Starthourlylogger() error {
-	our := &hourlylogger{ // our 类似跨函数闭包
-		LogsDir: filepath.Join(ExeDir, "logs"),
+func GetfilefieldByHour(logsDir string) (now time.Time, filename string) {
+	now = time.Now()
+
+	hours := now.Format("2006010215") // e.g. 2025032815
+	// {exe path dir}/logs/{exe name}-{2025032815}-{hostname}.log
+	filename = filepath.Join(logsDir, ExeName+"-"+hours+"-"+Hostname+".log")
+	print("getfilefield init log", Hostname, filename)
+	return
+}
+
+func Starthourordaylogger(getfilefield func(logsDir string) (now time.Time, filename string)) error {
+	if getfilefield == nil {
+		getfilefield = GetfilefieldByHour
+	}
+
+	our := &hourordaylogger{ // our 类似跨函数闭包
+		LogsDir:      filepath.Join(ExeDir, "logs"),
+		getfilefield: getfilefield,
 	}
 
 	err := os.MkdirAll(our.LogsDir, os.ModePerm)
@@ -35,26 +53,17 @@ func Starthourlylogger() error {
 	return nil
 }
 
-// Exist 判断路径（文件或目录）是否存在
-func Exist(path string) (exists bool, err error) {
-	_, err = os.Stat(path)
-	if err == nil {
-		return true, nil // 路径存在（无论是文件还是目录）
-	}
+type hourordaylogger struct {
+	*os.File
+	lasttime time.Time
 
-	if os.IsNotExist(err) {
-		return false, nil // 路径不存在
-	}
-	return false, err // 其他错误（如权限问题）, 但对当前用户而言是不存在
+	LogsDir string // LogsDir ★ 默认 log dir 在 {exe dir}/logs
+
+	getfilefield func(logsDir string) (now time.Time, filename string)
 }
 
-func (our *hourlylogger) rotate() error {
-	now := time.Now()
-
-	hours := now.Format("2006010215") // e.g. 2025032815
-	// {exe path dir}/logs/{exe name}-{2025032815}-{hostname}.log
-	filename := filepath.Join(our.LogsDir, ExeName+"-"+hours+"-"+Hostname+".log")
-	print("rotate init log", Hostname, filename)
+func (our *hourordaylogger) rotate() error {
+	now, filename := our.getfilefield(our.LogsDir)
 
 	if our.File != nil && our.Name() == filename {
 		found, err := Exist(filename)
@@ -65,7 +74,7 @@ func (our *hourlylogger) rotate() error {
 
 	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
 	if err != nil {
-		println("hourlylogger os.OpenFile error", err.Error(), filename)
+		println("rotate os.OpenFile error", err.Error(), filename)
 		return err
 	}
 
@@ -93,7 +102,7 @@ func (our *hourlylogger) rotate() error {
 	return nil
 }
 
-func (our *hourlylogger) rotateloop() {
+func (our *hourordaylogger) rotateloop() {
 	for {
 		now := time.Now()
 		// 下一个整点, 计算需要 sleep 时间
@@ -110,7 +119,7 @@ var DefaultCheckTime = 7 * time.Hour // sevenday 每次检查是否要清理历�
 
 var Dre = regexp.MustCompile(`(?:[^/-]+-)*(\d{8,12})-`)
 
-func (our *hourlylogger) sevenday(now time.Time) {
+func (our *hourordaylogger) sevenday(now time.Time) {
 	if now.Sub(our.lasttime) < DefaultCheckTime {
 		// 时间间隔太小直接返回
 		return
@@ -138,18 +147,21 @@ func (our *hourlylogger) sevenday(now time.Time) {
 			// 正则：匹配 logs/... 中的 10 位数字段
 			matches := Dre.FindStringSubmatch(path)
 			if len(matches) < 2 {
-				println("hourlylogger reD.FindStringSubmatch error", strings.Join(matches, " "), Hostname, path)
+				println("sevenday reD.FindStringSubmatch error", strings.Join(matches, " "), Hostname, path)
 				files = append(files, path)
 				return nil
 			}
 
 			// 提取中间的时间字符串
 			timeStr := matches[1]
+			if len(timeStr) > 8 {
+				timeStr = timeStr[:8]
+			}
 
 			// 解析时间
-			t, err := time.Parse("2006010215", timeStr)
+			t, err := time.Parse("20060102", timeStr)
 			if err != nil {
-				println("hourlylogger filepath.WalkDir time.Parse error", err.Error(), Hostname, path)
+				println("sevenday filepath.WalkDir time.Parse error", err.Error(), Hostname, path)
 				return nil
 			}
 
@@ -168,16 +180,16 @@ func (our *hourlylogger) sevenday(now time.Time) {
 		},
 	)
 	if err != nil {
-		println("hourlylogger filepath.WalkDir error", err.Error(), our.LogsDir)
+		println("sevenday filepath.WalkDir error", err.Error(), our.LogsDir)
 		return
 	}
 
 	for _, file := range files {
 		err = os.Remove(file)
 		if err != nil {
-			println("hourlylogger os.Remove error", err.Error(), file)
+			println("sevenday os.Remove error", err.Error(), file)
 		} else {
-			println("hourlylogger os.Remove success", file)
+			println("sevenday os.Remove success", file)
 		}
 	}
 }

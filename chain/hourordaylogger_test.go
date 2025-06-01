@@ -33,17 +33,6 @@ logs/segmentclips-2025041115-nb-1282427673004035712-9qrao4gnd4e8.log
 	println(onematches[1])
 }
 
-func Test_hourlylogger_sevenday(t *testing.T) {
-	DefaultCleanTime = 0
-
-	our := &daylogger{} // our 类似跨函数闭包
-	if err := our.rotate(); err != nil {
-		t.Log("Error", err)
-	} else {
-		t.Log("Success")
-	}
-}
-
 func Test_filename(t *testing.T) {
 	filename := `logs/segmentclips-2025041115-nb-1282427673004035712-9qrao4gnd4e8.log`
 

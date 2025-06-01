@@ -13,7 +13,7 @@ import (
 
 //
 // HTTP json 请求协议库
-//
+// // net/http/client.go 是这个祖宗; 用法很多灵活多变, 看场景选用
 
 var HTTPTransport = func() *http.Transport {
 	transport := http.DefaultTransport.(*http.Transport).Clone()

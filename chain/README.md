@@ -1,20 +1,8 @@
-# trace
+# slog
 
 采用 Go 官方的 `slog` 轮子直接实例化, 整体业务开发会更加简单和高效.
 
-**用法**
-
-```
-import "github.com/wangzhione/sbp/chain"
-
-InitSLog()
-```
-
-import 后 可以无缝使用 slog 进行 InfoContext or WarnContext or ErrorContext. 也可以参照其内部代码, 在 main func 初始化, 用业务自己的自定义 slog. 其中 chain.XRquestID 各个环节交互唯一 trace key 串
-
-***
-
-## UUID
+## uuid
 
 `chain.UUID()` 是 uuid version 4 random 算法, 默认返回不带 '`-`' 风格的小写串
 
@@ -53,4 +41,17 @@ func Request(r *http.Request) (req *http.Request, requestID string) {
 func GetTraceID(c context.Context) string 
 ```
 
-## `道常无为而无不为` 
+## slog 用法 Ⅴ
+
+```
+import "github.com/wangzhione/sbp/chain"
+
+chain.InitSLog()
+```
+
+import 后 可以无缝使用 slog 进行 InfoContext or WarnContext or ErrorContext. 也可以参照其内部代码, 在 main func 初始化, 用业务自己的自定义 slog. 其中 chain.XRquestID 各个环节交互唯一 trace key 串
+
+也可以使用 `chain.InitSlogRotatingFile()` 进行日维度日志文件收集
+
+***
+

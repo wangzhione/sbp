@@ -13,3 +13,9 @@ func TestGetExeName(t *testing.T) {
 
 	t.Log(ExeDir)
 }
+
+func TestUUID(t *testing.T) {
+	id := UUID()
+
+	t.Logf("id = %s", id)
+}
