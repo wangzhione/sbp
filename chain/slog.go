@@ -37,7 +37,7 @@ func InitSLog() {
 
 func InitSlogRotatingFile() error {
 	// 默认是 start day logger; 如果需要 hour logger , Please Call Starthourordaylogger(nil)
-	return Starthourordaylogger(GetfilefieldByDay)
+	return Startlogger(GetfileByDay)
 }
 
 type TraceHandler struct {

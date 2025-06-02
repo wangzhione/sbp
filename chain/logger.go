@@ -10,34 +10,35 @@ import (
 	"time"
 )
 
-func GetfilefieldByDay(logsDir string) (now time.Time, filename string) {
+func GetfileByDay(logsDir string) (now time.Time, filename string) {
 	now = time.Now()
 
 	days := now.Format("20060102") // e.g. 20250522
 	// {exe path dir}/logs/{exe name}-{20250522}-{hostname}.log
 	filename = filepath.Join(logsDir, ExeName+"-"+days+"-"+Hostname+".log")
-	print("getfilefieldByDay day init log", Hostname, filename)
+	print("GetfileByDay day init log", Hostname, filename)
 	return
 }
 
-func GetfilefieldByHour(logsDir string) (now time.Time, filename string) {
+func GetfileByHour(logsDir string) (now time.Time, filename string) {
 	now = time.Now()
 
 	hours := now.Format("2006010215") // e.g. 2025032815
 	// {exe path dir}/logs/{exe name}-{2025032815}-{hostname}.log
 	filename = filepath.Join(logsDir, ExeName+"-"+hours+"-"+Hostname+".log")
-	print("getfilefield init log", Hostname, filename)
+	print("GetfileByHour init log", Hostname, filename)
 	return
 }
 
-func Starthourordaylogger(getfilefield func(logsDir string) (now time.Time, filename string)) error {
-	if getfilefield == nil {
-		getfilefield = GetfilefieldByHour
+// Startlogger 启动一个 slog 实例, getfile 可以是 nil, 默认是 GetfileByHour or GetfileByDay
+func Startlogger(getfile func(logsDir string) (now time.Time, filename string)) error {
+	if getfile == nil {
+		getfile = GetfileByHour
 	}
 
 	our := &hourordaylogger{ // our 类似跨函数闭包
-		LogsDir:      filepath.Join(ExeDir, "logs"),
-		getfilefield: getfilefield,
+		LogsDir:   filepath.Join(ExeDir, "logs"),
+		getfilefn: getfile,
 	}
 
 	err := os.MkdirAll(our.LogsDir, os.ModePerm)
@@ -59,11 +60,11 @@ type hourordaylogger struct {
 
 	LogsDir string // LogsDir ★ 默认 log dir 在 {exe dir}/logs
 
-	getfilefield func(logsDir string) (now time.Time, filename string)
+	getfilefn func(logsDir string) (now time.Time, filename string)
 }
 
 func (our *hourordaylogger) rotate() error {
-	now, filename := our.getfilefield(our.LogsDir)
+	now, filename := our.getfilefn(our.LogsDir)
 
 	if our.File != nil && our.Name() == filename {
 		found, err := Exist(filename)
