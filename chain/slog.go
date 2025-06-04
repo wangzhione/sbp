@@ -24,11 +24,10 @@ func InitSLog() {
 		Level: EnableLevel,
 	}
 
-	var handler slog.Handler
+	// 默认走 JSON Handler
+	var handler slog.Handler = slog.NewJSONHandler(os.Stdout, options)
 	if EnableText() {
 		handler = slog.NewTextHandler(os.Stdout, options)
-	} else {
-		handler = slog.NewJSONHandler(os.Stdout, options)
 	}
 
 	logs := slog.New(&TraceHandler{handler})

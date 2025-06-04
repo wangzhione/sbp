@@ -14,9 +14,12 @@ import (
 
 // Download 下载 uri 到本地文件 outputPath
 func Download(ctx context.Context, uri, outputpath string, headerargs ...map[string]string) error {
+	// 希望这个 http request 不被 传入的 context 影响生命周期被取消中断
+	// 如何你想主动控制下载行为, 可以自定义函数去 http.NewRequestWithContext 处理
+	// 最早这个函数是 http.NewRequestWithContext 处理, 很灵活, 但用起来往往出错, 给傻瓜安全, 给机灵鬼自由
 	req, err := http.NewRequest(http.MethodGet, uri, nil)
 	if err != nil {
-		slog.ErrorContext(ctx, "http.NewRequestWithContext error", "error", err, "uri", uri)
+		slog.ErrorContext(ctx, "http.NewRequest error", "error", err, "uri", uri)
 		return err
 	}
 

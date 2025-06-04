@@ -8,6 +8,7 @@ import (
 var BC = Context()
 
 // XRquestID 默认所有链条 trace id 的 key
+// any("X-Request-Id") == any(XRquestID)
 const XRquestID = "X-Request-Id"
 
 var xRquestID = any(XRquestID)

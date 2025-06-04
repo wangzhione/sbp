@@ -1,7 +1,6 @@
 package httpip
 
 import (
-	"io"
 	"net"
 	"net/http"
 	"strings"
@@ -56,8 +55,8 @@ func GetMACAddress() (macList []string, err error) {
 	return
 }
 
-// GetAllIP 获取本机所有 IP 地址（包括本地和外部）
-func GetAllIP(includeIPv6 ...struct{}) ([]string, error) {
+// GetIP 获取本机所有 IP 地址（包括本地和外部）
+func GetIP(includeIPv6 ...struct{}) ([]string, error) {
 	var ipList []string
 
 	interfaces, err := net.Interfaces()
@@ -81,66 +80,4 @@ func GetAllIP(includeIPv6 ...struct{}) ([]string, error) {
 		}
 	}
 	return ipList, nil
-}
-
-// GetExternalIP 获取本机外部 IP 地址（排除 127.0.0.1）
-func GetExternalIP(includeIPv6 ...struct{}) ([]string, error) {
-	var ipList []string
-
-	// 在某些操作系统（如 Linux 或 MacOS）上，获取某些网络接口的地址可能需要管理员权限
-	interfaces, err := net.Interfaces()
-	if err != nil {
-		return nil, err
-	}
-
-	for _, i := range interfaces {
-		addrs, err := i.Addrs()
-		if err != nil {
-			continue
-		}
-
-		for _, addr := range addrs {
-			ipNet, ok := addr.(*net.IPNet)
-			if ok && !ipNet.IP.IsLoopback() && (len(includeIPv6) == 0 || ipNet.IP.To4() != nil) {
-				ipList = append(ipList, ipNet.IP.String())
-			}
-		}
-	}
-	return ipList, nil
-}
-
-// GetPublicIP 获取本机公网 IP 地址
-func GetPublicIP() (string, error) {
-	// 公网 IP 查询服务
-	resp, err := http.Get("https://api64.ipify.org?format=text")
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	ip, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	return string(ip), nil
-}
-
-var privateBlocks = []string{
-	"10.",      // 10.0.0.0 – 10.255.255.255
-	"172.16.",  // 172.16.0.0 – 172.31.255.255
-	"192.168.", // 192.168.0.0 – 192.168.255.255
-	"127.",     // Loopback
-	"fc00:",    // IPv6 Unique Local Address
-	"fe80:",    // IPv6 Link-Local Address
-}
-
-// IsPrivateIP 检查 IP 地址是否为内网地址
-func IsPrivateIP(ip string) bool {
-	for _, block := range privateBlocks {
-		if strings.HasPrefix(ip, block) {
-			return true
-		}
-	}
-	return false
 }
