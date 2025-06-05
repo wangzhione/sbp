@@ -8,9 +8,9 @@ import (
 
 // INT int or uint numbers type
 type INT interface {
-	~int | ~int8 | ~int16 | ~int32 | ~int64 |
-		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 |
-		~uintptr
+	~uintptr |
+		~int | ~int8 | ~int16 | ~int32 | ~int64 |
+		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64
 }
 
 // FormatINT int to string 默认都是 10 进制数, fast quickly
