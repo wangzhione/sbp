@@ -1,3 +1,4 @@
+// Package mysql provides helper functions and configuration for working with MySQL databases.
 package mysql
 
 import (

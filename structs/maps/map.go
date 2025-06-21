@@ -1,3 +1,4 @@
+// Package maps provides utility functions for working with Go maps, such as extracting keys, values, and transforming map data.
 package maps
 
 import (

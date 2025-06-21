@@ -1,3 +1,4 @@
+// Package httpip provides utilities for making HTTP requests with JSON encoding and decoding.
 package httpip
 
 import (
@@ -10,6 +11,7 @@ import (
 	"github.com/wangzhione/sbp/chain"
 )
 
+// Do http.Request 发起 http 调用, 返回 body 用 application/json 协议
 func Do(ctx context.Context, req *http.Request, response any) (err error) {
 	resp, err := HTTPClient.Do(req)
 	if err != nil {
@@ -28,7 +30,7 @@ func Do(ctx context.Context, req *http.Request, response any) (err error) {
 	// 解析 JSON 响应流
 	err = json.NewDecoder(resp.Body).Decode(response)
 	if err != nil {
-		io.Copy(io.Discard, resp.Body)
+		return
 	}
 
 	return
@@ -68,17 +70,17 @@ func Get(ctx context.Context, url string, headers map[string]string, response an
 	return DoRequest(ctx, http.MethodGet, url, headers, nil, response)
 }
 
-// Post 发送 POST 请求，并支持自定义超时时间
+// Delete 发送 DELETE 请求，并支持自定义超时时间
+func Delete(ctx context.Context, url string, headers map[string]string, response any) error {
+	return DoRequest(ctx, http.MethodDelete, url, headers, nil, response)
+}
+
+// Post 发送 POST 请求，类似 SQL create
 func Post(ctx context.Context, url string, headers map[string]string, request, response any) error {
 	return DoRequest(ctx, http.MethodPost, url, headers, request, response)
 }
 
-// Put 发送 PUT 请求，并支持自定义超时时间
+// Put 发送 PUT 请求，类似 SQL update
 func Put(ctx context.Context, url string, headers map[string]string, request, response any) error {
 	return DoRequest(ctx, http.MethodPut, url, headers, request, response)
-}
-
-// Delete 发送 DELETE 请求，并支持自定义超时时间
-func Delete(ctx context.Context, url string, headers map[string]string, response any) error {
-	return DoRequest(ctx, http.MethodDelete, url, headers, nil, response)
 }

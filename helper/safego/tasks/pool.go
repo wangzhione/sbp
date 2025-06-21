@@ -1,3 +1,4 @@
+// Package tasks provides a simple goroutine pool for managing concurrent tasks.
 package tasks
 
 import (

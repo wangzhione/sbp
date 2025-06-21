@@ -1,3 +1,4 @@
+// Package safego provides safe goroutine helpers to prevent leaks and handle panics.
 package safego
 
 import (

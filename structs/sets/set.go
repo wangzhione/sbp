@@ -1,3 +1,4 @@
+// Package sets provides a generic Set implementation for comparable types.
 package sets
 
 import (

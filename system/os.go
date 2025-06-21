@@ -1,3 +1,4 @@
+// Package system provides utilities for detecting the operating system and related logic.
 package system
 
 import (

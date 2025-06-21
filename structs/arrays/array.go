@@ -1,3 +1,4 @@
+// Package arrays provides utility functions for working with slices and arrays.
 package arrays
 
 import "github.com/wangzhione/sbp/structs"

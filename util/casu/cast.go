@@ -1,3 +1,4 @@
+// Package casu provides utilities for casting and parsing numeric and boolean types.
 package casu
 
 import (

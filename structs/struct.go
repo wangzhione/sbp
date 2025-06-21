@@ -1,3 +1,4 @@
+// Package structs provides utility functions for working with pointers and ordered values.
 package structs
 
 import "cmp"

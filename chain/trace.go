@@ -1,3 +1,4 @@
+// Package chain provides utilities for tracing and managing context in HTTP requests.
 package chain
 
 import (

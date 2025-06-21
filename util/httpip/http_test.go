@@ -86,9 +86,12 @@ func TestPostRequest(t *testing.T) {
 	t.Log("Hello, Go Developer", response.Message)
 }
 
+//
+// HTTP Code 403 服务器已经理解了请求，但拒绝执行它。
+
 func TestCall(t *testing.T) {
 	ctx := chain.Context()
-	url := `https://chatgpt.com/`
+	url := `https://chatgpt.com`
 
 	respData, err := Call(ctx, http.MethodGet, url, nil, nil)
 	if err != nil {

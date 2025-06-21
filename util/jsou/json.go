@@ -1,3 +1,4 @@
+// Package jsou provides utility functions for working with JSON data, including marshaling, unmarshaling, file operations, and debugging helpers.
 package jsou
 
 import (

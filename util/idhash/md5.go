@@ -1,3 +1,4 @@
+// Package idhash provides utility functions for generating MD5 hashes of strings, byte slices, and files.
 package idhash
 
 import (

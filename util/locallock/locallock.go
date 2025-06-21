@@ -1,3 +1,4 @@
+// Package locallock provides a local locking mechanism for synchronizing access to resources by key.
 package locallock
 
 import (

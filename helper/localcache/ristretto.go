@@ -1,3 +1,4 @@
+// Package localcache provides a wrapper around the Ristretto cache for simple cache operations.
 package localcache
 
 import (

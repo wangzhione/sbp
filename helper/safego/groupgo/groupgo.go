@@ -1,3 +1,4 @@
+// Package groupgo provides a goroutine group with concurrency limits and error handling.
 package groupgo
 
 import (

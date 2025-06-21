@@ -1,3 +1,4 @@
+// Package tuml provides utility functions for working with TOML files, including marshaling, unmarshaling, file reading, and writing.
 package tuml
 
 import (

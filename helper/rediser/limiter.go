@@ -1,3 +1,4 @@
+// Package rediser provides Redis-based helpers including a rate limiter.
 package rediser
 
 import (
