@@ -33,7 +33,7 @@ func (c *Cache[K, V]) Set(key K, value V) bool {
 	return c.R.Set(key, value, 1)
 }
 
-// Set adds a key-value pair to the cache with a given cost and TTL
+// SetTTL adds a key-value pair to the cache with a given cost and TTL
 func (c *Cache[K, V]) SetTTL(key K, value V, ttl time.Duration) bool {
 	return c.R.SetWithTTL(key, value, 1, ttl)
 }
