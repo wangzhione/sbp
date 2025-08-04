@@ -1,3 +1,4 @@
+// Package filedir provides utility functions for file and directory operations.
 package filedir
 
 import (

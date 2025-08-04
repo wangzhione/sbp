@@ -32,7 +32,7 @@ func (task *DownloadTask) Check() error {
 	return nil
 }
 
-// DownloadTask 表示单个下载任务, 这里这种模式类似对象函数
+// DownloadGroup 表示单个下载任务, 这里这种模式类似对象函数
 type DownloadGroup struct {
 	Task          []DownloadTask
 	MaxConcurrent int // group go max 并发
