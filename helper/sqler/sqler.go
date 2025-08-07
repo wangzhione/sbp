@@ -1,3 +1,4 @@
+// Package sqler provides helper functions and wrappers for SQL database operations.
 package sqler
 
 import (
