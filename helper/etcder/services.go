@@ -33,9 +33,9 @@ func NewServiceRegistry(ctx context.Context, client *clientv3.Client, key, value
 	}
 }
 
-// RegisterAndKeepAlive 注册服务并自动续约
+// Register 注册服务并自动续约
 // secondTTL: 服务注册的租约时间（单位：秒）普通 Web 服务推荐 10s; 后台服务推荐 30s; 高敏感服务推荐 3 - 5s
-func (s *ServiceRegistry) RegisterAndKeepAlive(secondTTL int64) error {
+func (s *ServiceRegistry) Register(secondTTL int64) error {
 	leaseResp, err := s.client.Grant(s.ctx, secondTTL)
 	if err != nil {
 		slog.ErrorContext(s.ctx, "failed to create lease", slog.Any("error", err), slog.Int64("secondTTL", secondTTL))
@@ -54,14 +54,14 @@ func (s *ServiceRegistry) RegisterAndKeepAlive(secondTTL int64) error {
 	slog.InfoContext(s.ctx, "service registered", slog.String("key", s.key), slog.String("value", s.value),
 		slog.Int64("leaseID", int64(leaseResp.ID)))
 
-	safego.Go(s.ctx, func(ctx context.Context) { s.keepAliveLoop() })
+	safego.Go(s.ctx, func(ctx context.Context) { s.keepAlive() })
 	return nil
 }
 
-func (s *ServiceRegistry) keepAliveLoop() {
+func (s *ServiceRegistry) keepAlive() {
 	const maxRetries = 3
-	retryCount := 0
 
+	retryCount := 0
 	for {
 		if s.ctx.Err() != nil {
 			slog.InfoContext(s.ctx, "keepalive stopped (context canceled)", slog.Int64("leaseID", int64(s.leaseID)))
@@ -71,8 +71,7 @@ func (s *ServiceRegistry) keepAliveLoop() {
 		ch, err := s.client.KeepAlive(s.ctx, s.leaseID)
 		if err != nil {
 			retryCount++
-			slog.ErrorContext(s.ctx, "failed to start keepalive",
-				slog.Any("error", err), slog.Int("retryCount", retryCount))
+			slog.ErrorContext(s.ctx, "failed to start keepalive", slog.Any("error", err), slog.Int("retryCount", retryCount))
 			if retryCount >= maxRetries {
 				slog.ErrorContext(s.ctx, "keepalive retry limit reached, exiting")
 				return
@@ -113,24 +112,17 @@ func (s *ServiceRegistry) keepAliveLoop() {
 func (s *ServiceRegistry) WatchServices(prefix string, onChange func(ctx context.Context, isDelete bool, key, value string)) {
 	safego.Go(s.ctx, func(ctx context.Context) {
 		slog.InfoContext(ctx, "starting watch", slog.String("prefix", prefix))
-		watchChan := s.client.Watch(ctx, prefix, clientv3.WithPrefix())
 
+		watchChan := s.client.Watch(ctx, prefix, clientv3.WithPrefix())
 		for resp := range watchChan {
 			if err := resp.Err(); err != nil {
 				slog.ErrorContext(ctx, "watch error", slog.Any("error", err))
 				continue
 			}
 
-			for _, ev := range resp.Events {
-				isDel := ev.Type == clientv3.EventTypeDelete
-				key, val := string(ev.Kv.Key), string(ev.Kv.Value)
-				slog.InfoContext(ctx, "watch event", slog.String("key", key), slog.String("value", val), slog.Bool("delete", isDel))
-				onChange(ctx, isDel, key, val)
-			}
-
-			for _, ev := range resp.Events {
-				key, val := string(ev.Kv.Key), string(ev.Kv.Value)
-				switch ev.Type {
+			for _, event := range resp.Events {
+				key, val := string(event.Kv.Key), string(event.Kv.Value)
+				switch event.Type {
 				case clientv3.EventTypePut: // 服务注册 or 变更(如 ip 变了)
 					slog.InfoContext(ctx, "event added or updated", slog.String("key", key), slog.String("value", val))
 					onChange(ctx, false, key, val)
@@ -138,7 +130,7 @@ func (s *ServiceRegistry) WatchServices(prefix string, onChange func(ctx context
 					slog.InfoContext(ctx, "event deleted", slog.String("key", key), slog.String("value", val))
 					onChange(ctx, true, key, val)
 				default:
-					slog.WarnContext(ctx, "unknown event type", slog.String("type", ev.Type.String()), slog.String("key", key), slog.String("value", val))
+					slog.WarnContext(ctx, "unknown event type", slog.String("type", event.Type.String()), slog.String("key", key), slog.String("value", val))
 				}
 			}
 		}
@@ -149,7 +141,7 @@ func (s *ServiceRegistry) WatchServices(prefix string, onChange func(ctx context
 func (s *ServiceRegistry) Stop() {
 	s.cancelFunc()
 	if s.leaseID != 0 {
-		_ = RevokeLease(s.ctx, s.client, s.leaseID)
+		_ = Revoke(s.ctx, s.client, s.leaseID)
 	}
 	slog.InfoContext(s.ctx, "service stopped", slog.String("key", s.key), slog.String("value", s.value), slog.Int64("leaseID", int64(s.leaseID)))
 }

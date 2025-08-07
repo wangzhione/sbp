@@ -30,7 +30,7 @@ func Test_ServiceRegistry(t *testing.T) {
 	reg := NewServiceRegistry(ctx, cli, key, value)
 
 	// ✅ 注册并自动续约（推荐 TTL 10s）
-	if err := reg.RegisterAndKeepAlive(10); err != nil {
+	if err := reg.Register(10); err != nil {
 		log.Fatalf("register failed: %v", err)
 	}
 

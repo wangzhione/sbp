@@ -12,8 +12,8 @@ import (
 // DefaultDialTimeout is the default timeout for etcd client connections
 var DefaultDialTimeout = 6 * time.Second
 
-// NewClientV3 创建一个 etcd client（推荐复用）
-func NewClientV3(ctx context.Context, endpoints []string) (cli *clientv3.Client, err error) {
+// New 创建一个 etcd client（推荐复用）
+func New(ctx context.Context, endpoints []string) (cli *clientv3.Client, err error) {
 	cli, err = clientv3.New(clientv3.Config{
 		Endpoints:   endpoints,
 		DialTimeout: DefaultDialTimeout,
@@ -27,14 +27,15 @@ func NewClientV3(ctx context.Context, endpoints []string) (cli *clientv3.Client,
 	return
 }
 
-// CloseClient 关闭 etcd 客户端连接
-func CloseClient(ctx context.Context, cli *clientv3.Client) {
-	if cli != nil {
-		if err := cli.Close(); err != nil {
-			slog.ErrorContext(ctx, "failed to close etcd client", slog.Any("error", err))
-		} else {
-			slog.InfoContext(ctx, "etcd client closed")
-		}
+// Close 关闭 etcd 客户端连接
+func Close(ctx context.Context, cli *clientv3.Client) {
+	endpoints := cli.Endpoints()
+
+	// 理论上, 很难执行这个方法, 实战场景可以不主动尝试 Clone
+	if err := cli.Close(); err != nil {
+		slog.ErrorContext(ctx, "failed to close etcd client", slog.Any("error", err), slog.Any("endpoints", endpoints))
+	} else {
+		slog.InfoContext(ctx, "etcd client closed", slog.Any("endpoints", endpoints))
 	}
 }
 
@@ -54,9 +55,9 @@ func GetKeyValues(ctx context.Context, cli *clientv3.Client, prefix string) (ser
 	return
 }
 
-// WatchKeyValues 监听指定前缀下键值对变化（新增/更新/删除）
+// WatchPrefix 监听指定前缀下键值对变化（新增/更新/删除）
 // 每次变更都会调用 onChange 回调：onChange func(ctx context.Context, isDelete bool, key, value string)
-func WatchKeyValues(ctx context.Context, cli *clientv3.Client, prefix string, onChange func(ctx context.Context, isDelete bool, key, value string)) {
+func WatchPrefix(ctx context.Context, cli *clientv3.Client, prefix string, onChange func(ctx context.Context, isDelete bool, key, value string)) {
 	watchChan := cli.Watch(ctx, prefix, clientv3.WithPrefix())
 	slog.InfoContext(ctx, "watching key-values", slog.String("prefix", prefix))
 
@@ -70,10 +71,10 @@ func WatchKeyValues(ctx context.Context, cli *clientv3.Client, prefix string, on
 			key, val := string(ev.Kv.Key), string(ev.Kv.Value)
 			switch ev.Type {
 			case clientv3.EventTypePut: // 服务注册 or 变更(如 ip 变了)
-				slog.InfoContext(ctx, "event added or updated", slog.String("key", key), slog.String("value", val))
+				slog.InfoContext(ctx, "event added or updated", slog.String("key", key))
 				onChange(ctx, false, key, val)
 			case clientv3.EventTypeDelete: // 服务下线, 异常失去联系等
-				slog.InfoContext(ctx, "event deleted", slog.String("key", key), slog.String("value", val))
+				slog.InfoContext(ctx, "event deleted", slog.String("key", key))
 				onChange(ctx, true, key, val)
 			default:
 				slog.WarnContext(ctx, "unknown event type", slog.String("type", ev.Type.String()), slog.String("key", key), slog.String("value", val))
@@ -82,8 +83,8 @@ func WatchKeyValues(ctx context.Context, cli *clientv3.Client, prefix string, on
 	}
 }
 
-// RegisterService 注册一个服务，写入指定 key 和 value，并绑定 TTL 租约
-func RegisterService(ctx context.Context, cli *clientv3.Client, key, value string, ttlSeconds int64) (leaseID clientv3.LeaseID, err error) {
+// Grant 注册一个服务，写入指定 key 和 value，并绑定 TTL 租约
+func Grant(ctx context.Context, cli *clientv3.Client, key, value string, ttlSeconds int64) (leaseID clientv3.LeaseID, err error) {
 	// 创建租约
 	leaseResp, err := cli.Grant(ctx, ttlSeconds)
 	if err != nil {
@@ -91,20 +92,22 @@ func RegisterService(ctx context.Context, cli *clientv3.Client, key, value strin
 		return
 	}
 
+	leaseID = leaseResp.ID
 	// 写入带租约的 key-value
-	_, err = cli.Put(ctx, key, value, clientv3.WithLease(leaseResp.ID))
+	_, err = cli.Put(ctx, key, value, clientv3.WithLease(leaseID))
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to register service", slog.Any("error", err), slog.String("key", key), slog.String("value", value))
+		slog.ErrorContext(ctx, "failed to register service", slog.Any("error", err),
+			slog.String("key", key), slog.String("value", value),
+			slog.Int64("leaseID", int64(leaseID)))
 		return
 	}
 
-	slog.InfoContext(ctx, "service registered", slog.String("key", key), slog.String("value", value), slog.Int64("ttl", ttlSeconds))
-	leaseID = leaseResp.ID
+	slog.InfoContext(ctx, "grant service registered", slog.String("key", key), slog.Int64("ttl", ttlSeconds), slog.Int64("leaseID", int64(leaseID)))
 	return
 }
 
-// KeepAliveLease 启动租约续租 goroutine，确保服务不会因超时自动下线
-func KeepAliveLease(ctx context.Context, cli *clientv3.Client, leaseID clientv3.LeaseID) {
+// KeepAlive 启动租约续租 goroutine，确保服务不会因超时自动下线
+func KeepAlive(ctx context.Context, cli *clientv3.Client, leaseID clientv3.LeaseID) {
 	ch, err := cli.KeepAlive(ctx, leaseID)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to start lease keepalive", slog.Any("error", err), slog.Int64("leaseID", int64(leaseID)))
@@ -117,6 +120,7 @@ func KeepAliveLease(ctx context.Context, cli *clientv3.Client, leaseID clientv3.
 		case <-ctx.Done():
 			slog.WarnContext(ctx, "lease keepalive stopped by context", slog.Int64("leaseID", int64(leaseID)))
 			return
+		// 收到响应, 续租情况
 		case resp, ok := <-ch:
 			if !ok {
 				slog.WarnContext(ctx, "lease keepalive channel closed", slog.Int64("leaseID", int64(leaseID)))
@@ -127,8 +131,8 @@ func KeepAliveLease(ctx context.Context, cli *clientv3.Client, leaseID clientv3.
 	}
 }
 
-// RevokeLease 主动撤销租约（可用于服务下线）
-func RevokeLease(ctx context.Context, cli *clientv3.Client, leaseID clientv3.LeaseID) error {
+// Revoke 主动撤销租约（可用于服务下线）
+func Revoke(ctx context.Context, cli *clientv3.Client, leaseID clientv3.LeaseID) error {
 	_, err := cli.Revoke(ctx, leaseID)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to revoke lease", slog.Any("error", err), slog.Int64("leaseID", int64(leaseID)))
@@ -138,19 +142,8 @@ func RevokeLease(ctx context.Context, cli *clientv3.Client, leaseID clientv3.Lea
 	return nil
 }
 
-// ExistsKey 检查指定 key 是否存在
-func ExistsKey(ctx context.Context, cli *clientv3.Client, key string) (exists bool, err error) {
-	resp, err := cli.Get(ctx, key)
-	if err != nil {
-		slog.ErrorContext(ctx, "etcd get failed", slog.Any("error", err), slog.String("key", key))
-		return
-	}
-	exists = len(resp.Kvs) > 0
-	return
-}
-
-// PutKey 设置指定 key 的值
-func PutKey(ctx context.Context, cli *clientv3.Client, key, value string) (err error) {
+// Put 设置指定 key 的值
+func Put(ctx context.Context, cli *clientv3.Client, key, value string) (err error) {
 	_, err = cli.Put(ctx, key, value)
 	if err != nil {
 		slog.ErrorContext(ctx, "etcd put failed", slog.Any("error", err), slog.String("key", key), slog.String("value", value))
@@ -160,8 +153,8 @@ func PutKey(ctx context.Context, cli *clientv3.Client, key, value string) (err e
 	return
 }
 
-// DeleteKey 删除指定 key
-func DeleteKey(ctx context.Context, cli *clientv3.Client, key string) (err error) {
+// Delete 删除指定 key
+func Delete(ctx context.Context, cli *clientv3.Client, key string) (err error) {
 	_, err = cli.Delete(ctx, key)
 	if err != nil {
 		slog.ErrorContext(ctx, "etcd delete failed", slog.Any("error", err), slog.String("key", key))
@@ -183,7 +176,6 @@ func GetKey(ctx context.Context, cli *clientv3.Client, key string) (value string
 		return "", nil
 	}
 	value = string(resp.Kvs[0].Value)
-	slog.InfoContext(ctx, "key retrieved successfully", slog.String("key", key), slog.String("value", value))
 	return
 }
 
@@ -199,7 +191,6 @@ func GetKeys(ctx context.Context, cli *clientv3.Client, prefix string) (keys []s
 	for _, kv := range resp.Kvs {
 		keys = append(keys, string(kv.Key))
 	}
-	slog.InfoContext(ctx, "keys retrieved with prefix", slog.String("prefix", prefix), slog.Int("count", len(keys)))
 	return
 }
 
@@ -215,6 +206,5 @@ func GetValues(ctx context.Context, cli *clientv3.Client, prefix string) (values
 	for _, kv := range resp.Kvs {
 		values = append(values, string(kv.Value))
 	}
-	slog.InfoContext(ctx, "values retrieved with prefix", slog.String("prefix", prefix), slog.Int("count", len(values)))
 	return
 }
