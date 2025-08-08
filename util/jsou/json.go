@@ -53,9 +53,7 @@ func WriteFile(dst string, obj any) error {
 	return os.WriteFile(dst, data, 0o664)
 }
 
-// ReadWriteFile
-// 1. 读取 src 文件, 尝试生成 json T obj 对象;
-// 2. 尝试将 obj 转成 json 格式, 然后输出到 dst destination（目的地）目标文件中;
+// ReadWriteFile 1. 读取 src 文件, 尝试生成 json T obj 对象; 2. 尝试将 obj 转成 json 格式, 然后输出到 dst destination（目的地）目标文件中;
 func ReadWriteFile[T any](src, dst string) (err error) {
 	// 打开源文件
 	source, err := os.Open(src)
@@ -73,7 +71,7 @@ func ReadWriteFile[T any](src, dst string) (err error) {
 	return WriteFile(dst, obj)
 }
 
-// Map json 字符串 数据集转为 map[string]any 类似 Unmarshal[map[string]any](dj)
+// Map json 字符串 数据集转为 map[string]any 类似 Unmarshal[map[string]any](obj)
 func Map(data string) (obj map[string]any, err error) {
 	err = json.Unmarshal([]byte(data), &obj)
 	return
