@@ -130,7 +130,7 @@ func (s *ServiceRegistry) WatchServices(prefix string, onChange func(ctx context
 					slog.InfoContext(ctx, "event deleted", slog.String("key", key), slog.String("value", val))
 					onChange(ctx, true, key, val)
 				default:
-					slog.WarnContext(ctx, "unknown event type", slog.String("type", event.Type.String()), slog.String("key", key), slog.String("value", val))
+					slog.ErrorContext(ctx, "unknown event type", slog.String("type", event.Type.String()), slog.String("key", key), slog.String("value", val))
 				}
 			}
 		}

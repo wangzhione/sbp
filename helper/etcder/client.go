@@ -77,7 +77,7 @@ func WatchPrefix(ctx context.Context, cli *clientv3.Client, prefix string, onCha
 				slog.InfoContext(ctx, "event deleted", slog.String("key", key))
 				onChange(ctx, true, key, val)
 			default:
-				slog.WarnContext(ctx, "unknown event type", slog.String("type", ev.Type.String()), slog.String("key", key), slog.String("value", val))
+				slog.ErrorContext(ctx, "unknown event type", slog.String("type", ev.Type.String()), slog.String("key", key), slog.String("value", val))
 			}
 		}
 	}
@@ -164,8 +164,8 @@ func Delete(ctx context.Context, cli *clientv3.Client, key string) (err error) {
 	return
 }
 
-// GetKey 获取指定 key 的值
-func GetKey(ctx context.Context, cli *clientv3.Client, key string) (value string, err error) {
+// Get 获取指定 key 的值
+func Get(ctx context.Context, cli *clientv3.Client, key string) (data []byte, err error) {
 	resp, err := cli.Get(ctx, key)
 	if err != nil {
 		slog.ErrorContext(ctx, "etcd get failed", slog.Any("error", err), slog.String("key", key))
@@ -173,9 +173,9 @@ func GetKey(ctx context.Context, cli *clientv3.Client, key string) (value string
 	}
 	if len(resp.Kvs) == 0 {
 		slog.WarnContext(ctx, "key not found", slog.String("key", key))
-		return "", nil
+		return nil, nil
 	}
-	value = string(resp.Kvs[0].Value)
+	data = resp.Kvs[0].Value
 	return
 }
 
