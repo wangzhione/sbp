@@ -1,5 +1,5 @@
-// Package etcdhelper provides etcd-based service discovery helpers
-package etcdhelper
+// Package etcder provides etcd-based service discovery helpers
+package etcder
 
 import (
 	"context"

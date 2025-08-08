@@ -1,4 +1,4 @@
-package etcdhelper
+package etcder
 
 import (
 	"context"
@@ -34,7 +34,7 @@ func NewServiceRegistry(ctx context.Context, client *clientv3.Client, key, value
 }
 
 // Register 注册服务并自动续约
-// secondTTL: 服务注册的租约时间（单位：秒）普通 Web 服务推荐 10s; 后台服务推荐 30s; 高敏感服务推荐 3 - 5s
+// secondTTL: 服务注册的租约时间（单位：秒）普通 Web 服务推荐 10s; 后台服务推荐 30s; 高敏感服务推荐 3-5s;
 func (s *ServiceRegistry) Register(secondTTL int64) error {
 	leaseResp, err := s.client.Grant(s.ctx, secondTTL)
 	if err != nil {
@@ -54,7 +54,7 @@ func (s *ServiceRegistry) Register(secondTTL int64) error {
 	slog.InfoContext(s.ctx, "service registered", slog.String("key", s.key), slog.String("value", s.value),
 		slog.Int64("leaseID", int64(leaseResp.ID)))
 
-	safego.Go(s.ctx, func(ctx context.Context) { s.keepAlive() })
+	safego.Go(s.ctx, func(context.Context) { s.keepAlive() })
 	return nil
 }
 
