@@ -76,8 +76,6 @@ func WatchPrefix(ctx context.Context, cli *clientv3.Client, prefix string, onCha
 			case clientv3.EventTypeDelete: // 服务下线, 异常失去联系等
 				slog.InfoContext(ctx, "event deleted", slog.String("key", key))
 				onChange(ctx, true, key, val)
-			default:
-				slog.ErrorContext(ctx, "unknown event type", slog.String("type", ev.Type.String()), slog.String("key", key), slog.String("value", val))
 			}
 		}
 	}

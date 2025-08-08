@@ -82,32 +82,42 @@ func (cw *ConfigWatcher) initial() error {
 	return nil
 }
 
-// watch 持续监听配置变化
+// watch 持续监听配置变化（支持 ctx.Done()，处理 watchChan 关闭）
 func (cw *ConfigWatcher) watch() {
-	watchChan := cw.cli.Watch(cw.ctx, cw.key)
 	slog.InfoContext(cw.ctx, "watching config key", slog.String("key", cw.key))
 
-	for resp := range watchChan {
-		if err := resp.Err(); err != nil {
-			slog.ErrorContext(cw.ctx, "watch error", slog.Any("error", err))
-			continue
-		}
+	watchChan := cw.cli.Watch(cw.ctx, cw.key)
 
-		for _, ev := range resp.Events {
-			switch ev.Type {
-			case clientv3.EventTypePut:
-				slog.InfoContext(cw.ctx, "config updated", slog.String("key", cw.key), slog.String("value", string(ev.Kv.Value)))
+	for {
+		select {
+		case <-cw.ctx.Done():
+			slog.WarnContext(cw.ctx, "config watcher stopped by context", slog.String("key", cw.key), slog.Any("err", cw.ctx.Err()))
+			return
 
-				cw.onUpdate(cw.ctx, ev.Kv.Value)
+		case resp, ok := <-watchChan:
+			if !ok {
+				slog.WarnContext(cw.ctx, "config watch channel closed", slog.String("key", cw.key))
+				return
+			}
 
-			case clientv3.EventTypeDelete: // 理论上不应该走到这个分支，因为服务配置一般不会被删除
-				slog.WarnContext(cw.ctx, "config deleted", slog.String("key", cw.key))
+			if err := resp.Err(); err != nil {
+				slog.ErrorContext(cw.ctx, "watch error", slog.Any("error", err))
+				continue
+			}
 
-				cw.onUpdate(cw.ctx, nil) // 通知配置被删除，传 nil 代表已经被删除
-			default:
-				slog.ErrorContext(cw.ctx, "unknown config event type",
-					slog.String("type", ev.Type.String()),
-					slog.String("key", string(ev.Kv.Key)))
+			for _, event := range resp.Events {
+				switch event.Type {
+				case clientv3.EventTypePut:
+					slog.InfoContext(cw.ctx, "config updated",
+						slog.String("key", cw.key),
+						slog.String("value", string(event.Kv.Value)))
+
+					cw.onUpdate(cw.ctx, event.Kv.Value)
+
+				case clientv3.EventTypeDelete:
+					slog.ErrorContext(cw.ctx, "config deleted panic error", slog.String("key", cw.key))
+					cw.onUpdate(cw.ctx, nil)
+				}
 			}
 		}
 	}
@@ -118,10 +128,9 @@ func (cw *ConfigWatcher) Close() {
 	cw.cancel()
 }
 
-// GetLatest 主动从 etcd 获取最新配置内容（同步拉取一次）
+// Get 主动从 etcd 获取最新配置内容（同步拉取一次）; 更为直接可以使用 client.go::Get 方法
 // 返回值 data 为 nil 表示 key 不存在
-// 更为直接可以使用 client.go::Get 方法
-func (cw *ConfigWatcher) GetLatest() (data []byte, err error) {
+func (cw *ConfigWatcher) Get() (data []byte, err error) {
 	resp, err := cw.cli.Get(cw.ctx, cw.key)
 	if err != nil {
 		slog.ErrorContext(cw.ctx, "failed to get config", slog.Any("error", err), slog.String("key", cw.key))

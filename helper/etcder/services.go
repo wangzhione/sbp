@@ -108,29 +108,41 @@ func (s *ServiceRegistry) keepAlive() {
 	}
 }
 
-// WatchServices 异步监听服务变化
+// WatchServices 异步监听服务变化（自动恢复、支持 ctx.Done()）
 func (s *ServiceRegistry) WatchServices(prefix string, onChange func(ctx context.Context, isDelete bool, key, value string)) {
 	safego.Go(s.ctx, func(ctx context.Context) {
 		slog.InfoContext(ctx, "starting watch", slog.String("prefix", prefix))
 
 		watchChan := s.client.Watch(ctx, prefix, clientv3.WithPrefix())
-		for resp := range watchChan {
-			if err := resp.Err(); err != nil {
-				slog.ErrorContext(ctx, "watch error", slog.Any("error", err))
-				continue
-			}
 
-			for _, event := range resp.Events {
-				key, val := string(event.Kv.Key), string(event.Kv.Value)
-				switch event.Type {
-				case clientv3.EventTypePut: // 服务注册 or 变更(如 ip 变了)
-					slog.InfoContext(ctx, "event added or updated", slog.String("key", key), slog.String("value", val))
-					onChange(ctx, false, key, val)
-				case clientv3.EventTypeDelete: // 服务下线, 异常失去联系等
-					slog.InfoContext(ctx, "event deleted", slog.String("key", key), slog.String("value", val))
-					onChange(ctx, true, key, val)
-				default:
-					slog.ErrorContext(ctx, "unknown event type", slog.String("type", event.Type.String()), slog.String("key", key), slog.String("value", val))
+		for {
+			select {
+			case <-ctx.Done():
+				slog.WarnContext(ctx, "watch cancelled by context", slog.String("prefix", prefix), slog.Any("err", ctx.Err()))
+				return
+
+			case resp, ok := <-watchChan:
+				if !ok {
+					slog.WarnContext(ctx, "watch channel closed", slog.String("prefix", prefix))
+					return
+				}
+
+				if err := resp.Err(); err != nil {
+					slog.ErrorContext(ctx, "watch error", slog.Any("error", err), slog.String("prefix", prefix))
+					continue // 自动恢复
+				}
+
+				for _, event := range resp.Events {
+					key, val := string(event.Kv.Key), string(event.Kv.Value)
+					switch event.Type {
+					case clientv3.EventTypePut:
+						slog.InfoContext(ctx, "event added or updated", slog.String("key", key), slog.String("value", val))
+						onChange(ctx, false, key, val)
+
+					case clientv3.EventTypeDelete:
+						slog.InfoContext(ctx, "event deleted", slog.String("key", key), slog.String("value", val))
+						onChange(ctx, true, key, val)
+					}
 				}
 			}
 		}
