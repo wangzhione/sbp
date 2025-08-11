@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/wangzhione/sbp/structs"
 	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
@@ -13,13 +14,17 @@ import (
 var DefaultDialTimeout = 6 * time.Second
 
 // New 创建一个 etcd client（推荐复用）
-func New(ctx context.Context, endpoints []string) (cli *clientv3.Client, err error) {
+func New(ctx context.Context, endpoints []string, timeout ...time.Duration) (cli *clientv3.Client, err error) {
+	// 如果没有传入超时时间，则使用默认值
+	dialTimeout := structs.Ternary(len(timeout) == 0, DefaultDialTimeout, timeout[0])
+
 	cli, err = clientv3.New(clientv3.Config{
 		Endpoints:   endpoints,
-		DialTimeout: DefaultDialTimeout,
+		DialTimeout: dialTimeout,
 	})
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to create etcd client", slog.Any("error", err), slog.Any("endpoints", endpoints))
+		slog.ErrorContext(ctx, "failed to create etcd client",
+			slog.Any("error", err), slog.Any("endpoints", endpoints), slog.Duration("timeout", dialTimeout))
 		return
 	}
 
@@ -39,8 +44,23 @@ func Close(ctx context.Context, cli *clientv3.Client) {
 	}
 }
 
-// GetKeyValues 获取指定前缀下的所有键值对
-func GetKeyValues(ctx context.Context, cli *clientv3.Client, prefix string) (services map[string]string, err error) {
+// Get 获取指定 key 的值
+func Get(ctx context.Context, cli *clientv3.Client, key string) (data []byte, err error) {
+	resp, err := cli.Get(ctx, key)
+	if err != nil {
+		slog.ErrorContext(ctx, "etcd get failed", slog.Any("error", err), slog.String("key", key))
+		return
+	}
+	if len(resp.Kvs) == 0 {
+		slog.WarnContext(ctx, "key not found", slog.String("key", key))
+		return nil, nil
+	}
+	data = resp.Kvs[0].Value
+	return
+}
+
+// GetPrefix 获取指定前缀下的所有键值对
+func GetPrefix(ctx context.Context, cli *clientv3.Client, prefix string) (services map[string]string, err error) {
 	// 使用 WithPrefix 获取所有以 prefix 开头的键值对
 	resp, err := cli.Get(ctx, prefix, clientv3.WithPrefix())
 	if err != nil {
@@ -51,6 +71,36 @@ func GetKeyValues(ctx context.Context, cli *clientv3.Client, prefix string) (ser
 	services = make(map[string]string)
 	for _, kv := range resp.Kvs {
 		services[string(kv.Key)] = string(kv.Value)
+	}
+	return
+}
+
+// GetPrefixKeys 获取指定前缀下的所有 keys
+func GetPrefixKeys(ctx context.Context, cli *clientv3.Client, prefix string) (keys []string, err error) {
+	resp, err := cli.Get(ctx, prefix, clientv3.WithPrefix())
+	if err != nil {
+		slog.ErrorContext(ctx, "etcd get with prefix failed", slog.Any("error", err), slog.String("prefix", prefix))
+		return
+	}
+
+	keys = make([]string, 0, len(resp.Kvs))
+	for _, kv := range resp.Kvs {
+		keys = append(keys, string(kv.Key))
+	}
+	return
+}
+
+// GetPrefixValues 获取指定前缀下的所有 values
+func GetPrefixValues(ctx context.Context, cli *clientv3.Client, prefix string) (values []string, err error) {
+	resp, err := cli.Get(ctx, prefix, clientv3.WithPrefix())
+	if err != nil {
+		slog.ErrorContext(ctx, "etcd get with prefix failed", slog.Any("error", err), slog.String("prefix", prefix))
+		return
+	}
+
+	values = make([]string, 0, len(resp.Kvs))
+	for _, kv := range resp.Kvs {
+		values = append(values, string(kv.Value))
 	}
 	return
 }
@@ -131,78 +181,75 @@ func KeepAlive(ctx context.Context, cli *clientv3.Client, leaseID clientv3.Lease
 
 // Revoke 主动撤销租约（可用于服务下线）
 func Revoke(ctx context.Context, cli *clientv3.Client, leaseID clientv3.LeaseID) error {
-	_, err := cli.Revoke(ctx, leaseID)
+	resp, err := cli.Revoke(ctx, leaseID)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to revoke lease", slog.Any("error", err), slog.Int64("leaseID", int64(leaseID)))
+		slog.ErrorContext(ctx, "failed to revoke lease",
+			slog.Any("error", err),
+			slog.Int64("leaseID", int64(leaseID)),
+		)
 		return err
 	}
-	slog.InfoContext(ctx, "lease revoked", slog.Int64("leaseID", int64(leaseID)))
+
+	slog.InfoContext(ctx, "lease revoked",
+		slog.Any("header", resp.Header), // 记录集群元信息
+		slog.Int64("leaseID", int64(leaseID)),
+	)
 	return nil
 }
 
 // Put 设置指定 key 的值
-func Put(ctx context.Context, cli *clientv3.Client, key, value string) (err error) {
-	_, err = cli.Put(ctx, key, value)
+func Put(ctx context.Context, cli *clientv3.Client, key, value string) error {
+	resp, err := cli.Put(ctx, key, value, clientv3.WithPrevKV()) // 加 WithPrevKV 可取旧值
 	if err != nil {
-		slog.ErrorContext(ctx, "etcd put failed", slog.Any("error", err), slog.String("key", key), slog.String("value", value))
-		return
+		slog.ErrorContext(ctx, "etcd put failed",
+			slog.Any("error", err),
+			slog.String("key", key),
+			slog.String("value", value),
+		)
+		return err
 	}
-	slog.InfoContext(ctx, "key set successfully", slog.String("key", key), slog.String("value", value))
-	return
+
+	if resp.PrevKv != nil {
+		slog.InfoContext(ctx, "key updated",
+			slog.Any("header", resp.Header),
+			slog.String("key", key),
+			slog.String("old_value", string(resp.PrevKv.Value)),
+			slog.String("new_value", value),
+		)
+	} else {
+		slog.InfoContext(ctx, "key created",
+			slog.Any("header", resp.Header),
+			slog.String("key", key),
+			slog.String("value", value),
+		)
+	}
+	return nil
 }
 
 // Delete 删除指定 key
-func Delete(ctx context.Context, cli *clientv3.Client, key string) (err error) {
-	_, err = cli.Delete(ctx, key)
+func Delete(ctx context.Context, cli *clientv3.Client, key string) error {
+	resp, err := cli.Delete(ctx, key, clientv3.WithPrevKV())
 	if err != nil {
-		slog.ErrorContext(ctx, "etcd delete failed", slog.Any("error", err), slog.String("key", key))
-		return
-	}
-	slog.InfoContext(ctx, "key deleted successfully", slog.String("key", key))
-	return
-}
-
-// Get 获取指定 key 的值
-func Get(ctx context.Context, cli *clientv3.Client, key string) (data []byte, err error) {
-	resp, err := cli.Get(ctx, key)
-	if err != nil {
-		slog.ErrorContext(ctx, "etcd get failed", slog.Any("error", err), slog.String("key", key))
-		return
-	}
-	if len(resp.Kvs) == 0 {
-		slog.WarnContext(ctx, "key not found", slog.String("key", key))
-		return nil, nil
-	}
-	data = resp.Kvs[0].Value
-	return
-}
-
-// GetKeys 获取指定前缀下的所有 keys
-func GetKeys(ctx context.Context, cli *clientv3.Client, prefix string) (keys []string, err error) {
-	resp, err := cli.Get(ctx, prefix, clientv3.WithPrefix())
-	if err != nil {
-		slog.ErrorContext(ctx, "etcd get with prefix failed", slog.Any("error", err), slog.String("prefix", prefix))
-		return
+		slog.ErrorContext(ctx, "etcd delete failed",
+			slog.Any("error", err),
+			slog.String("key", key),
+		)
+		return err
 	}
 
-	keys = make([]string, 0, len(resp.Kvs))
-	for _, kv := range resp.Kvs {
-		keys = append(keys, string(kv.Key))
-	}
-	return
-}
+	slog.InfoContext(ctx, "delete completed",
+		slog.String("key", key),
+		slog.Int64("deleted_count", resp.Deleted),
+		slog.Any("header", resp.Header),
+	)
 
-// GetValues 获取指定前缀下的所有 values
-func GetValues(ctx context.Context, cli *clientv3.Client, prefix string) (values []string, err error) {
-	resp, err := cli.Get(ctx, prefix, clientv3.WithPrefix())
-	if err != nil {
-		slog.ErrorContext(ctx, "etcd get with prefix failed", slog.Any("error", err), slog.String("prefix", prefix))
-		return
+	if len(resp.PrevKvs) > 0 {
+		for _, kv := range resp.PrevKvs {
+			slog.InfoContext(ctx, "key deleted",
+				slog.String("key", string(kv.Key)),
+				slog.String("old_value", string(kv.Value)),
+			)
+		}
 	}
-
-	values = make([]string, 0, len(resp.Kvs))
-	for _, kv := range resp.Kvs {
-		values = append(values, string(kv.Value))
-	}
-	return
+	return nil
 }

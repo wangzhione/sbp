@@ -40,3 +40,18 @@ func Min[T cmp.Ordered](vals ...T) (minval T) {
 	}
 	return
 }
+
+func Ternary[T any](cond bool, a, b T) T {
+	if cond {
+		return a
+	}
+	return b
+}
+
+// Coalesce 返回第一个非零值（需要可比较）
+func Coalesce[T comparable](v, def T) (zero T) {
+	if v == zero {
+		return def
+	}
+	return v
+}
