@@ -11,25 +11,28 @@ import (
 
 // ServiceRegistry 封装服务注册与监听逻辑（基于 etcd 实现）
 type ServiceRegistry struct {
-	ctx        context.Context
-	cancelFunc context.CancelFunc
+	ctx    context.Context
+	cancel context.CancelFunc
 
 	client  *clientv3.Client
 	leaseID clientv3.LeaseID
 
 	key   string
 	value string
+
+	StopTimeout time.Duration // 停止服务注册的超时时间
 }
 
 // NewServiceRegistry 创建一个服务注册对象（推荐 client 复用）
 func NewServiceRegistry(ctx context.Context, client *clientv3.Client, key, value string) *ServiceRegistry {
 	ctx, cancel := context.WithCancel(ctx)
 	return &ServiceRegistry{
-		client:     client,
-		ctx:        ctx,
-		cancelFunc: cancel,
-		key:        key,
-		value:      value,
+		client:      client,
+		ctx:         ctx,
+		cancel:      cancel,
+		key:         key,
+		value:       value,
+		StopTimeout: 3 * time.Second, // 默认 3 秒超时
 	}
 }
 
@@ -54,7 +57,7 @@ func (s *ServiceRegistry) Register(secondTTL int64) error {
 	slog.InfoContext(s.ctx, "service registered", slog.String("key", s.key), slog.String("value", s.value),
 		slog.Int64("leaseID", int64(leaseResp.ID)))
 
-	safego.Go(s.ctx, func(context.Context) { s.keepAlive() })
+	safego.Go(s.ctx, s.keepAlive)
 	return nil
 }
 
@@ -87,6 +90,7 @@ func (s *ServiceRegistry) keepAlive() {
 		// 启动成功，重置计数
 		retryCount = 0
 
+	Inner:
 		for {
 			select {
 			case <-s.ctx.Done():
@@ -100,7 +104,7 @@ func (s *ServiceRegistry) keepAlive() {
 						return
 					}
 					time.Sleep(time.Second)
-					break // 跳出内层，重连
+					break Inner // 跳出内层，重连
 				}
 				slog.DebugContext(s.ctx, "lease keepalive", slog.Int64("secondTTL", int64(ka.TTL)))
 			}
@@ -110,25 +114,25 @@ func (s *ServiceRegistry) keepAlive() {
 
 // WatchServices 异步监听服务变化（自动恢复、支持 ctx.Done()）
 func (s *ServiceRegistry) WatchServices(prefix string, onChange func(ctx context.Context, isDelete bool, key, value string)) {
-	safego.Go(s.ctx, func(ctx context.Context) {
-		slog.InfoContext(ctx, "starting watch", slog.String("prefix", prefix))
+	safego.Go(s.ctx, func() {
+		slog.InfoContext(s.ctx, "starting watch", slog.String("prefix", prefix))
 
-		watchChan := s.client.Watch(ctx, prefix, clientv3.WithPrefix())
+		watchChan := s.client.Watch(s.ctx, prefix, clientv3.WithPrefix())
 
 		for {
 			select {
-			case <-ctx.Done():
-				slog.WarnContext(ctx, "watch cancelled by context", slog.String("prefix", prefix), slog.Any("err", ctx.Err()))
+			case <-s.ctx.Done():
+				slog.WarnContext(s.ctx, "watch cancelled by context", slog.String("prefix", prefix), slog.Any("reason", s.ctx.Err()))
 				return
 
 			case resp, ok := <-watchChan:
 				if !ok {
-					slog.WarnContext(ctx, "watch channel closed", slog.String("prefix", prefix))
+					slog.WarnContext(s.ctx, "watch channel closed", slog.String("prefix", prefix))
 					return
 				}
 
 				if err := resp.Err(); err != nil {
-					slog.ErrorContext(ctx, "watch error", slog.Any("error", err), slog.String("prefix", prefix))
+					slog.ErrorContext(s.ctx, "watch error", slog.Any("error", err), slog.String("prefix", prefix))
 					continue // 自动恢复
 				}
 
@@ -136,12 +140,12 @@ func (s *ServiceRegistry) WatchServices(prefix string, onChange func(ctx context
 					key, val := string(event.Kv.Key), string(event.Kv.Value)
 					switch event.Type {
 					case clientv3.EventTypePut:
-						slog.InfoContext(ctx, "event added or updated", slog.String("key", key), slog.String("value", val))
-						onChange(ctx, false, key, val)
+						slog.InfoContext(s.ctx, "event added or updated", slog.String("key", key), slog.String("value", val))
+						onChange(s.ctx, false, key, val)
 
 					case clientv3.EventTypeDelete:
-						slog.InfoContext(ctx, "event deleted", slog.String("key", key), slog.String("value", val))
-						onChange(ctx, true, key, val)
+						slog.InfoContext(s.ctx, "event deleted", slog.String("key", key), slog.String("value", val))
+						onChange(s.ctx, true, key, val)
 					}
 				}
 			}
@@ -151,9 +155,16 @@ func (s *ServiceRegistry) WatchServices(prefix string, onChange func(ctx context
 
 // Stop 停止服务注册、撤销租约
 func (s *ServiceRegistry) Stop() {
-	s.cancelFunc()
+	var err error
+
 	if s.leaseID != 0 {
-		_ = Revoke(s.ctx, s.client, s.leaseID)
+		ctx, cancel := context.WithTimeout(s.ctx, s.StopTimeout)
+		err = Revoke(ctx, s.client, s.leaseID) // 先 Revoke
+		cancel()
 	}
-	slog.InfoContext(s.ctx, "service stopped", slog.String("key", s.key), slog.String("value", s.value), slog.Int64("leaseID", int64(s.leaseID)))
+	s.cancel()
+
+	slog.InfoContext(s.ctx, "service stopped",
+		slog.Any("reason", err),
+		slog.String("key", s.key), slog.String("value", s.value), slog.Int64("leaseID", int64(s.leaseID)))
 }

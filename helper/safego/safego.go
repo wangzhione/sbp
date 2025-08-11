@@ -27,38 +27,24 @@ go func() {
 }()
 */
 
-func So(ctx context.Context, fn func(context.Context) error) (err error) {
-	defer func() {
-		if cover := recover(); cover != nil {
-			err = fmt.Errorf("panic: safego.So %#v", cover)
-
-			// 遇到启动不起来, 异常退出, 打印堆栈方便排除问题
-			slog.ErrorContext(ctx, "So panic error",
-				slog.Any("error", err),
-				slog.String("stack", string(debug.Stack())), // 记录详细的堆栈信息
-			)
-		}
-	}()
-
-	return fn(ctx)
-}
-
-func Cover(ctx context.Context) {
+func Over(ctx context.Context) {
 	if cover := recover(); cover != nil {
-		// 遇到启动不起来, 异常退出, 打印堆栈方便排除问题
 		slog.ErrorContext(ctx, "recover go panic error",
 			slog.Any("error", cover),
-			slog.String("stack", string(debug.Stack())), // 记录详细的堆栈信息
+			slog.String("type", fmt.Sprintf("%T", cover)),
+			slog.String("stack", string(debug.Stack())),
 		)
+		// 需要时：panic(cover) // 或者上报/计数等
 	}
 }
 
-func Go(ctx context.Context, fn func(context.Context)) {
-	go func(c context.Context) {
-		defer Cover(c)
+func So(ctx context.Context, fn func()) {
+	defer Over(ctx)
+	fn()
+}
 
-		fn(c)
-	}(ctx)
+func Go(ctx context.Context, fn func()) {
+	go So(ctx, fn)
 }
 
 func ID() (goroutineid string) {

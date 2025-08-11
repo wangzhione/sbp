@@ -3,6 +3,7 @@ package etcder
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
 	"github.com/wangzhione/sbp/helper/safego"
@@ -11,9 +12,11 @@ import (
 
 // ConfigWatcher 监听单个配置 key（如 /configs/app.json）并自动热更新
 type ConfigWatcher struct {
-	ctx    context.Context
-	cancel context.CancelFunc
-	cli    *clientv3.Client
+	ctx context.Context
+	cli *clientv3.Client
+
+	// Close cw.Close() 停止监听, 理论上不用执行, 因为往往 config watcher 应该伴随服务 or 程序长期持有
+	Close context.CancelFunc
 
 	key      string
 	onUpdate func(ctx context.Context, data []byte) // 更新回调（可选）
@@ -42,24 +45,28 @@ type ConfigWatcher struct {
 	}
 */
 func NewConfigWatcher(ctx context.Context, cli *clientv3.Client, key string, onUpdate func(context.Context, []byte)) (*ConfigWatcher, error) {
+	if onUpdate == nil {
+		return nil, fmt.Errorf("onUpdate must not be nil")
+	}
 	ctx, cancel := context.WithCancel(ctx)
 
 	cw := &ConfigWatcher{
 		ctx:      ctx,
-		cancel:   cancel,
+		Close:    cancel,
 		cli:      cli,
 		key:      key,
-		onUpdate: onUpdate, // 更新回调必须存在, 用于配置文件加载操作
+		onUpdate: onUpdate,
 	}
 
-	// 初次拉取配置
-	if err := cw.initial(); err != nil {
+	// 初次拉取（带短超时），并得到当前 revision
+	err := cw.initial()
+	if err != nil {
 		cancel()
 		return nil, err
 	}
 
 	// 启动监听
-	safego.Go(ctx, func(context.Context) { cw.watch() })
+	safego.Go(ctx, func() { cw.watch() })
 
 	return cw, nil
 }
@@ -76,7 +83,7 @@ func (cw *ConfigWatcher) initial() error {
 		return nil
 	}
 
-	cw.onUpdate(cw.ctx, resp.Kvs[0].Value)
+	safego.So(cw.ctx, func() { cw.onUpdate(cw.ctx, resp.Kvs[0].Value) })
 
 	slog.InfoContext(cw.ctx, "initial config loaded", slog.String("key", cw.key))
 	return nil
@@ -111,21 +118,15 @@ func (cw *ConfigWatcher) watch() {
 					slog.InfoContext(cw.ctx, "config updated",
 						slog.String("key", cw.key),
 						slog.String("value", string(event.Kv.Value)))
-
-					cw.onUpdate(cw.ctx, event.Kv.Value)
+					safego.So(cw.ctx, func() { cw.onUpdate(cw.ctx, event.Kv.Value) })
 
 				case clientv3.EventTypeDelete:
 					slog.ErrorContext(cw.ctx, "config deleted panic error", slog.String("key", cw.key))
-					cw.onUpdate(cw.ctx, nil)
+					safego.So(cw.ctx, func() { cw.onUpdate(cw.ctx, nil) })
 				}
 			}
 		}
 	}
-}
-
-// Close 停止监听
-func (cw *ConfigWatcher) Close() {
-	cw.cancel()
 }
 
 // Get 主动从 etcd 获取最新配置内容（同步拉取一次）; 更为直接可以使用 client.go::Get 方法
