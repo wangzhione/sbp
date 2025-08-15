@@ -1,3 +1,4 @@
+// Package linkedq provides a thread-safe generic linked queue implementation.
 package linkedq
 
 import (
