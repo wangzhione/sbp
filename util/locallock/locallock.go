@@ -58,7 +58,7 @@ func (l *LocalLock) Unlock(key string) {
 		val.(*Locker).Unlock()
 	} else {
 		// 提醒 case
-		println("panic: multiple Unlock")
+		panic("multiple Unlock: " + key)
 	}
 }
 

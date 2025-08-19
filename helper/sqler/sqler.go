@@ -133,7 +133,8 @@ func (s *DB) QueryOne(ctx context.Context, query string, args ...any) (result ma
 
 	result = make(map[string]any)
 	if len(columns) == 0 {
-		return
+		// 没有列信息，返回空结果
+		return make(map[string]any), nil
 	}
 
 	// 创建切片用于存储结果
@@ -143,20 +144,27 @@ func (s *DB) QueryOne(ctx context.Context, query string, args ...any) (result ma
 		valuePtrs[i] = &values[i]
 	}
 
-	if rows.Next() {
-		// 读取数据
-		if err = rows.Scan(valuePtrs...); err != nil {
-			slog.ErrorContext(ctx, "SQLer QueryOne rows.Scan(valuePtrs...) error", "query", query, "args", args, "error", err)
-			return
-		}
+	// 检查是否有数据行
+	if !rows.Next() {
+		// 没有找到记录，返回 sql.ErrNoRows 错误
+		slog.InfoContext(ctx, "SQLer QueryOne no rows found", "query", query, "args", args)
+		return nil, sql.ErrNoRows
 	}
 
+	// 读取数据
+	if err = rows.Scan(valuePtrs...); err != nil {
+		slog.ErrorContext(ctx, "SQLer QueryOne rows.Scan(valuePtrs...) error", "query", query, "args", args, "error", err)
+		return
+	}
+
+	// 检查迭代过程中是否出错
 	if err = rows.Err(); err != nil {
 		slog.ErrorContext(ctx, "SQLer QueryOne rows.Err() error", "query", query, "args", args, "error", err)
 		return
 	}
 
 	// 解析数据
+	result = make(map[string]any, len(columns))
 	for i, colName := range columns {
 		switch val := values[i].(type) {
 		case nil:
@@ -273,7 +281,8 @@ func (s *DB) Transaction(ctx context.Context, transaction func(context.Context, 
 	// transaction success commit
 	err = tx.Commit()
 	if err != nil && err != sql.ErrTxDone {
-		slog.ErrorContext(ctx, "SQLer Transaction Commit panic error", "newerr", err)
+		slog.ErrorContext(ctx, "SQLer Transaction Commit error", "error", err)
+		return err
 	}
 
 	return nil
