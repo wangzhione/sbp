@@ -14,7 +14,7 @@ type Client struct {
 
 // Close 关闭数据库连接, 必须主动去执行, 否则无法被回收
 func (r *Client) Close(ctx context.Context) (err error) {
-	if r != nil {
+	if r != nil && r.UniversalClient != nil {
 		err = r.UniversalClient.Close()
 		// 创建和关闭都是很重的操作需要格外小心
 		slog.InfoContext(ctx, "r.UniversalClient.Close() info", "reason", err)
