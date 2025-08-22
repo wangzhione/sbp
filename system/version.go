@@ -11,15 +11,20 @@ var BuildVersion string = runtime.Version()
 // GitVersion 项目发布时候代码 git 版本信息 | git rev-parse HEAD
 var GitVersion string
 
+// GitCommitTime 最近一次提交时间（来自 vcs.time）
+var GitCommitTime string
+
 func init() {
 	info, ok := debug.ReadBuildInfo()
 	if !ok {
 		println("debug.ReadBuildInfo() return no ok")
 	} else {
 		for _, setting := range info.Settings {
-			if setting.Key == "vcs.revision" {
+			switch setting.Key {
+			case "vcs.revision":
 				GitVersion = setting.Value
-				break
+			case "vcs.time":
+				GitCommitTime = setting.Value
 			}
 		}
 	}
