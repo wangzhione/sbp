@@ -23,6 +23,16 @@ func Unmarshal[T any](data string) (obj T, err error) {
 	return
 }
 
+// To 将一个类型的值转换为另一个类型的值（泛型）
+func To[A any, B any](src A) (dst B, err error) {
+	data, err := json.Marshal(src)
+	if err != nil {
+		return
+	}
+	err = json.Unmarshal(data, &dst)
+	return
+}
+
 // Valid 判断字符串 是否为合法 json
 // 当你想要用 []byte 当成参数时候, 默认你是有一定选择能力开放人员, 这时候可以自行选定 json.Valid ...
 func Valid(data string) bool {
