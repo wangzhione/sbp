@@ -24,7 +24,7 @@ func Unmarshal[T any](data string) (obj T, err error) {
 }
 
 // To 将一个类型的值转换为另一个类型的值（泛型）
-func To[A any, B any](src A) (dst B, err error) {
+func To[T any](src any) (dst T, err error) {
 	data, err := json.Marshal(src)
 	if err != nil {
 		return
