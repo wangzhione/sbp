@@ -7,6 +7,8 @@ import (
 	"log/slog"
 	"runtime"
 	"runtime/debug"
+
+	"github.com/wangzhione/sbp/chain"
 )
 
 // goroutine 是有成本, 并且存在泄露或崩溃的风险!
@@ -45,6 +47,17 @@ func So(ctx context.Context, fn func()) {
 
 func Go(ctx context.Context, fn func()) {
 	go So(ctx, fn)
+}
+
+// Async 脱离原始 context.Context 控制, 发起独立 go 异步程序
+func Async(ctx context.Context, fn func(asynctx context.Context)) {
+	asynctx := chain.CopyTrace(ctx)
+
+	go func() {
+		defer Over(asynctx)
+
+		fn(asynctx)
+	}()
 }
 
 func ID() (goroutineid string) {
