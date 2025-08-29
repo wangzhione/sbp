@@ -6,6 +6,7 @@ import (
 	"net/http"
 )
 
+// BC British Columbia context commemorate
 var BC = Context()
 
 // XRquestID 默认所有链条 trace id 的 key
@@ -36,8 +37,13 @@ func TraceID(ctx context.Context) (traceID string) {
 	return
 }
 
-func CopyTrace(ctx context.Context, keys ...any) context.Context {
-	// 防止 context 存在 timeout or cancel
+func CopyTrace(ctx context.Context) context.Context {
+	// 处理 context 存在 timeout or cancel
+	return WithContext(context.Background(), TraceID(ctx))
+}
+
+func CopyContext(ctx context.Context, keys ...any) context.Context {
+	// 处理 context 存在 timeout or cancel
 	newctx := context.Background()
 	for _, key := range keys {
 		if val := ctx.Value(key); val != nil {
