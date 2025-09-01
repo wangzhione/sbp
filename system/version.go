@@ -16,16 +16,18 @@ var GitCommitTime string
 
 func init() {
 	info, ok := debug.ReadBuildInfo()
+
 	if !ok {
 		println("debug.ReadBuildInfo() return no ok")
-	} else {
-		for _, setting := range info.Settings {
-			switch setting.Key {
-			case "vcs.revision":
-				GitVersion = setting.Value
-			case "vcs.time":
-				GitCommitTime = setting.Value
-			}
+		return
+	}
+
+	for _, setting := range info.Settings {
+		switch setting.Key {
+		case "vcs.revision":
+			GitVersion = setting.Value
+		case "vcs.time":
+			GitCommitTime = setting.Value
 		}
 	}
 }
