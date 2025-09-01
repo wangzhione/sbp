@@ -1,3 +1,5 @@
+// Package chango provides a generic goroutine pool for managing concurrent tasks.
+// It supports worker lifecycle management, panic recovery, and context cancellation.
 package chango
 
 import (
@@ -62,19 +64,32 @@ func (p *Pool[T]) worker(one T) {
 	// 执行首次任务, 防止首次空转
 	one.Do()
 
-	// Go 1.23+ safe: Stop 无需 drain；defer 保证释放
+	// Go 1.23+ safe: Stop 无需 drain (<-timer.C 手工清空)；defer 保证释放
 	r := time.NewTimer(p.WokerLife)
 	defer r.Stop()
 
 	for {
 		select {
 		case two := <-p.oo:
-			// stop 保证 timer 不再触发 ticker
-			r.Stop()
 			two.Do()
-			// 重新来过, 为下次 循环准备
+			// 重新来过, 为下次 循环准备; 会 clear old <-r.C 的值
+			// https://golang.ac.cn/wiki/Go123Timer
 			r.Reset(p.WokerLife)
 		case <-r.C:
+			// 预防 timer 和 oo 都触发, 导致 worker 消费被遗漏
+			select {
+			case two := <-p.oo:
+				two.Do()
+				r.Reset(p.WokerLife)
+				// 继续循环，不退出
+				continue
+			default:
+				// 确实没任务，才真正退出
+				return
+			}
+
+		case <-p.C.Done():
+			// Pool 关闭/上层取消
 			return
 		}
 	}
