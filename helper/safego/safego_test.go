@@ -14,6 +14,7 @@ func TestID_Concurrent(t *testing.T) {
 
 	for range n {
 		wg.Add(1)
+
 		go func() {
 			defer wg.Done()
 			id := ID()
