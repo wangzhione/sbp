@@ -9,6 +9,8 @@ import (
 var BuildVersion string = runtime.Version()
 
 // GitVersion 项目发布时候代码 git 版本信息 | git rev-parse HEAD
+// 依赖下面类型的 build 编译方式
+// $env:CGO_ENABLED="0"; $env:GOOS="linux"; $env:GOARCH="amd64"; go build -trimpath -buildvcs=true -o {target} .
 var GitVersion string
 
 // GitCommitTime 最近一次提交时间（来自 vcs.time）
