@@ -23,7 +23,7 @@ func Unmarshal[T any](data string) (obj T, err error) {
 	return
 }
 
-// To 将一个类型的值转换为另一个类型的值（泛型）
+// To 将一个类型的值转换为(另)一个类型的值（泛型）; 类似 Simple DeepCopy
 func To[T any](src any) (dst T, err error) {
 	data, err := json.Marshal(src)
 	if err != nil {
@@ -33,20 +33,15 @@ func To[T any](src any) (dst T, err error) {
 	return
 }
 
-// Valid 判断字符串 是否为合法 json
-// 当你想要用 []byte 当成参数时候, 默认你是有一定选择能力开放人员, 这时候可以自行选定 json.Valid ...
-func Valid(data string) bool {
-	return json.Valid([]byte(data))
+// Map json 字符串 数据集转为 map[string]any 类似 Unmarshal[map[string]any](obj)
+func Map(data string) (obj map[string]any, err error) {
+	err = json.Unmarshal([]byte(data), &obj)
+	return
 }
 
-// ReadFile 读取 src 文件, 尝试生成 json T 对象
-func ReadFile[T any](src string) (obj T, err error) {
-	data, err := os.ReadFile(src)
-	if err != nil {
-		return
-	}
-
-	err = json.Unmarshal(data, &obj)
+// Slice json 字符串 数据集转为 []any
+func Slice(data string) (obj []any, err error) {
+	err = json.Unmarshal([]byte(data), &obj)
 	return
 }
 
@@ -61,6 +56,17 @@ func WriteFile(dst string, obj any) error {
 	// 所在组 (group)	6 → rw-	可读可写
 	// 其他人 (others)	4 → r--	只读
 	return os.WriteFile(dst, data, 0o664)
+}
+
+// ReadFile 读取 src 文件, 尝试生成 json T 对象
+func ReadFile[T any](src string) (obj T, err error) {
+	data, err := os.ReadFile(src)
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(data, &obj)
+	return
 }
 
 // ReadWriteFile 1. 读取 src 文件, 尝试生成 json T obj 对象; 2. 尝试将 obj 转成 json 格式, 然后输出到 dst destination（目的地）目标文件中;
@@ -81,28 +87,10 @@ func ReadWriteFile[T any](src, dst string) (err error) {
 	return WriteFile(dst, obj)
 }
 
-// Map json 字符串 数据集转为 map[string]any 类似 Unmarshal[map[string]any](obj)
-func Map(data string) (obj map[string]any, err error) {
-	err = json.Unmarshal([]byte(data), &obj)
-	return
-}
-
-// Slice json 字符串 数据集转为 []any
-func Slice(data string) (obj []any, err error) {
-	err = json.Unmarshal([]byte(data), &obj)
-	return
-}
-
-// !!! 用深拷贝时候, 认真思考下, 能否真的有必要, 如果不用这种隐式深拷贝是否也可以 !!!
-
-// DeepCopy json 深拷贝
-func DeepCopy[I any, T any](src I) (dst T, err error) {
-	data, err := json.Marshal(src)
-	if err != nil {
-		return
-	}
-	err = json.Unmarshal(data, &dst)
-	return
+// Valid 判断字符串 是否为合法 json
+// 当你想要用 []byte 当成参数时候, 默认你是有一定选择能力开放人员, 这时候可以自行选定 json.Valid ...
+func Valid(data string) bool {
+	return json.Valid([]byte(data))
 }
 
 // DEBUG json + fmt printf 简单打印测试, args[0] 可以传入 io.Writer, 不传入默认 os.Stdout
