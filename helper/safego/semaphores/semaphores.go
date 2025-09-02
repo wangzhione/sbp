@@ -10,11 +10,11 @@ type Semaphores struct {
 	Semaphore chan struct{}
 }
 
-func NewSemaphores(len int) (p Semaphores) {
-	if len <= 0 {
-		p.Semaphore = make(chan struct{})
+func NewSemaphores(size int) (p Semaphores) {
+	if size > 0 {
+		p.Semaphore = make(chan struct{}, size)
 	} else {
-		p.Semaphore = make(chan struct{}, len)
+		p.Semaphore = make(chan struct{})
 	}
 
 	return p
