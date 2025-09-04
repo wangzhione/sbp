@@ -2,38 +2,25 @@ package chain
 
 import (
 	"crypto/rand"
-	"io"
+	"encoding/hex"
 )
-
-const hextable = "0123456789abcdef"
 
 // UUID 的全称是 Universally Unique Identifier, "通用唯一标识符" or "全球唯一标识符"
 func UUID() string {
 	// // A UUID is a 128 bit (16 byte) Universal Unique IDentifier as defined in RFC9562.
 	var uuid [16]byte
-	_, err := io.ReadFull(rand.Reader, uuid[:]) // random function
-	if err != nil {
-		// 特定低版本 linux 内核 rand 会出错, 一旦出错, Go 运行时默认退出 ...
-		// fatal("crypto/rand: failed to read random data (see https://go.dev/issue/66821): " + err.Error())
-		// panic("unreachable") // To be sure.
+	_, _ = rand.Read(uuid[:]) // random function ; 细节 @see go/src/crypto/rand/rand.go
 
-		// never case, 兜底 用默认 uuid 串返回
-		return "00000000000000000000000000000000"
-	}
 	uuid[6] = (uuid[6] & 0x0f) | 0x40 // Version 4
 	uuid[8] = (uuid[8] & 0x3f) | 0x80 // Variant is 10
 
-	var data [32]byte
+	var out [32]byte
 	// "00000000-0000-0000-0000-000000000000" {8}-{4}-{4}-{4}-{12}
-	for i, v := range uuid {
-		data[i<<1] = hextable[v>>4]       // high 4 bit
-		data[(i<<1)+1] = hextable[v&0x0f] //  low 4 bit
-	}
-
-	return string(data[:])
+	hex.Encode(out[:], uuid[:])
+	return string(out[:])
 }
 
-// 对于 UUID , 另一个思路, 借助 MySQL UUID_SHORT() 函数返回 int128 , 可惜是 Go 官方还没有支持相关 bigint 类型
+// 对于 UUID , 另一个拓展思路, 借助 MySQL UUID_SHORT() 函数返回 int128
 
 /*
 	ulonglong uuid_value;
