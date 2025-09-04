@@ -14,7 +14,7 @@ import (
 var EnableLevel slog.Level = slog.LevelDebug
 
 // EnableText 日志给专业人士看的, 当前行业显学, 还是以 json 格式为主流.
-// 设计上越独裁, 使用方越自由, 要么简单用, 要么不用
+// 设计上死板, 使用方简单
 func EnableText() bool {
 	return strings.EqualFold(os.Getenv("LOG_FORMAT"), "text")
 }

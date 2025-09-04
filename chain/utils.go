@@ -20,6 +20,8 @@ var ExeNameSuffixExt = strings.TrimSuffix(ExeName, ExeExt)
 // ExeDir 获取可执行文件所在目录, 结尾不带 '/'
 var ExeDir = filepath.Dir(ExePath)
 
+var Hostname = hostname()
+
 func hostname() string {
 	// 获取容器的 hostname（通常是容器的短 ID）
 	hostname, err := os.Hostname()
@@ -29,8 +31,6 @@ func hostname() string {
 
 	return UUID()
 }
-
-var Hostname = hostname()
 
 // Exist 判断路径（文件或目录）是否存在
 func Exist(path string) (exists bool, err error) {
