@@ -8,7 +8,7 @@
 
 ## trace
 
-```
+```Go
 import "github.com/wangzhione/sbp/chain"
 
 
@@ -38,20 +38,35 @@ func Request(r *http.Request) (req *http.Request, requestID string) {
 
 
 // step 2:  Second 获取 trace id
-func GetTraceID(c context.Context) string 
+
+// GetTraceID context 中 get trace id
+func GetTraceID(ctx context.Context) (traceID string) {
+	traceID, _ = ctx.Value(xRquestID).(string)
+	return
+}
 ```
 
 ## slog 用法 Ⅴ
 
-```
+```Go
 import "github.com/wangzhione/sbp/chain"
 
 chain.InitSLog()
+
+```
+
+or 也可以使用 `chain.InitSlogRotatingFile()` 进行日维度日志文件收集
+
+```Go
+if err = chain.InitSlogRotatingFile(); err != nil {
+	// 如果 文件 日志有问题, 需要打印相关信息
+	slog.ErrorContext(context.Context, "chain.InitSlogRotatingFile error", "error", err) // 退化成控制台输出
+
+	chain.InitSLog()
+}
 ```
 
 import 后 可以无缝使用 slog 进行 InfoContext or WarnContext or ErrorContext. 也可以参照其内部代码, 在 main func 初始化, 用业务自己的自定义 slog. 其中 chain.XRquestID 各个环节交互唯一 trace key 串
-
-也可以使用 `chain.InitSlogRotatingFile()` 进行日维度日志文件收集
 
 ***
 

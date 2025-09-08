@@ -57,8 +57,7 @@ type hourordaylogger struct {
 	*os.File
 	lasttime time.Time
 
-	LogsDir string // LogsDir ★ 默认 log dir 在 {exe dir}/logs
-
+	LogsDir   string // ★ 默认 log dir 在 {exe dir}/logs
 	getfilefn func(logsDir string) (now time.Time, filename string)
 }
 
@@ -78,20 +77,13 @@ func (our *hourordaylogger) rotate() error {
 		return err
 	}
 
-	options := &slog.HandlerOptions{
-		Level: EnableLevel,
-	}
-
 	stdoutandfile := io.MultiWriter(os.Stdout, file)
 
-	var hourly slog.Handler
-	if EnableText() {
-		hourly = slog.NewTextHandler(stdoutandfile, options)
-	} else {
-		hourly = slog.NewJSONHandler(stdoutandfile, options)
-	}
-
-	slog.SetDefault(slog.New(&TraceHandler{hourly}))
+	slog.SetDefault(slog.New(&TraceHandler{
+		slog.NewJSONHandler(stdoutandfile, &slog.HandlerOptions{
+			Level: EnableLevel,
+		}),
+	}))
 
 	_ = our.Close() // os.OpenFile 有兜底 runtime.SetFinalizer(f.file, (*file).close) 😂
 	our.File = file
@@ -113,7 +105,7 @@ func (our *hourordaylogger) rotateloop() {
 	}
 }
 
-var DefaultCleanTime = 15 * 24 * time.Hour // 默认 15 天前, 有时候过 7 天假期, 回来 7 天日志没了 ...
+var DefaultCleanTime = -15 * 24 * time.Hour // 默认 15 天前, 有时候过 7 天假期, 回来 7 天日志没了 ...
 
 var DefaultCheckTime = 7 * time.Hour // sevenday 每次检查是否要清理历史日志时间间隔
 
@@ -124,7 +116,7 @@ func (our *hourordaylogger) sevenday(now time.Time) {
 	}
 	our.lasttime = now
 
-	cutoff := now.Add(-DefaultCleanTime)
+	cutoff := now.Add(DefaultCleanTime)
 	// 尝试清理历史文件
 	var files []string
 	err := filepath.WalkDir(

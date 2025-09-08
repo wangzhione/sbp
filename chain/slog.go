@@ -7,37 +7,22 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 )
 
 // EnableLevel 默认开启 slog.LevelDebug, 具体业务可以 init 通过配置日志等级
 var EnableLevel slog.Level = slog.LevelDebug
 
-// EnableText 日志给专业人士看的, 当前行业显学, 还是以 json 格式为主流.
-// 设计上死板, 使用方简单
-func EnableText() bool {
-	return strings.EqualFold(os.Getenv("LOG_FORMAT"), "text")
-}
-
 func InitSLog() {
-	options := &slog.HandlerOptions{
-		Level: EnableLevel,
-	}
-
-	// 默认走 JSON Handler
-	var handler slog.Handler
-	if EnableText() {
-		handler = slog.NewTextHandler(os.Stdout, options)
-	} else {
-		handler = slog.NewJSONHandler(os.Stdout, options)
-	}
-
-	logs := slog.New(&TraceHandler{handler})
-	slog.SetDefault(logs)
+	slog.SetDefault(slog.New(&TraceHandler{
+		slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+			Level: EnableLevel,
+		}),
+	}))
 }
 
 func InitSlogRotatingFile() error {
-	// 默认是 start day logger; 如果需要 hour logger , Please DefaultGetFile = GetfileByHour 随后 Call InitSlogRotatingFile()
+	// 默认是 start day logger;
+	// 如果需要 hour logger, Please DefaultGetFile = GetfileByHour 随后 Call InitSlogRotatingFile()
 	return Startlogger()
 }
 
