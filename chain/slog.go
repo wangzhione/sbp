@@ -25,9 +25,11 @@ func InitSLog() {
 	}
 
 	// 默认走 JSON Handler
-	var handler slog.Handler = slog.NewJSONHandler(os.Stdout, options)
+	var handler slog.Handler
 	if EnableText() {
 		handler = slog.NewTextHandler(os.Stdout, options)
+	} else {
+		handler = slog.NewJSONHandler(os.Stdout, options)
 	}
 
 	logs := slog.New(&TraceHandler{handler})
@@ -35,8 +37,8 @@ func InitSLog() {
 }
 
 func InitSlogRotatingFile() error {
-	// 默认是 start day logger; 如果需要 hour logger , Please Call Starthourordaylogger(nil)
-	return Startlogger(GetfileByDay)
+	// 默认是 start day logger; 如果需要 hour logger , Please DefaultGetFile = GetfileByHour 随后 Call InitSlogRotatingFile()
+	return Startlogger()
 }
 
 type TraceHandler struct {

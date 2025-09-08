@@ -5,18 +5,21 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"regexp"
-	"strings"
 	"time"
 )
 
+var DefaultGetFile = GetfileByDay // 默认按天切割日志
+
+// GetfileByDay 按天切割日志
+// 生成的日志文件名格式: {exe path dir}/logs/{20250522}-{exe name}-{hostname}.log
+// 例如: /home/user/myapp/logs/20250522-myapp-myhost.log
 func GetfileByDay(logsDir string) (now time.Time, filename string) {
 	now = time.Now()
 
 	days := now.Format("20060102") // e.g. 20250522
-	// {exe path dir}/logs/{exe name}-{20250522}-{hostname}.log
-	filename = filepath.Join(logsDir, ExeName+"-"+days+"-"+Hostname+".log")
-	print("GetfileByDay day init log", Hostname, filename)
+	// {exe path dir}/logs/{20250522}-{exe name}-{hostname}.log
+	filename = filepath.Join(logsDir, days+"-"+ExeName+"-"+Hostname+".log")
+	println("GetfileByDay day init log", Hostname, filename)
 	return
 }
 
@@ -24,21 +27,17 @@ func GetfileByHour(logsDir string) (now time.Time, filename string) {
 	now = time.Now()
 
 	hours := now.Format("2006010215") // e.g. 2025032815
-	// {exe path dir}/logs/{exe name}-{2025032815}-{hostname}.log
-	filename = filepath.Join(logsDir, ExeName+"-"+hours+"-"+Hostname+".log")
-	print("GetfileByHour init log", Hostname, filename)
+	// {exe path dir}/logs/{2025032815}-{exe name}-{hostname}.log
+	filename = filepath.Join(logsDir, hours+"-"+ExeName+"-"+Hostname+".log")
+	println("GetfileByHour init log", Hostname, filename)
 	return
 }
 
-// Startlogger 启动一个 slog 实例, getfile 可以是 nil, 默认是 GetfileByHour or GetfileByDay
-func Startlogger(getfile func(logsDir string) (now time.Time, filename string)) error {
-	if getfile == nil {
-		getfile = GetfileByHour
-	}
-
+// Startlogger 启动一个 slog 实例, DefaultGetFile 默认是 GetfileByDay; 或者重新设置 DefaultGetFile
+func Startlogger() error {
 	our := &hourordaylogger{ // our 类似跨函数闭包
 		LogsDir:   filepath.Join(ExeDir, "logs"),
-		getfilefn: getfile,
+		getfilefn: DefaultGetFile,
 	}
 
 	err := os.MkdirAll(our.LogsDir, os.ModePerm)
@@ -118,8 +117,6 @@ var DefaultCleanTime = 15 * 24 * time.Hour // 默认 15 天前, 有时候过 7 �
 
 var DefaultCheckTime = 7 * time.Hour // sevenday 每次检查是否要清理历史日志时间间隔
 
-var Dre = regexp.MustCompile(`(?:[^/-]+-)*(\d{8,12})-`)
-
 func (our *hourordaylogger) sevenday(now time.Time) {
 	if now.Sub(our.lasttime) < DefaultCheckTime {
 		// 时间间隔太小直接返回
@@ -142,22 +139,20 @@ func (our *hourordaylogger) sevenday(now time.Time) {
 				return nil
 			}
 
-			// fix `logs/materialefficiencytool-2025051404-ms-2scj6hpg-1-6c44dcc954-rfnhf.log` bug
-			// fix `logs/segmentclips-2025041115-nb-1282427673004035712-9qrao4gnd4e8.log` bug
+			filename := filepath.Base(path)
 
-			// 正则：匹配 logs/... 中的 10 位数字段
-			matches := Dre.FindStringSubmatch(path)
-			if len(matches) < 2 {
-				println("sevenday reD.FindStringSubmatch error", strings.Join(matches, " "), Hostname, path)
-				files = append(files, path)
+			// ★ 仅处理 .log 文件
+			if filepath.Ext(filename) != ".log" {
 				return nil
 			}
 
-			// 提取中间的时间字符串
-			timeStr := matches[1]
-			if len(timeStr) > 8 {
-				timeStr = timeStr[:8]
+			if len(filename) < 8 {
+				// 文件名太短, 不符合格式
+				return nil
 			}
+
+			// 提取开始的时间字符串
+			timeStr := filename[:8]
 
 			// 解析时间
 			t, err := time.Parse("20060102", timeStr)
