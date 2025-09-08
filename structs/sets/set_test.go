@@ -156,6 +156,6 @@ func TestSet_String(t *testing.T) {
 func TestSet_Operator(t *testing.T) {
 	var s Set[string] = nil
 
-	found := s.Contains("123")
+	found := s.Exists("123")
 	t.Log(found)
 }

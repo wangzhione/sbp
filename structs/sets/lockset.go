@@ -5,19 +5,19 @@ import (
 	"sync"
 )
 
-// LockSet[T] thread safe map set
+// LockSet is a thread-safe map set.
 // 如果你需要去使用, 需要区分对 set 的 read 和 write 操作
 //
 // r := NewLockSet()
 //
 // read step
-// r.Lock()
-// defer r.Unlock()
+// r.RLock()
+// defer r.RUnlock()
 // read r.S
 //
 // write step
-// r.RLock()
-// defer r.RUnlock()
+// r.Lock()
+// defer r.Unlock()
 // write r.S
 type LockSet[T comparable] struct {
 	sync.RWMutex
@@ -28,16 +28,10 @@ func NewLockSet[T comparable](vals ...T) *LockSet[T] {
 	return &LockSet[T]{S: New(vals...)}
 }
 
-func (r *LockSet[T]) Add(v T) {
+func (r *LockSet[T]) Add(vals ...T) {
 	r.Lock()
 	defer r.Unlock()
-	r.S.Add(v)
-}
-
-func (r *LockSet[T]) Append(vals ...T) {
-	r.Lock()
-	defer r.Unlock()
-	r.S.Append(vals...)
+	r.S.Add(vals...)
 }
 
 func (r *LockSet[T]) Clear() {
@@ -52,10 +46,10 @@ func (r *LockSet[T]) Len() int {
 	return r.S.Len()
 }
 
-func (r *LockSet[T]) Contains(v T) bool {
+func (r *LockSet[T]) Exists(v T) bool {
 	r.RLock()
 	defer r.RUnlock()
-	return r.S.Contains(v)
+	return r.S.Exists(v)
 }
 
 func (r *LockSet[T]) Delete(vals ...T) {

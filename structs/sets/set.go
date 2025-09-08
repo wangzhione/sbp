@@ -8,14 +8,12 @@ import (
 	"strings"
 )
 
-// Set[T] map set
+// Set is a generic set implementation for comparable types.
 type Set[T comparable] map[T]struct{}
 
 func New[T comparable](vals ...T) Set[T] {
 	s := make(Set[T], len(vals))
-	for _, elem := range vals {
-		s.Add(elem)
-	}
+	s.Add(vals...)
 	return s
 }
 
@@ -30,15 +28,13 @@ func New[T comparable](vals ...T) Set[T] {
 	go map 默认返回 *hmap 所以大部分情况, 大部分情况下函数方法值传递更好.
 */
 
-func (s Set[T]) Add(v T) { s[v] = struct{}{} }
-
-func (s Set[T]) Append(vals ...T) {
+func (s Set[T]) Add(vals ...T) {
 	for _, key := range vals {
 		s[key] = struct{}{}
 	}
 }
 
-func (s Set[T]) Contains(v T) bool {
+func (s Set[T]) Exists(v T) bool {
 	_, ok := s[v]
 	return ok
 }
@@ -61,7 +57,7 @@ func (s Set[T]) Equal(other Set[T]) bool {
 	}
 
 	for key := range other {
-		if !s.Contains(key) {
+		if !s.Exists(key) {
 			return false
 		}
 	}

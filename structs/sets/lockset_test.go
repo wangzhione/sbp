@@ -18,7 +18,7 @@ func Test_AddConcurrent(t *testing.T) {
 
 	var wg sync.WaitGroup
 	wg.Add(len(ints))
-	for i := 0; i < len(ints); i++ {
+	for i := range ints {
 		go func(i int) {
 			s.Add(i)
 			wg.Done()
@@ -27,7 +27,7 @@ func Test_AddConcurrent(t *testing.T) {
 
 	wg.Wait()
 	for _, i := range ints {
-		if !s.Contains(i) {
+		if !s.Exists(i) {
 			t.Errorf("Set is missing element: %v", i)
 		}
 	}
@@ -44,14 +44,14 @@ func Test_AppendConcurrent(t *testing.T) {
 	wg.Add(n)
 	for i := 0; i < n; i++ {
 		go func(i int) {
-			s.Append(i, N-i-1)
+			s.Add(i, N-i-1)
 			wg.Done()
 		}(i)
 	}
 
 	wg.Wait()
 	for _, i := range ints {
-		if !s.Contains(i) {
+		if !s.Exists(i) {
 			t.Errorf("Set is missing element: %v", i)
 		}
 	}
@@ -124,7 +124,7 @@ func Test_CloneConcurrent(t *testing.T) {
 	wg.Wait()
 }
 
-func Test_ContainssOneConcurrent(t *testing.T) {
+func Test_ExistssOneConcurrent(t *testing.T) {
 	runtime.GOMAXPROCS(2)
 
 	s := NewLockSet[int]()
@@ -138,7 +138,7 @@ func Test_ContainssOneConcurrent(t *testing.T) {
 		number := v
 		wg.Add(1)
 		go func() {
-			s.Contains(number)
+			s.Exists(number)
 			wg.Done()
 		}()
 	}
@@ -157,11 +157,9 @@ func Test_EqualConcurrent(t *testing.T) {
 
 	var wg sync.WaitGroup
 	for range ints {
-		wg.Add(1)
-		go func() {
+		wg.Go(func() {
 			s.Equal(ss)
-			wg.Done()
-		}()
+		})
 	}
 	wg.Wait()
 }
@@ -208,7 +206,7 @@ func Test_ToSlice(t *testing.T) {
 	}
 
 	for _, i := range setAsSlice {
-		if !s.Contains(i) {
+		if !s.Exists(i) {
 			t.Errorf("Set is missing element: %v", i)
 		}
 	}
