@@ -1,3 +1,4 @@
+// Package system provides HTTP server startup, graceful shutdown, and TLS support utilities.
 package system
 
 import (
