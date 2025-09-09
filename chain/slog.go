@@ -20,9 +20,9 @@ func InitSLog() {
 	}))
 }
 
-func InitSlogRotatingFile() error {
+func InitSLogRotatingFile() error {
 	// 默认是 start day logger;
-	// 如果需要 hour logger, Please DefaultGetFile = GetfileByHour 随后 Call InitSlogRotatingFile()
+	// 如果需要 hour logger, Please DefaultGetFile = GetfileByHour 随后 Call InitSLogRotatingFile()
 	return Startlogger()
 }
 
@@ -45,8 +45,8 @@ func (h TraceHandler) Handle(ctx context.Context, r slog.Record) error {
 	}
 	funcName := frame.Function[i+1:]
 
-	// go run test   : e:\github.com\wangzhione\sbp\chain\slog_test.go:26:TestInitSlogRotatingFile
-	// go debug test : slog_test.go:27:TestInitSlogRotatingFile
+	// go run test   : e:\github.com\wangzhione\sbp\chain\slog_test.go:26:TestInitSLogRotatingFile
+	// go debug test : slog_test.go:27:TestInitSLogRotatingFile
 	source := fmt.Sprintf("%s:%d:%s", filepath.Base(frame.File), frame.Line, funcName)
 
 	r.AddAttrs(

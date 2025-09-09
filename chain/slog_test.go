@@ -16,10 +16,10 @@ func TestInitSLog(t *testing.T) {
 	slog.WarnContext(ctx, "测试 warn", "123", "value 123", "234", "value 234", "456", "value 456", "789", "value 789")
 }
 
-func TestInitSlogRotatingFile(t *testing.T) {
+func TestInitSLogRotatingFile(t *testing.T) {
 	t.Log(ExeNameSuffixExt)
 
-	InitSlogRotatingFile()
+	InitSLogRotatingFile()
 
 	slog.DebugContext(ctx, "测试 debug")
 	slog.InfoContext(ctx, "测试 info", "123", "value 123")
