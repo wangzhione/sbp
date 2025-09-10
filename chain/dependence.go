@@ -9,20 +9,15 @@ import (
 	"time"
 )
 
-var ExePath = os.Args[0]
+var (
+	ExePath          = os.Args[0]                          // ExePath 获取可执行文件路径(相对路径 or 绝对路径)
+	ExeDir           = filepath.Dir(ExePath)               // ExeDir 获取可执行文件所在目录, 结尾不带 '/'
+	ExeName          = filepath.Base(ExePath)              // ExeName 获取不带路径的可执行文件名
+	ExeExt           = filepath.Ext(ExeName)               // ExeExt 获取可执行文件名的扩展名
+	ExeNameSuffixExt = strings.TrimSuffix(ExeName, ExeExt) // ExeNameSuffixExt 获取可执行文件名, 不包含扩展名
+)
 
-var ExeName = filepath.Base(ExePath)
-
-var ExeExt = filepath.Ext(ExeName)
-
-var ExeNameSuffixExt = strings.TrimSuffix(ExeName, ExeExt)
-
-// ExeDir 获取可执行文件所在目录, 结尾不带 '/'
-var ExeDir = filepath.Dir(ExePath)
-
-var Hostname = hostname()
-
-func hostname() string {
+var Hostname = func() string {
 	// 获取容器的 hostname（通常是容器的短 ID）
 	hostname, err := os.Hostname()
 	if err == nil {
@@ -30,7 +25,7 @@ func hostname() string {
 	}
 
 	return UUID()
-}
+}()
 
 // Exist 判断路径（文件或目录）是否存在
 func Exist(path string) (exists bool, err error) {

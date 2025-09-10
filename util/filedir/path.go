@@ -26,3 +26,8 @@ func AbsPath(ctx context.Context, path string) (abspath string, err error) {
 	}
 	return
 }
+
+// - filepath.Dir(path)  	-> 目录
+// - filepath.Base(path) 	-> 文件名
+// - filepath.Ext(filename) -> 扩展名
+// - strings.TrimSuffix(文件名, 扩展名) -> 不带扩展名的文件名
