@@ -69,17 +69,15 @@ func Request(r *http.Request) (req *http.Request, requestID string) {
 
 // UUID 的全称是 Universally Unique Identifier, "通用唯一标识符" or "全球唯一标识符"
 func UUID() string {
-	// // A UUID is a 128 bit (16 byte) Universal Unique IDentifier as defined in RFC9562.
-	var uuid [16]byte
-	_, _ = rand.Read(uuid[:]) // random function ; 细节 @see go/src/crypto/rand/rand.go
+	var id [16]byte         // A UUID is a 128 bit (16 byte) Universal Unique IDentifier as defined in RFC9562.
+	_, _ = rand.Read(id[:]) // random function ; 细节 @see go/src/crypto/rand/rand.go
 
-	uuid[6] = (uuid[6] & 0x0f) | 0x40 // Version 4
-	uuid[8] = (uuid[8] & 0x3f) | 0x80 // Variant is 10
+	id[6] = (id[6] & 0x0f) | 0x40 // Version 4
+	id[8] = (id[8] & 0x3f) | 0x80 // Variant is 10
 
-	var out [32]byte
-	// "00000000-0000-0000-0000-000000000000" {8}-{4}-{4}-{4}-{12}
-	hex.Encode(out[:], uuid[:])
-	return string(out[:])
+	var od [32]byte // "00000000 0000 0000 0000 000000000000" {8}{4}{4}{4}{12}
+	hex.Encode(od[:], id[:])
+	return string(od[:])
 }
 
 // 对于 UUID , 另一个拓展思路, 借助 MySQL UUID_SHORT() 函数返回 int128

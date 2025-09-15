@@ -15,8 +15,13 @@ func TestCopyTrace(t *testing.T) {
 
 func TestUUID(t *testing.T) {
 	id := UUID()
+	t.Logf("id = %s", id) // id = 22ba3cffc8de4a2d9dc8a95d09ed03e1
 
-	t.Logf("id = %s", id)
+	// import "github.com/google/uuid"
+	// go mod tidy
+	//
+	// id := uuid.New().String()
+	// t.Logf("id = %s", id) // id = 22ba3cff-c8de-4a2d-9dc8-a95d09ed03e1
 }
 
 func BenchmarkUUID(b *testing.B) {
