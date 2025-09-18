@@ -49,8 +49,7 @@ func WriteFile(ctx context.Context, dst string, obj any) error {
 }
 
 // Valid 判断字符串 or []byte 是否为合法 json
-func Valid(data string) bool {
+func Valid[T ~string | ~[]byte](data T) bool {
 	var v any
-	err := toml.Unmarshal([]byte(data), &v)
-	return err == nil
+	return toml.Unmarshal([]byte(data), &v) == nil
 }
