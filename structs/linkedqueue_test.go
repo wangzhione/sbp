@@ -1,9 +1,9 @@
-package linkedq
+package structs
 
 import "testing"
 
 func TestLinkedQueue_Dequeue(t *testing.T) {
-	q := New[int64]()
+	q := NewLinkedQueue[int64]()
 
 	// q.head.value 0 q.tail.value 0 empty true
 	t.Log("q.head", q.head, "q.tail", q.tail, "Len", q.Len())
@@ -43,7 +43,7 @@ func TestLinkedQueue_Dequeue(t *testing.T) {
 }
 
 func TestLinkedQueue_Basic(t *testing.T) {
-	q := New[int]()
+	q := NewLinkedQueue[int]()
 
 	if q.Len() != 0 {
 		t.Errorf("expected length 0, got %d", q.Len())

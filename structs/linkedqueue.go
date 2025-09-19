@@ -1,5 +1,5 @@
-// Package linkedq provides a thread-safe generic linked queue implementation.
-package linkedq
+// Package structs.linkedq provides a thread-safe generic linked queue implementation.
+package structs
 
 import (
 	"sync"
@@ -11,7 +11,7 @@ type LinkedQueue[T any] struct {
 	sync.Mutex
 	head   *linkedQueueNode[T]
 	tail   *linkedQueueNode[T]
-	length atomic.Int32 // 单纯统计监控维度
+	length atomic.Int32 // 单纯统计监控维度; 大多数场景不会也不应该超过 21 亿个元素
 }
 
 type linkedQueueNode[T any] struct {
@@ -19,10 +19,30 @@ type linkedQueueNode[T any] struct {
 	value T
 }
 
-// New 创建一个新的泛型队列
-func New[T any]() *LinkedQueue[T] { return &LinkedQueue[T]{} }
+// NewLinkedQueue 创建一个新的泛型队列
+func NewLinkedQueue[T any]() *LinkedQueue[T] { return &LinkedQueue[T]{} }
 
 // Push 将一个元素加入队列尾部
+//
+// 字符画主视图：
+// 空队列 Push(1):
+//
+//	head: nil, tail: nil
+//	Push(1) → [1] ← head/tail
+//
+// 非空队列 Push(2):
+//
+//	head: [1] → nil, tail: [1]
+//	Push(2) → [1] → [2] ← tail
+//	          ↑
+//	        head
+//
+// 继续 Push(3):
+//
+//	head: [1] → [2] → nil, tail: [2]
+//	Push(3) → [1] → [2] → [3] ← tail
+//	          ↑
+//	        head
 func (q *LinkedQueue[T]) Push(value T) {
 	q.Lock()
 	node := &linkedQueueNode[T]{value: value}
@@ -39,6 +59,29 @@ func (q *LinkedQueue[T]) Push(value T) {
 }
 
 // Pop 从队列头部取出一个元素
+//
+// 字符画主视图：
+// 队列状态 [1] → [2] → [3] → nil
+//
+//	  ↑              ↑
+//	head            tail
+//
+// Pop() 操作：
+//  1. 取出 head.value = 1
+//  2. head 移动到下一个节点
+//  3. 结果: [2] → [3] → nil
+//     ↑        ↑
+//     head      tail
+//
+// 最后一个元素 Pop():
+// 队列: [3] → nil
+//
+//	    ↑
+//	head/tail
+//
+// Pop() 后: nil (空队列)
+//
+//	head/tail 都指向 nil
 func (q *LinkedQueue[T]) Pop() (value T, ok bool) {
 	q.Lock()
 	if q.head == nil {
