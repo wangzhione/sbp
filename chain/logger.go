@@ -145,18 +145,9 @@ func (our *hourordaylogger) sevenday(now time.Time) {
 
 			// 提取开始的时间字符串
 			timeStr := filename[:8]
-
-			// 非时间开头, 直接跳过, 不再处理, 依赖人工自行处理
-			switch timeStr[0] {
-			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-			default:
-				return nil
-			}
-
 			// 解析时间
 			t, err := time.Parse("20060102", timeStr)
 			if err != nil {
-				println("sevenday filepath.WalkDir time.Parse error", err.Error(), Hostname, path)
 				return nil
 			}
 
