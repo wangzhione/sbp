@@ -19,6 +19,10 @@ var (
 	ExeNameSuffixExt = strings.TrimSuffix(ExeName, ExeExt) // ExeNameSuffixExt 获取可执行文件名, 不包含扩展名
 )
 
+// LogsDir 默认日志目录 {exe dir}/logs
+var LogsDir = filepath.Join(ExeDir, "logs")
+
+// Hostname 获取主机名 or 容器短 ID
 var Hostname = func() string {
 	// 获取容器的 hostname（通常是容器的短 ID）
 	hostname, err := os.Hostname()

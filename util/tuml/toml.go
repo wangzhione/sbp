@@ -43,7 +43,7 @@ func WriteFile(ctx context.Context, dst string, obj any) error {
 	// 其他人 (others)	4 → r--	只读
 	err = os.WriteFile(dst, data, 0o664)
 	if err != nil {
-		slog.ErrorContext(ctx, "os.WriteFile 0o644 error", "error", err, "dst", dst)
+		slog.ErrorContext(ctx, "os.WriteFile 0o664 error", "error", err, "dst", dst)
 	}
 	return err
 }
