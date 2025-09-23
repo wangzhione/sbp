@@ -1,3 +1,4 @@
+// Package command provides utilities for executing system commands and batch operations.
 package command
 
 import (
@@ -17,28 +18,24 @@ func Run(ctx context.Context, bin string, args ...string) (err error) {
 }
 
 type BatchOption struct {
+	Serialization bool        // true 串行化; 默认 false 内部自行决定
 	Options       []*exec.Cmd // 要执行的命令列表, exec.CommandContext(ctx, ...
-	endindex      int         // 结束 index
-	Serialization bool        // true 串行化
 }
 
 func (b *BatchOption) Start() error {
-	b.endindex = len(b.Options)
-	for i, opt := range b.Options {
+	for _, opt := range b.Options {
 		// 遇到错误会停下,
 		// 因为有时候在错误情况下继续执行, 行为未知的, 还不如主动出错, 等待工程师接入
 		if err := opt.Start(); err != nil {
-			b.endindex = i
 			return err
 		}
 	}
-
 	return nil
 }
 
 func (b *BatchOption) Wait() error {
-	for i := range b.endindex {
-		if err := b.Options[i].Wait(); err != nil {
+	for _, opt := range b.Options {
+		if err := opt.Wait(); err != nil {
 			return err
 		}
 	}

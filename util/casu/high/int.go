@@ -1,3 +1,4 @@
+// Package high provides high-performance integer parsing functions.
 package high
 
 import (
