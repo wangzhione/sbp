@@ -35,6 +35,8 @@ func (b *BatchOption) Start() error {
 
 func (b *BatchOption) Wait() error {
 	for _, opt := range b.Options {
+		// Wait() 方法必须在命令启动后调用，以确保正确释放资源。
+		// 如果在未启动命令的情况下直接调用 Wait()，会返回错误，且不会发生死锁。
 		if err := opt.Wait(); err != nil {
 			return err
 		}
