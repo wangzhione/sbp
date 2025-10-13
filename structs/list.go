@@ -89,6 +89,10 @@ func (list *List[T]) PushFront(value T) {
 
 // Remove removes the node 'node' from the list.
 func (list *List[T]) Remove(node *ListNode[T]) {
+	if node == nil {
+		return
+	}
+
 	if node.Next != nil {
 		node.Next.Prev = node.Prev
 	} else {
