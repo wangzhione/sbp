@@ -252,7 +252,7 @@ func (list *List[T]) PopBackNode() *ListNode[T] {
 
 // MoveToFront moves 'node' to the front.
 func (list *List[T]) MoveToFront(node *ListNode[T]) {
-	if node == nil || node == list.Front {
+	if node == list.Front {
 		return
 	}
 
@@ -286,7 +286,7 @@ func (list *List[T]) MoveToFront(node *ListNode[T]) {
 
 // MoveToBack moves 'node' to the back.
 func (list *List[T]) MoveToBack(node *ListNode[T]) {
-	if node == nil || node == list.Back {
+	if node == list.Back {
 		return
 	}
 
