@@ -89,7 +89,7 @@ func (list *List[T]) PushFront(value T) {
 
 // Remove removes the node 'node' from the list.
 func (list *List[T]) Remove(node *ListNode[T]) {
-	if node == nil {
+	if node == nil || list.Front == nil {
 		return
 	}
 
@@ -107,8 +107,12 @@ func (list *List[T]) Remove(node *ListNode[T]) {
 }
 
 // InsertAfter 在 node 之后插入 next 并返回它。
-// next 不应该已在另一个列表中（否则可能破坏另一个列表的结构）。这些低级 api 保证内容 not nil
+// next 不应该已在另一个列表中（否则可能破坏另一个列表的结构）
 func (list *List[T]) InsertAfter(node *ListNode[T], next *ListNode[T]) *ListNode[T] {
+	if node == nil || list.Front == nil || node == next {
+		return nil
+	}
+
 	// 将 next 插入到 node 后面
 	next.Prev = node
 	next.Next = node.Next
@@ -124,8 +128,12 @@ func (list *List[T]) InsertAfter(node *ListNode[T], next *ListNode[T]) *ListNode
 }
 
 // InsertBefore 在 node 之前插入 prev 并返回它。
-// 注意：prev 不应该已在另一个列表中（否则可能破坏另一个列表的结构）。这些低级 api 保证内容 not nil
+// 注意：prev 不应该已在另一个列表中（否则可能破坏另一个列表的结构）
 func (list *List[T]) InsertBefore(node *ListNode[T], prev *ListNode[T]) *ListNode[T] {
+	if node == nil || list.Front == nil || node == prev {
+		return nil
+	}
+
 	// 将 prev 插入到 node 前面
 	prev.Next = node
 	prev.Prev = node.Prev
@@ -138,4 +146,168 @@ func (list *List[T]) InsertBefore(node *ListNode[T], prev *ListNode[T]) *ListNod
 	}
 	node.Prev = prev
 	return prev
+}
+
+// Len returns the number of elements (O(n)).
+func (list *List[T]) Len() int {
+	count := 0
+	for n := list.Front; n != nil; n = n.Next {
+		count++
+	}
+	return count
+}
+
+// IsEmpty reports whether the list is empty.
+func (list *List[T]) IsEmpty() bool { return list.Front == nil }
+
+// PopFront removes and returns the front value.
+func (list *List[T]) PopFront() (value T, ok bool) {
+	node := list.Front
+	if node == nil {
+		return
+	}
+
+	next := node.Next
+	if next != nil {
+		next.Prev = nil
+		list.Front = next
+	} else {
+		// only one node
+		list.Front = nil
+		list.Back = nil
+	}
+
+	// fully detach
+	node.Next, node.Prev = nil, nil
+	return node.Value, true
+}
+
+// PopBack removes and returns the back value. (no Remove)
+func (list *List[T]) PopBack() (value T, ok bool) {
+	node := list.Back
+	if node == nil {
+		return
+	}
+
+	prev := node.Prev
+	if prev != nil {
+		prev.Next = nil
+		list.Back = prev
+	} else {
+		// only one node
+		list.Front = nil
+		list.Back = nil
+	}
+
+	// fully detach
+	node.Next, node.Prev = nil, nil
+	return node.Value, true
+}
+
+// PopFrontNode removes and returns the front node.
+func (list *List[T]) PopFrontNode() *ListNode[T] {
+	node := list.Front
+	if node == nil {
+		return nil
+	}
+
+	next := node.Next
+	if next != nil {
+		next.Prev = nil
+		list.Front = next
+	} else {
+		list.Front = nil
+		list.Back = nil
+	}
+
+	node.Next, node.Prev = nil, nil
+	return node
+}
+
+// PopBackNode removes and returns the back node.
+func (list *List[T]) PopBackNode() *ListNode[T] {
+	node := list.Back
+	if node == nil {
+		return nil
+	}
+
+	prev := node.Prev
+	if prev != nil {
+		prev.Next = nil
+		list.Back = prev
+	} else {
+		list.Front = nil
+		list.Back = nil
+	}
+
+	node.Next, node.Prev = nil, nil
+	return node
+}
+
+// MoveToFront moves 'node' to the front.
+func (list *List[T]) MoveToFront(node *ListNode[T]) {
+	if node == nil || node == list.Front {
+		return
+	}
+
+	// 1) splice out from current position
+	prev, next := node.Prev, node.Next
+	if prev != nil {
+		prev.Next = next
+	} else {
+		// node was Front (但已在上面 return 掉了，这里是防御)
+		list.Front = next
+	}
+	if next != nil {
+		next.Prev = prev
+	} else {
+		// node was Back
+		list.Back = prev
+	}
+
+	// 2) insert at front
+	oldFront := list.Front
+	node.Prev = nil
+	node.Next = oldFront
+	if oldFront != nil {
+		oldFront.Prev = node
+	} else {
+		// list was empty after splice (理论上只有单节点时会触发)
+		list.Back = node
+	}
+	list.Front = node
+}
+
+// MoveToBack moves 'node' to the back.
+func (list *List[T]) MoveToBack(node *ListNode[T]) {
+	if node == nil || node == list.Back {
+		return
+	}
+
+	// 1) splice out from current position
+	prev, next := node.Prev, node.Next
+	if prev != nil {
+		prev.Next = next
+	} else {
+		// node was Front
+		list.Front = next
+	}
+	if next != nil {
+		next.Prev = prev
+	} else {
+		// node was Back (已在上面 return，这里是防御)
+		list.Back = prev
+	}
+
+	// 2) insert at back
+	oldBack := list.Back
+	node.Next = nil
+	node.Prev = oldBack
+	if oldBack != nil {
+		oldBack.Next = node
+	} else {
+		// list was empty after splice
+		list.Front = node
+	}
+	list.Back = node
 }
