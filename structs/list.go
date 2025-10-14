@@ -266,11 +266,11 @@ func (list *List[T]) MoveToFront(node *ListNode[T]) {
 	}
 
 	// 2) insert at front
-	oldFront := list.Front
+	front := list.Front
 	node.Prev = nil
-	node.Next = oldFront
-	if oldFront != nil {
-		oldFront.Prev = node
+	node.Next = front
+	if front != nil {
+		front.Prev = node
 	} else {
 		// list was empty after splice (理论上只有单节点时会触发)
 		list.Back = node
@@ -300,11 +300,11 @@ func (list *List[T]) MoveToBack(node *ListNode[T]) {
 	}
 
 	// 2) insert at back
-	oldBack := list.Back
+	back := list.Back
 	node.Next = nil
-	node.Prev = oldBack
-	if oldBack != nil {
-		oldBack.Next = node
+	node.Prev = back
+	if back != nil {
+		back.Next = node
 	} else {
 		// list was empty after splice
 		list.Front = node
