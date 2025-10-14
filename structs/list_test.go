@@ -162,12 +162,12 @@ func TestPushFrontNode(t *testing.T) {
 	}
 }
 
-// TestRemove 测试从链表中移除节点
-func TestRemove(t *testing.T) {
+// TestRemoveNode 测试从链表中移除节点
+func TestRemoveNode(t *testing.T) {
 	list := NewList[int]()
 
 	// 测试移除 nil 节点
-	list.Remove(nil)
+	list.RemoveNode(nil)
 	if list.Front != nil || list.Back != nil {
 		t.Error("移除 nil 节点后，链表应该仍然为空")
 	}
@@ -179,7 +179,7 @@ func TestRemove(t *testing.T) {
 
 	// 测试移除中间节点
 	middleNode := list.Front.Next
-	list.Remove(middleNode)
+	list.RemoveNode(middleNode)
 
 	// 验证移除后的链表结构
 	if list.Front.Value != 1 {
@@ -196,7 +196,7 @@ func TestRemove(t *testing.T) {
 	}
 
 	// 测试移除头节点
-	list.Remove(list.Front)
+	list.RemoveNode(list.Front)
 	if list.Front.Value != 3 {
 		t.Errorf("移除头节点后，Front 值应该为 3，实际为 %v", list.Front.Value)
 	}
@@ -205,7 +205,7 @@ func TestRemove(t *testing.T) {
 	}
 
 	// 测试移除尾节点（也是最后一个节点）
-	list.Remove(list.Back)
+	list.RemoveNode(list.Back)
 	if list.Front != nil || list.Back != nil {
 		t.Error("移除最后一个节点后，链表应该为空")
 	}
@@ -328,7 +328,7 @@ func TestComplexOperations(t *testing.T) {
 	}
 
 	// 测试移除操作
-	list.Remove(newNode)
+	list.RemoveNode(newNode)
 
 	// 验证移除后的状态
 	expected = []string{"0", "A", "B", "C"}
@@ -356,7 +356,7 @@ func TestEmptyListOperations(t *testing.T) {
 	}
 
 	// 清空链表
-	list.Remove(list.Front)
+	list.RemoveNode(list.Front)
 
 	// 测试对空链表进行 PushFront
 	list.PushFront(2)

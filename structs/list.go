@@ -19,14 +19,8 @@ type List[T any] struct {
 // NewList returns an empty linked list.
 func NewList[T any]() *List[T] { return &List[T]{} }
 
-// PushBackNode adds the node 'node' to the back of the list.
-func (list *List[T]) PushBackNode(node *ListNode[T]) {
-	if node == nil {
-		return
-	}
-
-	node.Next = nil
-
+// PushBackPartial adds the node 'node' to the back of the list.
+func (list *List[T]) PushBackPartial(node *ListNode[T]) {
 	if list.Back == nil {
 		list.Front = node
 		list.Back = node
@@ -38,19 +32,32 @@ func (list *List[T]) PushBackNode(node *ListNode[T]) {
 	list.Back = node
 }
 
+// PushBackNode adds the node 'node' to the back of the list.
+func (list *List[T]) PushBackNode(node *ListNode[T]) {
+	if node == nil {
+		return
+	}
+
+	node.Next = nil
+	list.PushBackPartial(node)
+}
+
 // PushBack adds 'value' to the end of the list.
 func (list *List[T]) PushBack(value T) {
-	node := NewListNode(value)
+	list.PushBackPartial(NewListNode(value))
+}
 
-	if list.Back == nil {
+// PushFrontPartial adds the node 'node' to the front of the list.
+func (list *List[T]) PushFrontPartial(node *ListNode[T]) {
+	if list.Front == nil {
 		list.Front = node
 		list.Back = node
 		return
 	}
 
-	node.Prev = list.Back
-	list.Back.Next = node
-	list.Back = node
+	node.Next = list.Front
+	list.Front.Prev = node
+	list.Front = node
 }
 
 // PushFrontNode adds the node 'node' to the front of the list.
@@ -60,39 +67,16 @@ func (list *List[T]) PushFrontNode(node *ListNode[T]) {
 	}
 
 	node.Prev = nil
-
-	if list.Front == nil {
-		list.Front = node
-		list.Back = node
-		return
-	}
-
-	node.Next = list.Front
-	list.Front.Prev = node
-	list.Front = node
+	list.PushFrontPartial(node)
 }
 
 // PushFront adds 'value' to the beginning of the list.
 func (list *List[T]) PushFront(value T) {
-	node := NewListNode(value)
-
-	if list.Front == nil {
-		list.Front = node
-		list.Back = node
-		return
-	}
-
-	node.Next = list.Front
-	list.Front.Prev = node
-	list.Front = node
+	list.PushFrontPartial(NewListNode(value))
 }
 
-// Remove removes the node 'node' from the list.
-func (list *List[T]) Remove(node *ListNode[T]) {
-	if node == nil || list.Front == nil {
-		return
-	}
-
+// RemovePartial removes the node 'node' from the list.
+func (list *List[T]) RemovePartial(node *ListNode[T]) {
 	if node.Next != nil {
 		node.Next.Prev = node.Prev
 	} else {
@@ -104,6 +88,28 @@ func (list *List[T]) Remove(node *ListNode[T]) {
 	} else {
 		list.Front = node.Next
 	}
+
+	node.Next, node.Prev = nil, nil
+}
+
+// RemoveNode removes the node 'node' from the list.
+func (list *List[T]) RemoveNode(node *ListNode[T]) {
+	if node == nil || list == nil || list.Front == nil {
+		return
+	}
+
+	list.RemovePartial(node)
+}
+
+// RemoveFunc 通过自定义等价谓词删除首个匹配节点
+func (l *List[T]) RemoveFunc(eq func(a T) bool) bool {
+	for node := l.Front; node != nil; node = node.Next {
+		if eq(node.Value) {
+			l.RemovePartial(node)
+			return true
+		}
+	}
+	return false
 }
 
 // InsertAfter 在 node 之后插入 next 并返回它。
