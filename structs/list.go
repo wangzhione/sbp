@@ -88,8 +88,6 @@ func (list *List[T]) RemovePartial(node *ListNode[T]) {
 	} else {
 		list.Front = node.Next
 	}
-
-	node.Next, node.Prev = nil, nil
 }
 
 // RemoveNode removes the node 'node' from the list.
@@ -99,17 +97,7 @@ func (list *List[T]) RemoveNode(node *ListNode[T]) {
 	}
 
 	list.RemovePartial(node)
-}
-
-// RemoveFunc 通过自定义等价谓词删除首个匹配节点
-func (l *List[T]) RemoveFunc(eq func(a T) bool) bool {
-	for node := l.Front; node != nil; node = node.Next {
-		if eq(node.Value) {
-			l.RemovePartial(node)
-			return true
-		}
-	}
-	return false
+	node.Next, node.Prev = nil, nil
 }
 
 // InsertAfter 在 node 之后插入 next 并返回它。
@@ -252,68 +240,22 @@ func (list *List[T]) PopBackNode() *ListNode[T] {
 
 // MoveToFront moves 'node' to the front.
 func (list *List[T]) MoveToFront(node *ListNode[T]) {
-	if node == list.Front {
+	if list.Front == nil || node == list.Front {
 		return
 	}
-
-	// 1) splice out from current position
-	prev, next := node.Prev, node.Next
-	if prev != nil {
-		prev.Next = next
-	} else {
-		// node was Front (但已在上面 return 掉了，这里是防御)
-		list.Front = next
-	}
-	if next != nil {
-		next.Prev = prev
-	} else {
-		// node was Back
-		list.Back = prev
-	}
-
-	// 2) insert at front
-	front := list.Front
+	// 先从当前位置摘除，再放到头部
+	list.RemovePartial(node)
 	node.Prev = nil
-	node.Next = front
-	if front != nil {
-		front.Prev = node
-	} else {
-		// list was empty after splice (理论上只有单节点时会触发)
-		list.Back = node
-	}
-	list.Front = node
+	list.PushFrontPartial(node)
 }
 
 // MoveToBack moves 'node' to the back.
 func (list *List[T]) MoveToBack(node *ListNode[T]) {
-	if node == list.Back {
+	if list.Front == nil || node == list.Back {
 		return
 	}
-
-	// 1) splice out from current position
-	prev, next := node.Prev, node.Next
-	if prev != nil {
-		prev.Next = next
-	} else {
-		// node was Front
-		list.Front = next
-	}
-	if next != nil {
-		next.Prev = prev
-	} else {
-		// node was Back (已在上面 return，这里是防御)
-		list.Back = prev
-	}
-
-	// 2) insert at back
-	back := list.Back
+	// 先从当前位置摘除，再放到尾部
+	list.RemovePartial(node)
 	node.Next = nil
-	node.Prev = back
-	if back != nil {
-		back.Next = node
-	} else {
-		// list was empty after splice
-		list.Front = node
-	}
-	list.Back = node
+	list.PushBackPartial(node)
 }
