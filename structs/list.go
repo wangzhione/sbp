@@ -107,7 +107,7 @@ func (list *List[T]) Remove(node *ListNode[T]) {
 }
 
 // InsertAfter 在 node 之后插入 next 并返回它。
-// next 不应该已在另一个列表中（否则可能破坏另一个列表的结构）。
+// next 不应该已在另一个列表中（否则可能破坏另一个列表的结构）。这些低级 api 保证内容 not nil
 func (list *List[T]) InsertAfter(node *ListNode[T], next *ListNode[T]) *ListNode[T] {
 	// 将 next 插入到 node 后面
 	next.Prev = node
@@ -124,7 +124,7 @@ func (list *List[T]) InsertAfter(node *ListNode[T], next *ListNode[T]) *ListNode
 }
 
 // InsertBefore 在 node 之前插入 prev 并返回它。
-// 注意：prev 不应该已在另一个列表中（否则可能破坏另一个列表的结构）。
+// 注意：prev 不应该已在另一个列表中（否则可能破坏另一个列表的结构）。这些低级 api 保证内容 not nil
 func (list *List[T]) InsertBefore(node *ListNode[T], prev *ListNode[T]) *ListNode[T] {
 	// 将 prev 插入到 node 前面
 	prev.Next = node
