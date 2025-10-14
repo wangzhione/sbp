@@ -31,16 +31,11 @@ func NewLRUCache[K comparable, V any](capacity int) *LRUCache[K, V] {
 	}
 }
 
-// moveToFront 将节点移动到链表头部（标记为最近使用）
-func (lru *LRUCache[K, V]) moveToFront(node *ListNode[LRUItem[K, V]]) {
-	lru.list.MoveToFront(node)
-}
-
 // Get 获取缓存中的值，如果存在则将其标记为最近使用
 func (lru *LRUCache[K, V]) Get(key K) (V, bool) {
 	if node, exists := lru.cache[key]; exists {
 		// 将节点移动到头部，标记为最近使用
-		lru.moveToFront(node)
+		lru.list.MoveToFront(node)
 		return node.Value.Value, true
 	}
 	var zero V
@@ -52,7 +47,7 @@ func (lru *LRUCache[K, V]) Put(key K, value V) {
 	if node, exists := lru.cache[key]; exists {
 		// 更新已存在的节点
 		node.Value.Value = value
-		lru.moveToFront(node)
+		lru.list.MoveToFront(node)
 	} else {
 		// 创建新条目
 		item := LRUItem[K, V]{Key: key, Value: value}
