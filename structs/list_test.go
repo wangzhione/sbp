@@ -195,7 +195,7 @@ func TestRemoveNode(t *testing.T) {
 	list := NewList[int]()
 
 	// 测试移除 nil 节点
-	list.RemoveNode(nil)
+	list.Detach(nil)
 	if list.Front != nil || list.Back != nil {
 		t.Error("移除 nil 节点后，链表应该仍然为空")
 	}
@@ -207,7 +207,7 @@ func TestRemoveNode(t *testing.T) {
 
 	// 测试移除中间节点
 	middleNode := list.Front.Next
-	list.RemoveNode(middleNode)
+	list.Detach(middleNode)
 
 	// 验证移除后的链表结构
 	if list.Front.Value != 1 {
@@ -224,7 +224,7 @@ func TestRemoveNode(t *testing.T) {
 	}
 
 	// 测试移除头节点
-	list.RemoveNode(list.Front)
+	list.Detach(list.Front)
 	if list.Front.Value != 3 {
 		t.Errorf("移除头节点后，Front 值应该为 3，实际为 %v", list.Front.Value)
 	}
@@ -233,7 +233,7 @@ func TestRemoveNode(t *testing.T) {
 	}
 
 	// 测试移除尾节点（也是最后一个节点）
-	list.RemoveNode(list.Back)
+	list.Detach(list.Back)
 	if list.Front != nil || list.Back != nil {
 		t.Error("移除最后一个节点后，链表应该为空")
 	}
@@ -249,12 +249,7 @@ func TestInsertAfter(t *testing.T) {
 
 	// 在第一个节点后插入新节点
 	newNode := NewListNode(2)
-	insertedNode := list.InsertAfter(list.Front, newNode)
-
-	// 验证插入的节点
-	if insertedNode != newNode {
-		t.Error("InsertAfter 应该返回插入的节点")
-	}
+	list.InsertAfter(list.Front, newNode)
 
 	// 验证链表结构
 	if list.Front.Value != 1 {
@@ -286,12 +281,7 @@ func TestInsertBefore(t *testing.T) {
 
 	// 在第二个节点前插入新节点
 	newNode := NewListNode(2)
-	insertedNode := list.InsertBefore(list.Back, newNode)
-
-	// 验证插入的节点
-	if insertedNode != newNode {
-		t.Error("InsertBefore 应该返回插入的节点")
-	}
+	list.InsertBefore(list.Back, newNode)
 
 	// 验证链表结构
 	if list.Front.Value != 1 {
@@ -356,7 +346,7 @@ func TestComplexOperations(t *testing.T) {
 	}
 
 	// 测试移除操作
-	list.RemoveNode(newNode)
+	list.Detach(newNode)
 
 	// 验证移除后的状态
 	expected = []string{"0", "A", "B", "C"}
@@ -384,7 +374,7 @@ func TestEmptyListOperations(t *testing.T) {
 	}
 
 	// 清空链表
-	list.RemoveNode(list.Front)
+	list.Detach(list.Front)
 
 	// 测试对空链表进行 PushFront
 	list.PushFront(2)
@@ -412,7 +402,7 @@ func TestLen(t *testing.T) {
 
 	// 逐步删除元素并测试长度
 	for i := 4; i >= 0; i-- {
-		list.RemoveNode(list.Front)
+		list.Detach(list.Front)
 		if list.Len() != i {
 			t.Errorf("删除元素后，长度应该为 %d，实际为 %d", i, list.Len())
 		}
@@ -435,7 +425,7 @@ func TestIsEmpty(t *testing.T) {
 	}
 
 	// 删除元素后测试
-	list.RemoveNode(list.Front)
+	list.Detach(list.Front)
 	if !list.IsEmpty() {
 		t.Error("删除所有元素后，链表应该为空")
 	}
@@ -715,48 +705,36 @@ func TestEdgeCases(t *testing.T) {
 
 	// 测试 InsertAfter 的边界情况
 	// 1. 插入 nil 节点
-	if list.InsertAfter(nil, nil) != nil {
-		t.Error("插入 nil 节点应该返回 nil")
-	}
+	list.InsertAfter(nil, nil) // 应该不执行任何操作
 
 	// 2. 向空链表插入
 	list.PushBack(1)
-	if list.InsertAfter(nil, NewListNode(2)) != nil {
-		t.Error("向空链表插入应该返回 nil")
-	}
+	list.InsertAfter(nil, NewListNode(2)) // 应该不执行任何操作
 
 	// 3. 插入自己
 	node := list.Front
-	if list.InsertAfter(node, node) != nil {
-		t.Error("插入自己应该返回 nil")
-	}
+	list.InsertAfter(node, node) // 应该不执行任何操作
 
 	// 测试 InsertBefore 的边界情况
 	// 1. 插入 nil 节点
-	if list.InsertBefore(nil, nil) != nil {
-		t.Error("插入 nil 节点应该返回 nil")
-	}
+	list.InsertBefore(nil, nil) // 应该不执行任何操作
 
 	// 2. 向空链表插入
-	list.RemoveNode(list.Front)
-	if list.InsertBefore(nil, NewListNode(2)) != nil {
-		t.Error("向空链表插入应该返回 nil")
-	}
+	list.Detach(list.Front)
+	list.InsertBefore(nil, NewListNode(2)) // 应该不执行任何操作
 
 	// 3. 插入自己
 	list.PushBack(1)
 	node = list.Front
-	if list.InsertBefore(node, node) != nil {
-		t.Error("插入自己应该返回 nil")
-	}
+	list.InsertBefore(node, node) // 应该不执行任何操作
 
 	// 测试 RemoveNode 的边界情况
 	// 1. 移除 nil 节点
-	list.RemoveNode(nil)
+	list.Detach(nil)
 
 	// 2. 从空链表移除
-	list.RemoveNode(list.Front)
-	list.RemoveNode(NewListNode(99))
+	list.Detach(list.Front)
+	list.Detach(NewListNode(99))
 
 	// 测试 MoveToFront 的边界情况
 	// 1. 移动 nil 节点
@@ -825,7 +803,7 @@ func TestComplexScenarios(t *testing.T) {
 	for current != nil {
 		next := current.Next
 		if current.Value == "A" || current.Value == "Y" {
-			list.RemoveNode(current)
+			list.Detach(current)
 		}
 		current = next
 	}
@@ -1033,7 +1011,7 @@ func BenchmarkMixedOperations(b *testing.B) {
 			for current != nil && list.Len() > 5 {
 				next := current.Next
 				if current.Value%10 == 0 {
-					list.RemoveNode(current)
+					list.Detach(current)
 				}
 				current = next
 			}
@@ -1146,7 +1124,7 @@ func TestStressTest(t *testing.T) {
 				for current != nil && list.Len() > 1 {
 					next := current.Next
 					if current.Value%10 == 0 {
-						list.RemoveNode(current)
+						list.Detach(current)
 					}
 					current = next
 				}

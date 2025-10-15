@@ -75,8 +75,12 @@ func (list *List[T]) PushFront(value T) {
 	list.PushFrontPartial(NewListNode(value))
 }
 
-// RemovePartial removes the node 'node' from the list.
-func (list *List[T]) RemovePartial(node *ListNode[T]) {
+// Detach 从链表中摘除节点 'node'。摘除是个重操作, 所以相对严格一点
+func (list *List[T]) Detach(node *ListNode[T]) {
+	if node == nil || list == nil || list.Front == nil {
+		return
+	}
+
 	if node.Next != nil {
 		node.Next.Prev = node.Prev
 	} else {
@@ -88,23 +92,14 @@ func (list *List[T]) RemovePartial(node *ListNode[T]) {
 	} else {
 		list.Front = node.Next
 	}
-}
-
-// RemoveNode removes the node 'node' from the list.
-func (list *List[T]) RemoveNode(node *ListNode[T]) {
-	if node == nil || list == nil || list.Front == nil {
-		return
-	}
-
-	list.RemovePartial(node)
 	node.Next, node.Prev = nil, nil
 }
 
 // InsertAfter 在 node 之后插入 next 并返回它。
 // next 不应该已在另一个列表中（否则可能破坏另一个列表的结构）
-func (list *List[T]) InsertAfter(node *ListNode[T], next *ListNode[T]) *ListNode[T] {
+func (list *List[T]) InsertAfter(node *ListNode[T], next *ListNode[T]) {
 	if node == nil || list.Front == nil || node == next {
-		return nil
+		return
 	}
 
 	// 将 next 插入到 node 后面
@@ -118,14 +113,13 @@ func (list *List[T]) InsertAfter(node *ListNode[T], next *ListNode[T]) *ListNode
 		list.Back = next
 	}
 	node.Next = next
-	return next
 }
 
 // InsertBefore 在 node 之前插入 prev 并返回它。
 // 注意：prev 不应该已在另一个列表中（否则可能破坏另一个列表的结构）
-func (list *List[T]) InsertBefore(node *ListNode[T], prev *ListNode[T]) *ListNode[T] {
+func (list *List[T]) InsertBefore(node *ListNode[T], prev *ListNode[T]) {
 	if node == nil || list.Front == nil || node == prev {
-		return nil
+		return
 	}
 
 	// 将 prev 插入到 node 前面
@@ -139,7 +133,6 @@ func (list *List[T]) InsertBefore(node *ListNode[T], prev *ListNode[T]) *ListNod
 		list.Front = prev
 	}
 	node.Prev = prev
-	return prev
 }
 
 // Len returns the number of elements (O(n)).
@@ -244,8 +237,7 @@ func (list *List[T]) MoveToFront(node *ListNode[T]) {
 		return
 	}
 	// 先从当前位置摘除，再放到头部
-	list.RemovePartial(node)
-	node.Prev = nil
+	list.Detach(node)
 	list.PushFrontPartial(node)
 }
 
@@ -255,7 +247,6 @@ func (list *List[T]) MoveToBack(node *ListNode[T]) {
 		return
 	}
 	// 先从当前位置摘除，再放到尾部
-	list.RemovePartial(node)
-	node.Next = nil
+	list.Detach(node)
 	list.PushBackPartial(node)
 }

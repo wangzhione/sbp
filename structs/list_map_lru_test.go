@@ -70,7 +70,7 @@ func (lru *LRUCache[K, V]) Put(key K, value V) {
 // Delete 删除缓存中的键值对
 func (lru *LRUCache[K, V]) Delete(key K) bool {
 	if node, exists := lru.cache[key]; exists {
-		lru.list.RemoveNode(node)
+		lru.list.Detach(node)
 		delete(lru.cache, key)
 		return true
 	}
