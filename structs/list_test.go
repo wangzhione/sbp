@@ -63,7 +63,7 @@ func verifyListStructure[T comparable](t *testing.T, list *List[T], expected []T
 
 // 辅助函数：创建测试链表
 func createTestList[T any](values ...T) *List[T] {
-	list := NewList[T]()
+	list := &List[T]{}
 	for _, value := range values {
 		list.PushBack(value)
 	}
@@ -81,7 +81,7 @@ func getListValues[T any](list *List[T]) []T {
 
 // TestNewList 测试创建新链表
 func TestNewList(t *testing.T) {
-	list := NewList[int]()
+	list := &List[int]{}
 
 	// 验证新创建的链表为空
 	verifyListStructure(t, list, []int{})
@@ -104,11 +104,22 @@ func TestNewListNode(t *testing.T) {
 	if node.Next != nil {
 		t.Errorf("新节点的 Next 应该为 nil，实际为 %v", node.Next)
 	}
+
+	// 测试 GetValue 方法
+	if node.GetValue() != value {
+		t.Errorf("GetValue() 应该返回 %d，实际为 %v", value, node.GetValue())
+	}
+
+	// 测试 nil 节点的 GetValue 方法
+	var nilNode *ListNode[int]
+	if nilNode.GetValue() != 0 {
+		t.Errorf("nil 节点的 GetValue() 应该返回零值，实际为 %v", nilNode.GetValue())
+	}
 }
 
 // TestPushBack 测试在链表尾部添加元素
 func TestPushBack(t *testing.T) {
-	list := NewList[int]()
+	list := &List[int]{}
 
 	// 测试向空链表添加元素
 	list.PushBack(1)
@@ -122,7 +133,7 @@ func TestPushBack(t *testing.T) {
 
 // TestPushFront 测试在链表头部添加元素
 func TestPushFront(t *testing.T) {
-	list := NewList[int]()
+	list := &List[int]{}
 
 	// 测试向空链表添加元素
 	list.PushFront(1)
@@ -136,7 +147,7 @@ func TestPushFront(t *testing.T) {
 
 // TestPushBackNode 测试在链表尾部添加节点
 func TestPushBackNode(t *testing.T) {
-	list := NewList[int]()
+	list := &List[int]{}
 
 	// 测试添加 nil 节点
 	list.PushBackNode(nil)
@@ -164,7 +175,7 @@ func TestPushBackNode(t *testing.T) {
 
 // TestPushFrontNode 测试在链表头部添加节点
 func TestPushFrontNode(t *testing.T) {
-	list := NewList[int]()
+	list := &List[int]{}
 
 	// 测试添加 nil 节点
 	list.PushFrontNode(nil)
@@ -192,7 +203,7 @@ func TestPushFrontNode(t *testing.T) {
 
 // TestRemoveNode 测试从链表中移除节点
 func TestRemoveNode(t *testing.T) {
-	list := NewList[int]()
+	list := &List[int]{}
 
 	// 测试移除 nil 节点
 	list.Detach(nil)
@@ -241,7 +252,7 @@ func TestRemoveNode(t *testing.T) {
 
 // TestInsertAfter 测试在指定节点后插入节点
 func TestInsertAfter(t *testing.T) {
-	list := NewList[int]()
+	list := &List[int]{}
 
 	// 创建测试数据
 	list.PushBack(1)
@@ -273,7 +284,7 @@ func TestInsertAfter(t *testing.T) {
 
 // TestInsertBefore 测试在指定节点前插入节点
 func TestInsertBefore(t *testing.T) {
-	list := NewList[int]()
+	list := &List[int]{}
 
 	// 创建测试数据
 	list.PushBack(1)
@@ -305,7 +316,7 @@ func TestInsertBefore(t *testing.T) {
 
 // TestComplexOperations 测试复杂操作组合
 func TestComplexOperations(t *testing.T) {
-	list := NewList[string]()
+	list := &List[string]{}
 
 	// 构建一个复杂的链表
 	list.PushBack("A")
@@ -365,7 +376,7 @@ func TestComplexOperations(t *testing.T) {
 
 // TestEmptyListOperations 测试空链表的操作
 func TestEmptyListOperations(t *testing.T) {
-	list := NewList[int]()
+	list := &List[int]{}
 
 	// 测试对空链表进行各种操作
 	list.PushBack(1)
@@ -385,11 +396,17 @@ func TestEmptyListOperations(t *testing.T) {
 
 // TestLen 测试获取链表长度
 func TestLen(t *testing.T) {
-	list := NewList[int]()
+	list := &List[int]{}
 
 	// 测试空链表长度
 	if list.Len() != 0 {
 		t.Errorf("空链表长度应该为 0，实际为 %d", list.Len())
+	}
+
+	// 测试 nil 链表长度
+	var nilList *List[int]
+	if nilList.Len() != 0 {
+		t.Errorf("nil 链表长度应该为 0，实际为 %d", nilList.Len())
 	}
 
 	// 逐步添加元素并测试长度
@@ -411,11 +428,17 @@ func TestLen(t *testing.T) {
 
 // TestIsEmpty 测试检查链表是否为空
 func TestIsEmpty(t *testing.T) {
-	list := NewList[int]()
+	list := &List[int]{}
 
 	// 测试空链表
 	if !list.IsEmpty() {
 		t.Error("新创建的链表应该为空")
+	}
+
+	// 测试 nil 链表
+	var nilList *List[int]
+	if !nilList.IsEmpty() {
+		t.Error("nil 链表应该为空")
 	}
 
 	// 添加元素后测试
@@ -431,14 +454,14 @@ func TestIsEmpty(t *testing.T) {
 	}
 }
 
-// TestPopFront 测试弹出并返回首元素
+// TestPopFront 测试弹出并返回首节点
 func TestPopFront(t *testing.T) {
-	list := NewList[int]()
+	list := &List[int]{}
 
 	// 测试空链表
-	_, ok := list.PopFront()
-	if ok {
-		t.Error("空链表不应该能弹出元素")
+	node := list.PopFront()
+	if node != nil {
+		t.Error("空链表不应该能弹出节点")
 	}
 
 	// 创建测试数据
@@ -446,13 +469,19 @@ func TestPopFront(t *testing.T) {
 	list.PushBack(2)
 	list.PushBack(3)
 
-	// 测试弹出首元素
-	value, ok := list.PopFront()
-	if !ok {
-		t.Error("应该能成功弹出首元素")
+	// 测试弹出首节点
+	node = list.PopFront()
+	if node == nil {
+		t.Error("应该能成功弹出首节点")
+		return
 	}
-	if value != 1 {
-		t.Errorf("弹出的值应该为 1，实际为 %d", value)
+	if node.Value != 1 {
+		t.Errorf("弹出节点的值应该为 1，实际为 %d", node.Value)
+	}
+
+	// 验证节点已完全分离
+	if node.Next != nil || node.Prev != nil {
+		t.Error("弹出的节点应该完全分离")
 	}
 
 	// 验证弹出后的链表结构
@@ -465,9 +494,9 @@ func TestPopFront(t *testing.T) {
 
 	// 测试弹出所有元素
 	list.PopFront()
-	value, ok = list.PopFront()
-	if !ok || value != 3 {
-		t.Errorf("最后一个元素应该为 3，实际为 %d", value)
+	node = list.PopFront()
+	if node == nil || node.Value != 3 {
+		t.Errorf("最后一个节点应该为 3，实际为 %v", node)
 	}
 
 	// 验证链表为空
@@ -476,14 +505,14 @@ func TestPopFront(t *testing.T) {
 	}
 }
 
-// TestPopBack 测试弹出并返回尾元素
+// TestPopBack 测试弹出并返回尾节点
 func TestPopBack(t *testing.T) {
-	list := NewList[int]()
+	list := &List[int]{}
 
 	// 测试空链表
-	_, ok := list.PopBack()
-	if ok {
-		t.Error("空链表不应该能弹出元素")
+	node := list.PopBack()
+	if node != nil {
+		t.Error("空链表不应该能弹出节点")
 	}
 
 	// 创建测试数据
@@ -491,13 +520,19 @@ func TestPopBack(t *testing.T) {
 	list.PushBack(2)
 	list.PushBack(3)
 
-	// 测试弹出尾元素
-	value, ok := list.PopBack()
-	if !ok {
-		t.Error("应该能成功弹出尾元素")
+	// 测试弹出尾节点
+	node = list.PopBack()
+	if node == nil {
+		t.Error("应该能成功弹出尾节点")
+		return
 	}
-	if value != 3 {
-		t.Errorf("弹出的值应该为 3，实际为 %d", value)
+	if node.Value != 3 {
+		t.Errorf("弹出节点的值应该为 3，实际为 %d", node.Value)
+	}
+
+	// 验证节点已完全分离
+	if node.Next != nil || node.Prev != nil {
+		t.Error("弹出的节点应该完全分离")
 	}
 
 	// 验证弹出后的链表结构
@@ -510,9 +545,9 @@ func TestPopBack(t *testing.T) {
 
 	// 测试弹出所有元素
 	list.PopBack()
-	value, ok = list.PopBack()
-	if !ok || value != 1 {
-		t.Errorf("最后一个元素应该为 1，实际为 %d", value)
+	node = list.PopBack()
+	if node == nil || node.Value != 1 {
+		t.Errorf("最后一个节点应该为 1，实际为 %v", node)
 	}
 
 	// 验证链表为空
@@ -521,12 +556,12 @@ func TestPopBack(t *testing.T) {
 	}
 }
 
-// TestPopFrontNode 测试弹出并返回首节点
+// TestPopFrontNode 测试弹出并返回首节点（已重命名为PopFront）
 func TestPopFrontNode(t *testing.T) {
-	list := NewList[int]()
+	list := &List[int]{}
 
 	// 测试空链表
-	node := list.PopFrontNode()
+	node := list.PopFront()
 	if node != nil {
 		t.Error("空链表不应该能弹出节点")
 	}
@@ -537,7 +572,7 @@ func TestPopFrontNode(t *testing.T) {
 	list.PushBack(3)
 
 	// 测试弹出首节点
-	node = list.PopFrontNode()
+	node = list.PopFront()
 	if node == nil {
 		t.Error("应该能成功弹出首节点")
 		return
@@ -560,12 +595,12 @@ func TestPopFrontNode(t *testing.T) {
 	}
 }
 
-// TestPopBackNode 测试弹出并返回尾节点
+// TestPopBackNode 测试弹出并返回尾节点（已重命名为PopBack）
 func TestPopBackNode(t *testing.T) {
-	list := NewList[int]()
+	list := &List[int]{}
 
 	// 测试空链表
-	node := list.PopBackNode()
+	node := list.PopBack()
 	if node != nil {
 		t.Error("空链表不应该能弹出节点")
 	}
@@ -576,7 +611,7 @@ func TestPopBackNode(t *testing.T) {
 	list.PushBack(3)
 
 	// 测试弹出尾节点
-	node = list.PopBackNode()
+	node = list.PopBack()
 	if node == nil {
 		t.Error("应该能成功弹出尾节点")
 		return
@@ -601,7 +636,7 @@ func TestPopBackNode(t *testing.T) {
 
 // TestMoveToFront 测试移动节点到链表头部
 func TestMoveToFront(t *testing.T) {
-	list := NewList[int]()
+	list := &List[int]{}
 
 	// 测试空链表
 	list.MoveToFront(nil)
@@ -651,7 +686,7 @@ func TestMoveToFront(t *testing.T) {
 
 // TestMoveToBack 测试移动节点到链表尾部
 func TestMoveToBack(t *testing.T) {
-	list := NewList[int]()
+	list := &List[int]{}
 
 	// 测试空链表
 	list.MoveToBack(nil)
@@ -701,7 +736,7 @@ func TestMoveToBack(t *testing.T) {
 
 // TestEdgeCases 测试边界情况和错误处理
 func TestEdgeCases(t *testing.T) {
-	list := NewList[int]()
+	list := &List[int]{}
 
 	// 测试 InsertAfter 的边界情况
 	// 1. 插入 nil 节点
@@ -753,7 +788,7 @@ func TestEdgeCases(t *testing.T) {
 
 // TestComplexScenarios 测试复杂场景
 func TestComplexScenarios(t *testing.T) {
-	list := NewList[string]()
+	list := &List[string]{}
 
 	// 场景1：频繁的插入和删除操作
 	// 构建链表: A -> B -> C -> D
@@ -826,7 +861,7 @@ func TestComplexScenarios(t *testing.T) {
 // TestConcurrentSafety 测试并发安全性（基础测试）
 func TestConcurrentSafety(t *testing.T) {
 	// 注意：这个测试只是基础测试，真正的并发测试需要更复杂的设置
-	list := NewList[int]()
+	list := &List[int]{}
 
 	// 测试在并发环境下的基本操作不会panic
 	done := make(chan bool, 10)
@@ -844,7 +879,13 @@ func TestConcurrentSafety(t *testing.T) {
 			for j := 0; j < 100; j++ {
 				list.PushBack(id*100 + j)
 				if list.Len() > 0 {
-					list.PopFront()
+					node := list.PopFront()
+					if node != nil {
+						// 验证节点已分离
+						if node.Next != nil || node.Prev != nil {
+							t.Errorf("弹出的节点应该完全分离")
+						}
+					}
 				}
 			}
 		}(i)
@@ -860,7 +901,7 @@ func TestConcurrentSafety(t *testing.T) {
 
 // BenchmarkPushBack 测试 PushBack 操作的性能
 func BenchmarkPushBack(b *testing.B) {
-	list := NewList[int]()
+	list := &List[int]{}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		list.PushBack(i)
@@ -869,7 +910,7 @@ func BenchmarkPushBack(b *testing.B) {
 
 // BenchmarkPushFront 测试 PushFront 操作的性能
 func BenchmarkPushFront(b *testing.B) {
-	list := NewList[int]()
+	list := &List[int]{}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		list.PushFront(i)
@@ -878,7 +919,7 @@ func BenchmarkPushFront(b *testing.B) {
 
 // BenchmarkPopFront 测试 PopFront 操作的性能
 func BenchmarkPopFront(b *testing.B) {
-	list := NewList[int]()
+	list := &List[int]{}
 	// 预填充数据
 	for i := 0; i < b.N; i++ {
 		list.PushBack(i)
@@ -886,13 +927,17 @@ func BenchmarkPopFront(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		list.PopFront()
+		node := list.PopFront()
+		if node != nil {
+			// 验证节点已分离
+			_ = node.Value
+		}
 	}
 }
 
 // BenchmarkPopBack 测试 PopBack 操作的性能
 func BenchmarkPopBack(b *testing.B) {
-	list := NewList[int]()
+	list := &List[int]{}
 	// 预填充数据
 	for i := 0; i < b.N; i++ {
 		list.PushBack(i)
@@ -900,13 +945,17 @@ func BenchmarkPopBack(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		list.PopBack()
+		node := list.PopBack()
+		if node != nil {
+			// 验证节点已分离
+			_ = node.Value
+		}
 	}
 }
 
 // BenchmarkLen 测试 Len 操作的性能
 func BenchmarkLen(b *testing.B) {
-	list := NewList[int]()
+	list := &List[int]{}
 	// 预填充数据
 	for i := 0; i < 1000; i++ {
 		list.PushBack(i)
@@ -920,7 +969,7 @@ func BenchmarkLen(b *testing.B) {
 
 // BenchmarkMoveToFront 测试 MoveToFront 操作的性能
 func BenchmarkMoveToFront(b *testing.B) {
-	list := NewList[int]()
+	list := &List[int]{}
 	// 预填充数据
 	for i := 0; i < 1000; i++ {
 		list.PushBack(i)
@@ -937,7 +986,7 @@ func BenchmarkMoveToFront(b *testing.B) {
 
 // BenchmarkMoveToBack 测试 MoveToBack 操作的性能
 func BenchmarkMoveToBack(b *testing.B) {
-	list := NewList[int]()
+	list := &List[int]{}
 	// 预填充数据
 	for i := 0; i < 1000; i++ {
 		list.PushBack(i)
@@ -954,7 +1003,7 @@ func BenchmarkMoveToBack(b *testing.B) {
 
 // BenchmarkInsertAfter 测试 InsertAfter 操作的性能
 func BenchmarkInsertAfter(b *testing.B) {
-	list := NewList[int]()
+	list := &List[int]{}
 	// 预填充数据
 	for i := 0; i < 1000; i++ {
 		list.PushBack(i)
@@ -972,7 +1021,7 @@ func BenchmarkInsertAfter(b *testing.B) {
 
 // BenchmarkInsertBefore 测试 InsertBefore 操作的性能
 func BenchmarkInsertBefore(b *testing.B) {
-	list := NewList[int]()
+	list := &List[int]{}
 	// 预填充数据
 	for i := 0; i < 1000; i++ {
 		list.PushBack(i)
@@ -990,7 +1039,7 @@ func BenchmarkInsertBefore(b *testing.B) {
 
 // BenchmarkMixedOperations 测试混合操作的性能
 func BenchmarkMixedOperations(b *testing.B) {
-	list := NewList[int]()
+	list := &List[int]{}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -1000,10 +1049,16 @@ func BenchmarkMixedOperations(b *testing.B) {
 			list.PushFront(i * 2)
 		}
 		if i%3 == 0 && !list.IsEmpty() {
-			list.PopFront()
+			node := list.PopFront()
+			if node != nil {
+				_ = node.Value
+			}
 		}
 		if i%5 == 0 && !list.IsEmpty() {
-			list.PopBack()
+			node := list.PopBack()
+			if node != nil {
+				_ = node.Value
+			}
 		}
 		if i%7 == 0 && list.Len() > 10 {
 			// 手动删除一些元素
@@ -1050,7 +1105,7 @@ func TestTableDrivenTests(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			list := NewList[interface{}]()
+			list := &List[interface{}]{}
 			for _, value := range tt.values {
 				list.PushBack(value)
 			}
@@ -1078,19 +1133,31 @@ func TestTableDrivenTests(t *testing.T) {
 
 // TestMemoryLeaks 测试内存泄漏（基础测试）
 func TestMemoryLeaks(t *testing.T) {
-	list := NewList[int]()
+	list := &List[int]{}
 
 	// 大量添加和删除操作
 	for i := 0; i < 10000; i++ {
 		list.PushBack(i)
 		if i%2 == 0 {
-			list.PopFront()
+			node := list.PopFront()
+			if node != nil {
+				// 验证节点已分离
+				if node.Next != nil || node.Prev != nil {
+					t.Error("弹出的节点应该完全分离")
+				}
+			}
 		}
 	}
 
 	// 清空链表
 	for !list.IsEmpty() {
-		list.PopFront()
+		node := list.PopFront()
+		if node != nil {
+			// 验证节点已分离
+			if node.Next != nil || node.Prev != nil {
+				t.Error("弹出的节点应该完全分离")
+			}
+		}
 	}
 
 	// 验证链表为空
@@ -1099,7 +1166,7 @@ func TestMemoryLeaks(t *testing.T) {
 
 // TestStressTest 压力测试
 func TestStressTest(t *testing.T) {
-	list := NewList[int]()
+	list := &List[int]{}
 
 	// 大量操作
 	for i := 0; i < 1000; i++ {
@@ -1111,11 +1178,23 @@ func TestStressTest(t *testing.T) {
 			list.PushFront(i)
 		case 2:
 			if !list.IsEmpty() {
-				list.PopFront()
+				node := list.PopFront()
+				if node != nil {
+					// 验证节点已分离
+					if node.Next != nil || node.Prev != nil {
+						t.Error("弹出的节点应该完全分离")
+					}
+				}
 			}
 		case 3:
 			if !list.IsEmpty() {
-				list.PopBack()
+				node := list.PopBack()
+				if node != nil {
+					// 验证节点已分离
+					if node.Next != nil || node.Prev != nil {
+						t.Error("弹出的节点应该完全分离")
+					}
+				}
 			}
 		case 4:
 			if !list.IsEmpty() && list.Len() > 1 {

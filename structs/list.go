@@ -11,13 +11,32 @@ type ListNode[T any] struct {
 
 func NewListNode[T any](value T) *ListNode[T] { return &ListNode[T]{Value: value} }
 
+func (node *ListNode[T]) GetValue() (value T) {
+	if node != nil {
+		return node.Value
+	}
+	return
+}
+
 // List implements a doubly-linked list.
 type List[T any] struct {
 	Front, Back *ListNode[T]
 }
 
-// NewList returns an empty linked list.
-func NewList[T any]() *List[T] { return &List[T]{} }
+// List[T]{} or &List[T]{} 都可以, 推荐前者 struct 方式声明
+
+func NewList[T any](values ...T) *List[T] {
+	if len(values) == 0 {
+		return &List[T]{}
+	}
+	list := &List[T]{Front: &ListNode[T]{Value: values[0]}}
+	list.Back = list.Front
+	for i := 1; i < len(values); i++ {
+		list.Back.Next = &ListNode[T]{Prev: list.Back, Value: values[i]}
+		list.Back = list.Back.Next
+	}
+	return list
+}
 
 // PushBackPartial adds the node 'node' to the back of the list.
 func (list *List[T]) PushBackPartial(node *ListNode[T]) {
@@ -77,7 +96,7 @@ func (list *List[T]) PushFront(value T) {
 
 // Detach 从链表中摘除节点 'node'。摘除是个重操作, 所以相对严格一点
 func (list *List[T]) Detach(node *ListNode[T]) {
-	if node == nil || list == nil || list.Front == nil {
+	if node == nil || list.Front == nil {
 		return
 	}
 
@@ -92,6 +111,7 @@ func (list *List[T]) Detach(node *ListNode[T]) {
 	} else {
 		list.Front = node.Next
 	}
+
 	node.Next, node.Prev = nil, nil
 }
 
@@ -136,98 +156,30 @@ func (list *List[T]) InsertBefore(node *ListNode[T], prev *ListNode[T]) {
 }
 
 // Len returns the number of elements (O(n)).
-func (list *List[T]) Len() int {
-	count := 0
+func (list *List[T]) Len() (count int) {
+	if list == nil {
+		return
+	}
 	for n := list.Front; n != nil; n = n.Next {
 		count++
 	}
-	return count
+	return
 }
 
 // IsEmpty reports whether the list is empty.
-func (list *List[T]) IsEmpty() bool { return list.Front == nil }
+func (list *List[T]) IsEmpty() bool { return list == nil || list.Front == nil }
 
-// PopFront removes and returns the front value.
-func (list *List[T]) PopFront() (value T, ok bool) {
+// PopFront removes and returns the front node.
+func (list *List[T]) PopFront() *ListNode[T] {
 	node := list.Front
-	if node == nil {
-		return
-	}
-
-	next := node.Next
-	if next != nil {
-		next.Prev = nil
-		list.Front = next
-	} else {
-		// only one node
-		list.Front = nil
-		list.Back = nil
-	}
-
-	// fully detach
-	node.Next, node.Prev = nil, nil
-	return node.Value, true
-}
-
-// PopBack removes and returns the back value. (no Remove)
-func (list *List[T]) PopBack() (value T, ok bool) {
-	node := list.Back
-	if node == nil {
-		return
-	}
-
-	prev := node.Prev
-	if prev != nil {
-		prev.Next = nil
-		list.Back = prev
-	} else {
-		// only one node
-		list.Front = nil
-		list.Back = nil
-	}
-
-	// fully detach
-	node.Next, node.Prev = nil, nil
-	return node.Value, true
-}
-
-// PopFrontNode removes and returns the front node.
-func (list *List[T]) PopFrontNode() *ListNode[T] {
-	node := list.Front
-	if node == nil {
-		return nil
-	}
-
-	next := node.Next
-	if next != nil {
-		next.Prev = nil
-		list.Front = next
-	} else {
-		list.Front = nil
-		list.Back = nil
-	}
-
-	node.Next, node.Prev = nil, nil
+	list.Detach(node)
 	return node
 }
 
-// PopBackNode removes and returns the back node.
-func (list *List[T]) PopBackNode() *ListNode[T] {
+// PopBack removes and returns the back node.
+func (list *List[T]) PopBack() *ListNode[T] {
 	node := list.Back
-	if node == nil {
-		return nil
-	}
-
-	prev := node.Prev
-	if prev != nil {
-		prev.Next = nil
-		list.Back = prev
-	} else {
-		list.Front = nil
-		list.Back = nil
-	}
-
-	node.Next, node.Prev = nil, nil
+	list.Detach(node)
 	return node
 }
 

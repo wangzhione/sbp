@@ -6,7 +6,6 @@ go 1.25
 // go mod tidy
 
 require (
-	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/dgraph-io/ristretto/v2 v2.3.0
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/pelletier/go-toml/v2 v2.2.4
@@ -17,6 +16,7 @@ require (
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/coreos/go-semver v0.3.1 // indirect
 	github.com/coreos/go-systemd/v22 v22.6.0 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect

@@ -26,7 +26,7 @@ func NewLRUCache[K comparable, V any](capacity int) *LRUCache[K, V] {
 
 	return &LRUCache[K, V]{
 		capacity: capacity,
-		list:     NewList[LRUItem[K, V]](),
+		list:     &List[LRUItem[K, V]]{},
 		cache:    make(map[K]*ListNode[LRUItem[K, V]]),
 	}
 }
@@ -54,7 +54,7 @@ func (lru *LRUCache[K, V]) Put(key K, value V) {
 
 		if lru.list.Len() >= lru.capacity {
 			// 缓存已满，移除最久未使用的节点
-			tailNode := lru.list.PopBackNode()
+			tailNode := lru.list.PopBack()
 			if tailNode != nil {
 				delete(lru.cache, tailNode.Value.Key)
 			}
@@ -100,7 +100,7 @@ func (lru *LRUCache[K, V]) IsFull() bool {
 // Clear 清空缓存
 func (lru *LRUCache[K, V]) Clear() {
 	lru.cache = make(map[K]*ListNode[LRUItem[K, V]])
-	lru.list = NewList[LRUItem[K, V]]()
+	lru.list = &List[LRUItem[K, V]]{}
 }
 
 // Keys 返回缓存中所有的键（按访问顺序，最近使用的在前）
