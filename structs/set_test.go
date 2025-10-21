@@ -6,7 +6,7 @@ import (
 )
 
 func TestThreadUnsafeSet_MarshalJSON(t *testing.T) {
-	expected := New[int64](1, 2, 3)
+	expected := NewSet[int64](1, 2, 3)
 	var actual Set[int64]
 
 	// test Marshal from Set method
@@ -41,7 +41,7 @@ func TestThreadUnsafeSet_MarshalJSON(t *testing.T) {
 }
 
 func TestThreadUnsafeSet_UnmarshalJSON(t *testing.T) {
-	expected := New[int64](1, 2, 3)
+	expected := NewSet[int64](1, 2, 3)
 	var actual Set[int64]
 
 	// test Unmarshal from Set method
@@ -54,7 +54,7 @@ func TestThreadUnsafeSet_UnmarshalJSON(t *testing.T) {
 	}
 
 	// test Unmarshal from json package
-	actual = New[int64]()
+	actual = NewSet[int64]()
 	err = json.Unmarshal([]byte(`[1, 2, 3]`), &actual)
 	if err != nil {
 		t.Errorf("Error should be nil: %v", err)
@@ -65,9 +65,9 @@ func TestThreadUnsafeSet_UnmarshalJSON(t *testing.T) {
 }
 
 func TestThreadUnsafeSet_MarshalJSON_Struct(t *testing.T) {
-	expected := &testStruct{"test", New("a")}
+	expected := &testStruct{"test", NewSet("a")}
 
-	b, err := json.Marshal(&testStruct{"test", New("a")})
+	b, err := json.Marshal(&testStruct{"test", NewSet("a")})
 	if err != nil {
 		t.Errorf("Error should be nil: %v", err)
 	}
@@ -84,7 +84,7 @@ func TestThreadUnsafeSet_MarshalJSON_Struct(t *testing.T) {
 }
 
 func TestThreadUnsafeSet_UnmarshalJSON_Struct(t *testing.T) {
-	expected := &testStruct{"test", New("a", "b", "c")}
+	expected := &testStruct{"test", NewSet("a", "b", "c")}
 	actual := &testStruct{}
 
 	err := json.Unmarshal([]byte(`{"other":"test", "set":["a", "b", "c"]}`), actual)
@@ -95,8 +95,8 @@ func TestThreadUnsafeSet_UnmarshalJSON_Struct(t *testing.T) {
 		t.Errorf("Expected no difference, got: %v", expected.Set.Remove(actual.Set))
 	}
 
-	expectedComplex := New(struct{ Val string }{Val: "a"}, struct{ Val string }{Val: "b"})
-	actualComplex := New[struct{ Val string }]()
+	expectedComplex := NewSet(struct{ Val string }{Val: "a"}, struct{ Val string }{Val: "b"})
+	actualComplex := NewSet[struct{ Val string }]()
 
 	err = actualComplex.UnmarshalJSON([]byte(`[{"Val": "a"}, {"Val": "b"}]`))
 	if err != nil {
@@ -106,7 +106,7 @@ func TestThreadUnsafeSet_UnmarshalJSON_Struct(t *testing.T) {
 		t.Errorf("Expected no difference, got: %v", expectedComplex.Remove(actualComplex))
 	}
 
-	actualComplex = New[struct{ Val string }]()
+	actualComplex = NewSet[struct{ Val string }]()
 	err = json.Unmarshal([]byte(`[{"Val": "a"}, {"Val": "b"}]`), &actualComplex)
 	if err != nil {
 		t.Errorf("Error should be nil: %v", err)
@@ -134,13 +134,13 @@ func (t *testStruct) UnmarshalJSON(b []byte) error {
 	}
 
 	t.Other = raw.Other
-	t.Set = New(raw.Set...)
+	t.Set = NewSet(raw.Set...)
 
 	return nil
 }
 
 func TestSet_String(t *testing.T) {
-	expected := New[int64](1, 2, 3)
+	expected := NewSet[int64](1, 2, 3)
 	var actual Set[int64]
 
 	t.Log(expected.String())
@@ -149,7 +149,7 @@ func TestSet_String(t *testing.T) {
 	expectedData, err := expected.MarshalJSON()
 	t.Log(string(expectedData), err)
 
-	mySet := New[any]()
+	mySet := NewSet[any]()
 	t.Log(mySet.String())
 }
 

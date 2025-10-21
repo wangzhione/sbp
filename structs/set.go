@@ -11,7 +11,7 @@ import (
 // Set is a generic set implementation for comparable types.
 type Set[T comparable] map[T]struct{}
 
-func New[T comparable](value ...T) Set[T] {
+func NewSet[T comparable](value ...T) Set[T] {
 	s := make(Set[T], len(value))
 	s.Add(value...)
 	return s
