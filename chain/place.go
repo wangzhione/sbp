@@ -1,12 +1,9 @@
 package chain
 
 import (
-	"context"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
 var (
@@ -42,18 +39,4 @@ func Exist(path string) (exists bool, err error) {
 		return false, nil // 路径不存在
 	}
 	return false, err // 其他错误（如权限问题）, 但对当前用户而言是不存在
-}
-
-// LogStartEnd Wrapper function to log start and end times, and measure duration
-func LogStartEnd(ctx context.Context, name string, fn func(context.Context) error) (err error) {
-	start := time.Now()
-	slog.InfoContext(ctx, "["+name+"] - Start", "time", start.Format("2006-01-02 15:04:05.000000"))
-
-	// Execute the wrapped function with context
-	err = fn(ctx)
-
-	end := time.Now()
-	elapsed := end.Sub(start)
-	slog.InfoContext(ctx, "["+name+"] - End", "elapsed", elapsed.Seconds(), "time", end.Format("2006-01-02 15:04:05.000000"))
-	return
 }
