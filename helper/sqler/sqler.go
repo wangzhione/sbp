@@ -1,5 +1,5 @@
-// Package mysql provides helper functions and wrappers for SQL database operations.
-package mysql
+// Package sqler provides helper functions and wrappers for SQL database operations.
+package sqler
 
 import (
 	"context"

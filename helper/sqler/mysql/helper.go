@@ -10,6 +10,7 @@ import (
 	_ "github.com/go-sql-driver/mysql" // init MySQL 驱动
 
 	"github.com/wangzhione/sbp/chain"
+	"github.com/wangzhione/sbp/helper/sqler"
 )
 
 // 设计师有话说
@@ -20,7 +21,7 @@ import (
 var MySQLDriverName = "mysql"
 
 // NewDBWithConfig 创建一个新的 MyMySQL 实例, 需要自行 Close 释放资源
-func NewDBWithConfig(ctx context.Context, config *MySQLConfig) (s *DB, err error) {
+func NewDBWithConfig(ctx context.Context, config *MySQLConfig) (s *sqler.DB, err error) {
 	// 构建 DSN（Data Source Name）
 	dsn := config.DataSourceName()
 	if chain.EnableLevel == slog.LevelDebug {
@@ -55,11 +56,11 @@ func NewDBWithConfig(ctx context.Context, config *MySQLConfig) (s *DB, err error
 	}
 
 	slog.InfoContext(ctx, "Connected to MySQL successfully", "database", config.Database, "username", config.Username)
-	s = (*DB)(db)
+	s = (*sqler.DB)(db)
 	return
 }
 
-func NewDB(ctx context.Context, command string) (s *DB, err error) {
+func NewDB(ctx context.Context, command string) (s *sqler.DB, err error) {
 	config, err := ParseCommand(command)
 	if err != nil {
 		slog.ErrorContext(ctx, "ParseCommand error", "error", err, "command", command)
