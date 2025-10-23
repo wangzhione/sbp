@@ -48,7 +48,8 @@ func After(ctx context.Context, begin time.Time) {
 // Exec 执行无返回的 SQL 语句等 例如（INSERT, UPDATE, DELETE）
 func (s *DB) Exec(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	// 主动注入日志模块
-	defer After(ctx, Before(ctx, query, args))
+	begin := Before(ctx, query, args...)
+	defer After(ctx, begin)
 
 	result, err := s.DB().ExecContext(ctx, query, args...)
 	if err != nil {
@@ -60,7 +61,8 @@ func (s *DB) Exec(ctx context.Context, query string, args ...any) (sql.Result, e
 // QueryCallBack 执行查询, 内部自行通过闭包来完成参数传递和返回值获取
 // callback is for rows.Next() { if err := rows.Scan(&, &, &, ...); err != nil { } }
 func (s *DB) QueryCallBack(ctx context.Context, callback func(context.Context, *sql.Rows) error, query string, args ...any) error {
-	defer After(ctx, Before(ctx, query, args))
+	begin := Before(ctx, query, args...)
+	defer After(ctx, begin)
 
 	// 如果 rows return empty , err == nil, 在 rows.Next() 返回 false
 	rows, err := s.DB().QueryContext(ctx, query, args...)
@@ -97,7 +99,8 @@ func (s *DB) QueryCallBack(ctx context.Context, callback func(context.Context, *
 
 // QueryRow FindOne, args is empty 可以是 nil or []any{}
 func (s *DB) QueryRow(ctx context.Context, query string, args []any, dest ...any) error {
-	defer After(ctx, Before(ctx, query, args))
+	begin := Before(ctx, query, args...)
+	defer After(ctx, begin)
 
 	err := s.DB().QueryRowContext(ctx, query, args...).Scan(dest...)
 	switch err {
@@ -114,7 +117,8 @@ func (s *DB) QueryRow(ctx context.Context, query string, args []any, dest ...any
 
 // QueryOne 查询单条记录
 func (s *DB) QueryOne(ctx context.Context, query string, args ...any) (result map[string]any, err error) {
-	defer After(ctx, Before(ctx, query, args))
+	begin := Before(ctx, query, args...)
+	defer After(ctx, begin)
 
 	// 如果 rows return empty , err == nil, 在 rows.Next() 返回 false
 	rows, err := s.DB().QueryContext(ctx, query, args...)
@@ -157,7 +161,7 @@ func (s *DB) QueryOne(ctx context.Context, query string, args ...any) (result ma
 		return
 	}
 
-	// 检查迭代过程中是否出错
+	// 检查迭代过程中是否出错（在关闭 rows 之前检查）
 	if err = rows.Err(); err != nil {
 		slog.ErrorContext(ctx, "SQLer QueryOne rows.Err() error", "query", query, "args", args, "error", err)
 		return
@@ -181,7 +185,8 @@ func (s *DB) QueryOne(ctx context.Context, query string, args ...any) (result ma
 
 // QueryAll 查询多条记录
 func (s *DB) QueryAll(ctx context.Context, query string, args ...any) (results []map[string]any, err error) {
-	defer After(ctx, Before(ctx, query, args))
+	begin := Before(ctx, query, args...)
+	defer After(ctx, begin)
 
 	// 如果 rows return empty , err == nil, 在 rows.Next() 返回 false
 	rows, err := s.DB().QueryContext(ctx, query, args...)
@@ -231,7 +236,7 @@ func (s *DB) QueryAll(ctx context.Context, query string, args ...any) (results [
 		results = append(results, result)
 	}
 
-	// 检查迭代过程中是否出错
+	// 检查迭代过程中是否出错（在关闭 rows 之前检查）
 	if err = rows.Err(); err != nil {
 		slog.ErrorContext(ctx, "SQLer QueryAll rows.Err() error", "query", query, "args", args, "error", err)
 		return
@@ -242,7 +247,8 @@ func (s *DB) QueryAll(ctx context.Context, query string, args ...any) (results [
 
 // Transaction 开启事务
 func (s *DB) Transaction(ctx context.Context, transaction func(context.Context, *sql.Tx) error) (err error) {
-	defer After(ctx, Before(ctx, "Transaction"))
+	begin := Before(ctx, "Transaction")
+	defer After(ctx, begin)
 
 	// opts *sql.TxOptions 用于指定事务的隔离级别和是否为只读事务。可选参数，可以传 nil 使用 mysql 默认配置。
 	tx, err := s.DB().BeginTx(ctx, nil)
@@ -256,11 +262,12 @@ func (s *DB) Transaction(ctx context.Context, transaction func(context.Context, 
 		if cover := recover(); cover != nil {
 			slog.ErrorContext(ctx, "SQLer Transaction panic error", "recover", cover, "stack", string(debug.Stack()))
 
-			newerr := tx.Rollback()
-			if newerr != nil && newerr != sql.ErrTxDone {
-				slog.ErrorContext(ctx, "SQLer Transaction Rollback defer panic error", "newerr", newerr)
+			// 尝试回滚事务
+			if rollbackErr := tx.Rollback(); rollbackErr != nil && rollbackErr != sql.ErrTxDone {
+				slog.ErrorContext(ctx, "SQLer Transaction Rollback defer panic error", "rollbackErr", rollbackErr)
 			}
 
+			// 将 panic 转换为错误返回
 			err = fmt.Errorf("transaction panic: %v", cover)
 			return
 		}
@@ -270,10 +277,9 @@ func (s *DB) Transaction(ctx context.Context, transaction func(context.Context, 
 	if err != nil {
 		slog.ErrorContext(ctx, "SQLer Transaction transaction error", "error", err)
 
-		newerr := tx.Rollback()
-		if newerr != nil && newerr != sql.ErrTxDone {
-			// 依赖人工每日接入, 追查细节
-			slog.ErrorContext(ctx, "SQLer Transaction Rollback panic error", "newerr", newerr)
+		// 事务执行失败，尝试回滚
+		if rollbackErr := tx.Rollback(); rollbackErr != nil && rollbackErr != sql.ErrTxDone {
+			slog.ErrorContext(ctx, "SQLer Transaction Rollback error", "rollbackErr", rollbackErr)
 		}
 		return err
 	}

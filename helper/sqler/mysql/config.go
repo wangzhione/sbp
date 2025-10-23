@@ -101,9 +101,9 @@ func ParseCommand(command string) (*MySQLConfig, error) {
 				config.Host = args[i+1]
 				i++ // Skip the next argument since it's already used
 			}
-		} else if strings.HasPrefix(arg, "-h") {
+		} else if after0, ok0 := strings.CutPrefix(arg, "-h"); ok0 {
 			// Handle `-hHostName` format
-			config.Host = strings.TrimPrefix(arg, "-h")
+			config.Host = after0
 		} else if arg == "-P" {
 			// Handle `-P` with a value in the next argument
 			if i+1 < len(args) {
@@ -114,9 +114,9 @@ func ParseCommand(command string) (*MySQLConfig, error) {
 				config.Port = port
 				i++ // Skip the next argument since it's already used
 			}
-		} else if strings.HasPrefix(arg, "-P") {
+		} else if after1, ok1 := strings.CutPrefix(arg, "-P"); ok1 {
 			// Handle `-PPort` format
-			ports := strings.TrimPrefix(arg, "-P")
+			ports := after1
 			port, err := casu.ParseINTE[uint16](ports)
 			if err != nil {
 				return nil, fmt.Errorf("invalid 2 port format: %s %v", ports, err)
