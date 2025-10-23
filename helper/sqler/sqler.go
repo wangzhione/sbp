@@ -38,11 +38,7 @@ func Before(ctx context.Context, query string, args ...any) time.Time {
 func After(ctx context.Context, begin time.Time) {
 	end := time.Now()
 	elapsed := end.Sub(begin)
-	if elapsed >= time.Second {
-		slog.WarnContext(ctx, "SQLer After Warn slow", "elapsed", elapsed, "end", end)
-	} else {
-		slog.InfoContext(ctx, "SQLer After", "elapsed", elapsed, "end", end)
-	}
+	slog.InfoContext(ctx, "SQLer After", "begin", begin, "elapsed", elapsed, "end", end)
 }
 
 // Exec 执行无返回的 SQL 语句等 例如（INSERT, UPDATE, DELETE）

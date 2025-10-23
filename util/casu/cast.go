@@ -68,8 +68,9 @@ func ParseBool(s string) bool {
 		"tRue", "tRuE", "tRUe", "tRUE",
 		"TruE", "TrUe", "TrUE", "TRue", "TRuE", "TRUe":
 		return true
+	default:
+		return false
 	}
-	return false
 }
 
 // FormatFloat float to string, 这是个商业业务代码, 不是科学代码, 业务场景不应该出现 float32
