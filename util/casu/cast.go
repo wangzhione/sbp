@@ -16,9 +16,14 @@ type INT interface {
 
 // FormatINT int to string 默认都是 10 进制数, fast quickly
 func FormatINT[T INT](i T) string {
+	// small returns the string for an i with 0 <= i < nSmalls.
 	if 0 <= i && i < nSmalls {
-		return small(int(i))
+		if i < 10 {
+			return digits[i : i+1]
+		}
+		return smallsString[i*2 : i*2+2]
 	}
+
 	return format10(uint64(i), i < 0)
 }
 

@@ -1,13 +1,5 @@
 package casu
 
-// small returns the string for an i with 0 <= i < nSmalls.
-func small(i int) string {
-	if i < 10 {
-		return digits[i : i+1]
-	}
-	return smallsString[i*2 : i*2+2]
-}
-
 const nSmalls = 100
 
 const smallsString = "00010203040506070809" +
@@ -21,9 +13,9 @@ const smallsString = "00010203040506070809" +
 	"80818283848586878889" +
 	"90919293949596979899"
 
-const host32bit = ^uint(0)>>32 == 0
+const digits = "0123456789"
 
-const digits = "0123456789abcdefghijklmnopqrstuvwxyz"
+const host32bit = ^uint(0)>>32 == 0
 
 func format10(u uint64, neg bool) string {
 	// 0 ~ 2^64 - 1 = 18,446,744,073,709,551,615
