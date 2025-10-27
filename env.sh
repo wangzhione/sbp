@@ -1,10 +1,13 @@
 sudo sh -c 'cat >> /etc/profile <<EOF
 
-# ===== Go global build options =====
-# Automatically apply to all go commands:
-# -trimpath: remove file system paths for reproducible builds
-# -buildvcs=true: record VCS info in binaries for traceability
-export GOFLAGS="-trimpath -buildvcs=true"
+# ===== Go global build options (merged with go env) =====
+# Combine system GOFLAGS with user go env configuration
+go_env_flags=\$(go env GOFLAGS 2>/dev/null)
+if [ -n "\$go_env_flags" ]; then
+    export GOFLAGS="\$go_env_flags -trimpath -buildvcs=true"
+else
+    export GOFLAGS="-trimpath -buildvcs=true"
+fi
 
 EOF'
 
