@@ -38,6 +38,8 @@ type Pool[T Tasker] struct {
 func (p *Pool[T]) Push(task T) {
 	// 无论缓冲区是否满，只要可能，就拉 worker
 	select {
+	case <-p.C.Done():
+		return
 	case p.sem <- struct{}{}:
 		go p.worker(task)
 		return
@@ -45,8 +47,12 @@ func (p *Pool[T]) Push(task T) {
 		// 达到最大并发，靠现有 worker 消费
 	}
 
-	// 提交任务，存在阻塞的可能, 那就等一等
-	p.oo <- task
+	select {
+	case <-p.C.Done():
+		return
+	case p.oo <- task: // 提交任务，存在阻塞的可能, 那就等一等
+		return
+	}
 }
 
 func (p *Pool[T]) worker(one T) {

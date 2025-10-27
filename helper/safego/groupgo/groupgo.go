@@ -19,6 +19,9 @@ type Group struct {
 
 	errOnce sync.Once
 	err     error // 默认只纪录第一个错误
+
+	panicOnce sync.Once
+	panicErr  error // 记录首个 panic 错误（优先级更高）
 }
 
 func (g *Group) done() {
@@ -44,6 +47,12 @@ func (g *Group) Wait() error {
 	}
 
 	g.wg.Wait()
+
+	// panic 错误优先返回, 因为其通常代表更严重的问题
+	if g.panicErr != nil {
+		return g.panicErr
+	}
+
 	return g.err
 }
 
@@ -58,8 +67,9 @@ func (g *Group) Go(f func(ctx context.Context) error) {
 	go func() {
 		defer func() {
 			if cover := recover(); cover != nil {
-				g.errOnce.Do(func() {
-					g.err = fmt.Errorf("panic: groupgo.Group.Go %#v", cover)
+				// panic 与普通 error 分轨记录，panic 优先
+				g.panicOnce.Do(func() {
+					g.panicErr = fmt.Errorf("panic: groupgo.Group.Go %#v", cover)
 				})
 
 				// 遇到启动不起来, 异常退出, 打印堆栈方便排除问题
