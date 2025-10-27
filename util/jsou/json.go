@@ -55,6 +55,18 @@ func To[T any](src any) (dst T, err error) {
 	return
 }
 
+// Map json 字符串 数据集转为 map[string]any 类似 Unmarshal[map[string]any](data)
+func Map(data string) (obj map[string]any, err error) {
+	err = json.Unmarshal([]byte(data), &obj)
+	return
+}
+
+// Slice json 字符串 数据集转为 []any 类似 Unmarshal[[]any](data)
+func Slice(data string) (obj []any, err error) {
+	err = json.Unmarshal([]byte(data), &obj)
+	return
+}
+
 // WriteFile 尝试将 obj 转成 json 格式, 然后输出到 dst 目标文件中
 func WriteFile(dst string, obj any) error {
 	data, err := json.Marshal(obj)
