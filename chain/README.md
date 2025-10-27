@@ -70,3 +70,10 @@ import 后 可以无缝使用 slog 进行 InfoContext or WarnContext or ErrorCon
 
 ***
 
+## Go env 配置
+
+```Go
+go env -w GOFLAGS="-trimpath -buildvcs=true"
+
+go env GOFLAGS
+```
