@@ -33,6 +33,8 @@ import (
 // 6. 输入数据包含非法 UTF-8 字节或 Reader 实现 panic：
 //    在字符串转换或流读取时可能触发 panic（常见于损坏或非文本输入）。
 
+// 相关协议部分阅读 https://www.json.org/json-zh.html
+
 // String 结构体转换为 JSON 字符串
 func String(obj any) string {
 	data, _ := json.Marshal(obj)
@@ -61,8 +63,8 @@ func Map(data string) (obj map[string]any, err error) {
 	return
 }
 
-// Slice json 字符串 数据集转为 []any 类似 Unmarshal[[]any](data)
-func Slice(data string) (obj []any, err error) {
+// Array json 字符串 数据集转为 []any 类似 Unmarshal[[]any](data)
+func Array(data string) (obj []any, err error) {
 	err = json.Unmarshal([]byte(data), &obj)
 	return
 }
