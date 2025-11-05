@@ -54,7 +54,14 @@ func CopyContext(ctx context.Context, keys ...any) context.Context {
 	return WithContext(newctx, TraceID(ctx))
 }
 
-func Request(r *http.Request) (req *http.Request, requestID string) {
+func Request(r *http.Request, headers ...string) (req *http.Request, requestID string) {
+	for _, header := range headers {
+		if requestID = r.Header.Get(header); requestID != "" {
+			req = r.WithContext(WithContext(r.Context(), requestID))
+			return
+		}
+	}
+
 	// 获取或生成 requestID
 	if requestID = r.Header.Get(XRquestID); requestID == "" {
 		requestID = UUID()
