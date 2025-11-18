@@ -9,7 +9,7 @@ import (
 	"github.com/pelletier/go-toml/v2"
 )
 
-// Unmarshal 将 JSON 字符串解析为结构体（泛型）
+// Unmarshal 将 TOML 字符串解析为结构体（泛型）
 func Unmarshal[T any](ctx context.Context, data string) (obj T, err error) {
 	err = toml.Unmarshal([]byte(data), &obj)
 	if err != nil {
