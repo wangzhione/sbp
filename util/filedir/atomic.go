@@ -5,56 +5,46 @@ import (
 	"path/filepath"
 )
 
-// AtomicSyncWriteFile 以 “写临时文件 + 原子 rename” 的方式安全写文件：
-// 1. 确保同目录下写入临时文件
-// 2. 写完并 fsync 文件内容
-// 3. 关闭文件句柄（兼容 Windows）
-// 4. 原子重命名替换目标文件
-// 5. 尝试 fsync 目录，增强崩溃安全
-//
-// 参数 perm：
-//   - 如果 perm != 0，则使用 perm 作为新文件权限
-//   - 如果 perm == 0 且旧文件已存在，则继承旧文件的权限
-//   - 否则使用系统默认权限（受 umask 影响）
-func AtomicSyncWriteFile(path string, data []byte, perm os.FileMode) error {
+// FSyncWriteFile 原子性地将 data 写入指定路径的文件中。
+func FSyncWriteFile(path string, data []byte, perm ...os.FileMode) error {
 	dir := filepath.Dir(path)
 	base := filepath.Base(path)
 
-	// 确保目录存在（如果你不想自动建目录，可以去掉这一段）
+	// 自动创建目录（可选）
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
 
-	// 在目标目录下创建临时文件
-	temp, err := os.CreateTemp(dir, base+".*.tmp")
+	// 创建临时文件：
+	//   pattern = base + ".*.temp"
+	//   其中 "*" 会被自动替换成随机字符串，形成如下格式的文件名：
+	//
+	//       <base>.<random>.temp
+	//
+	//   例如：
+	//       base = "config.json"
+	//       生成的文件可能是：
+	//       "config.json.123456789.temp"
+	//
+	// 临时文件会被创建在目标目录 dir 中，确保 rename 原子性。
+	// 临时文件将使用系统默认权限（受 umask 影响）
+	temp, err := os.CreateTemp(dir, base+".*.temp")
 	if err != nil {
 		return err
 	}
 	name := temp.Name()
 
-	// 确保最后清理临时文件（无论成功或失败）
-	// - 如果 rename 成功，这个路径已不存在，Remove 会静默失败
-	// - 如果中途出错，临时文件会被删除，避免目录堆垃圾
 	defer os.Remove(name)
 
-	// 决定最终权限：
-	// 1. 调用方显式传了 perm -> 用它
-	// 2. 否则如果原文件存在 -> 继承原文件权限
-	// 3. 否则保留 CreateTemp 的默认权限（受 umask 影响）
-	finalPerm := perm
-	if finalPerm == 0 {
-		if fi, err := os.Stat(path); err == nil {
-			finalPerm = fi.Mode().Perm()
-		}
-	}
-	if finalPerm != 0 {
-		if err := temp.Chmod(finalPerm); err != nil {
+	// 若调用方显式传入 perm（例如 0644）则设置权限
+	if len(perm) > 0 && perm[0] != 0 {
+		if err := temp.Chmod(perm[0]); err != nil {
 			temp.Close()
 			return err
 		}
 	}
 
-	// 循环写入，防止短写
+	// 写入循环，避免短写
 	written := 0
 	for written < len(data) {
 		n, err := temp.Write(data[written:])
@@ -65,28 +55,25 @@ func AtomicSyncWriteFile(path string, data []byte, perm os.FileMode) error {
 		written += n
 	}
 
-	// fsync 文件内容，确保数据落盘
+	// fsync 文件内容
 	if err := temp.Sync(); err != nil {
 		temp.Close()
 		return err
 	}
 
-	// 关闭文件句柄（特别是 Windows 上，未关闭无法 rename/删除）
+	// Windows rename 之前需要先关闭句柄
 	if err := temp.Close(); err != nil {
 		return err
 	}
 
-	// 原子 rename 替换目标文件：
-	// - 要么看到旧文件，要么看到新文件
-	// - 不会出现半截内容
+	// 原子替换
 	if err := os.Rename(name, path); err != nil {
 		return err
 	}
 
-	// 尽力 fsync 目录，保证目录项更新也落盘
-	// 某些平台/文件系统可能不支持对目录 fsync，这种情况下的错误可以忽略
+	// fsync 目录项（尽力而为）
 	if dirFile, err := os.Open(dir); err == nil {
-		_ = dirFile.Sync() // 忽略错误（例如不支持目录 fsync）
+		_ = dirFile.Sync()
 		dirFile.Close()
 	}
 
