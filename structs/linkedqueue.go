@@ -11,7 +11,7 @@ type LinkedQueue[T any] struct {
 	sync.Mutex
 	head   *linkedQueueNode[T]
 	tail   *linkedQueueNode[T]
-	length atomic.Int32 // 单纯统计监控维度; 大多数场景不会也不应该超过 21 亿个元素
+	length atomic.Int64 // 统计监控维度;
 }
 
 type linkedQueueNode[T any] struct {
@@ -71,6 +71,6 @@ func (q *LinkedQueue[T]) Peek() (value T, ok bool) {
 
 // Len 获取 queue 中待消费数量, 多数用于线上监控, 业务运行状态
 // Empty 判断队列是否为空 q.Len() == 0
-func (q *LinkedQueue[T]) Len() int32 {
+func (q *LinkedQueue[T]) Len() int64 {
 	return q.length.Load()
 }
