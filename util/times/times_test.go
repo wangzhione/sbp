@@ -2,10 +2,11 @@ package times
 
 import (
 	"testing"
+	"time"
 )
 
 func TestShanghaiTimeLocation(t *testing.T) {
-	t.Log("ShanghaiLoction", ShanghaiTime())
+	t.Log("ShanghaiLoction", time.Now().In(ShanghaiLoction))
 
-	t.Log("ShanghaiTimeString", ShanghaiTimeString())
+	t.Log("ShanghaiTimeString", NowString())
 }
