@@ -9,12 +9,14 @@ import (
 )
 
 // LPush 向列表左侧插入值
-func (r *Client) LPush(ctx context.Context, key string, values ...any) error {
-	err := r.UniversalClient.LPush(ctx, key, values...).Err()
+// 返回插入后列表的长度
+func (r *Client) LPush(ctx context.Context, key string, values ...any) (length int64, err error) {
+	length, err = r.UniversalClient.LPush(ctx, key, values...).Result()
 	if err != nil {
 		slog.ErrorContext(ctx, "Redis LPush error", slog.String("key", key), slog.String("error", err.Error()))
+		return
 	}
-	return err
+	return length, nil
 }
 
 // RPop 从列表右侧弹出值
