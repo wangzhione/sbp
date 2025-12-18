@@ -2,27 +2,21 @@
 package tuml
 
 import (
-	"context"
-	"log/slog"
 	"os"
 
 	"github.com/pelletier/go-toml/v2"
 )
 
 // Unmarshal 将 TOML 字符串解析为结构体（泛型）
-func Unmarshal[T any](ctx context.Context, data string) (obj T, err error) {
+func Unmarshal[R any, P ~string | ~[]byte](data P) (obj R, err error) {
 	err = toml.Unmarshal([]byte(data), &obj)
-	if err != nil {
-		slog.ErrorContext(ctx, "toml.Unmarshal error", "error", err, "toml", data)
-	}
 	return
 }
 
 // ReadFile 读取 src 文件, 尝试生成 json T 对象
-func ReadFile[T any](ctx context.Context, patha string) (obj T, err error) {
+func ReadFile[R any](patha string) (obj R, err error) {
 	data, err := os.ReadFile(patha)
 	if err != nil {
-		slog.ErrorContext(ctx, "os.ReadFile error", "error", err, "patha", patha)
 		return
 	}
 
@@ -30,26 +24,21 @@ func ReadFile[T any](ctx context.Context, patha string) (obj T, err error) {
 	return
 }
 
-// WriteFile 尝试将 obj 转成 json 格式, 然后输出到 dst 目标文件中
-func WriteFile(ctx context.Context, dst string, obj any) error {
+// WriteFile 尝试将 obj 转成 json 格式, 然后输出到 patha 目标文件中
+func WriteFile(patha string, obj any) error {
 	data, err := toml.Marshal(obj)
 	if err != nil {
-		slog.ErrorContext(ctx, "toml.Marshal error", "error", err, "dst", dst, "obj", obj)
 		return nil
 	}
 
 	// 所有者 (owner)	6 → rw-	可读可写
 	// 所在组 (group)	6 → rw-	可读可写
 	// 其他人 (others)	4 → r--	只读
-	err = os.WriteFile(dst, data, 0o664)
-	if err != nil {
-		slog.ErrorContext(ctx, "os.WriteFile 0o664 error", "error", err, "dst", dst)
-	}
-	return err
+	return os.WriteFile(patha, data, 0o664)
 }
 
 // Valid 判断字符串 or []byte 是否为合法 json
-func Valid[T ~string | ~[]byte](data T) bool {
+func Valid[P ~string | ~[]byte](data P) bool {
 	var v any
 	return toml.Unmarshal([]byte(data), &v) == nil
 }

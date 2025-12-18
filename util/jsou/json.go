@@ -42,35 +42,35 @@ func String(obj any) string {
 }
 
 // Unmarshal 将 JSON 字符串解析为结构体（泛型）
-func Unmarshal[T any](data string) (obj T, err error) {
+func Unmarshal[R any, P ~string | ~[]byte](data P) (obj R, err error) {
 	err = json.Unmarshal([]byte(data), &obj)
 	return
 }
 
 // To 将一个类型的值转换为(另)一个类型的值（泛型）; 类似 Simple DeepCopy
-func To[T any](src any) (dst T, err error) {
-	data, err := json.Marshal(src)
+func To[R any](a any) (b R, err error) {
+	data, err := json.Marshal(a)
 	if err != nil {
 		return
 	}
-	err = json.Unmarshal(data, &dst)
+	err = json.Unmarshal(data, &b)
 	return
 }
 
 // Map json 字符串 数据集转为 map[string]any 类似 Unmarshal[map[string]any](data)
-func Map(data string) (obj map[string]any, err error) {
+func Map[P ~string | ~[]byte](data P) (obj map[string]any, err error) {
 	err = json.Unmarshal([]byte(data), &obj)
 	return
 }
 
 // Array json 字符串 数据集转为 []any 类似 Unmarshal[[]any](data)
-func Array(data string) (obj []any, err error) {
+func Array[P ~string | ~[]byte](data P) (obj []any, err error) {
 	err = json.Unmarshal([]byte(data), &obj)
 	return
 }
 
 // WriteFile 尝试将 obj 转成 json 格式, 然后输出到 dst 目标文件中
-func WriteFile(dst string, obj any) error {
+func WriteFile(patha string, obj any) error {
 	data, err := json.Marshal(obj)
 	if err != nil {
 		return nil
@@ -79,11 +79,11 @@ func WriteFile(dst string, obj any) error {
 	// 所有者 (owner)	6 → rw-	可读可写
 	// 所在组 (group)	6 → rw-	可读可写
 	// 其他人 (others)	4 → r--	只读
-	return os.WriteFile(dst, data, 0o664)
+	return os.WriteFile(patha, data, 0o664)
 }
 
 // ReadFile 读取 src 文件, 尝试生成 json T 对象
-func ReadFile[T any](src string) (obj T, err error) {
+func ReadFile[R any](src string) (obj R, err error) {
 	data, err := os.ReadFile(src)
 	if err != nil {
 		return
@@ -112,8 +112,7 @@ func ReadWriteFile[T any](src, dst string) (err error) {
 }
 
 // Valid 判断字符串 是否为合法 json
-// 当你想要用 []byte 当成参数时候, 默认你是有一定选择能力开放人员, 这时候可以自行选定 json.Valid ...
-func Valid(data string) bool {
+func Valid[P ~string | ~[]byte](data P) bool {
 	return json.Valid([]byte(data))
 }
 
