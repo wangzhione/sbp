@@ -19,7 +19,7 @@ func NewCache[K ristretto.Key, V any](num int) (*Cache[K, V], error) {
 	c, err := ristretto.NewCache(&ristretto.Config[K, V]{
 		NumCounters: int64(num) * 10, // 10x num items to optimize eviction
 		MaxCost:     int64(num),      // Total cost of cache
-		BufferItems: 256,
+		BufferItems: 64,
 	})
 	if err != nil {
 		return nil, err
@@ -28,12 +28,7 @@ func NewCache[K ristretto.Key, V any](num int) (*Cache[K, V], error) {
 	return &Cache[K, V]{R: c}, nil
 }
 
-// Set adds a key-value pair to the cache
-func (c *Cache[K, V]) Set(key K, value V) bool {
-	return c.R.Set(key, value, 1)
-}
-
-// SetTTL adds a key-value pair to the cache with a given cost and TTL
+// SetTTL adds a key-value pair to the cache with a given cost and TTL | 0*time.Second is c.R.Set(key, value, 1)
 func (c *Cache[K, V]) SetTTL(key K, value V, ttl time.Duration) bool {
 	return c.R.SetWithTTL(key, value, 1, ttl)
 }
@@ -43,22 +38,7 @@ func (c *Cache[K, V]) Get(key K) (V, bool) {
 	return c.R.Get(key)
 }
 
-// Delete removes a key from the cache
-func (c *Cache[K, V]) Delete(key K) {
+// Del removes a key from the cache
+func (c *Cache[K, V]) Del(key K) {
 	c.R.Del(key)
-}
-
-// Clear clears the entire cache
-func (c *Cache[K, V]) Clear() {
-	c.R.Clear()
-}
-
-// Wait waits for all cache operations to complete
-func (c *Cache[K, V]) Wait() {
-	c.R.Wait()
-}
-
-// Metrics returns cache statistics
-func (c *Cache[K, V]) Metrics() *ristretto.Metrics {
-	return c.R.Metrics
 }
