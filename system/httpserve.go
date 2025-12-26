@@ -41,16 +41,18 @@ func End(ctx context.Context) {
 	)
 }
 
+type StopFunc func(ctx context.Context) <-chan struct{}
+
 // ServeLoop 服务启动 loop 主流程
 // addr 类似 fmt.Sprintf("0.0.0.0:%d", config.G.Serve.Port) ; 0.0.0.0 默认 ipv4 绑定本机地址
 // handler 类似 middleware.MainMiddleware(http.DefaultServeMux)
-func ServeLoop(ctx context.Context, addr string, handler http.Handler, stopTime time.Duration, stopfunc ...func(context.Context, os.Signal)) {
+func ServeLoop(ctx context.Context, addr string, handler http.Handler, stopTime time.Duration, stopmainfunc ...StopFunc) {
 	serve := &http.Server{
 		Addr:    addr,
 		Handler: handler,
 	}
 
-	go ServeShutdown(ctx, serve, stopTime, stopfunc...)
+	go ServeShutdown(ctx, serve, stopTime, stopmainfunc...)
 
 	// main server 启动
 	slog.InfoContext(ctx, "Server running", slog.String("addr", serve.Addr))
@@ -67,7 +69,7 @@ func ServeLoop(ctx context.Context, addr string, handler http.Handler, stopTime 
 	}
 }
 
-func ServeShutdown(ctx context.Context, server *http.Server, stopTime time.Duration, stopfunc ...func(context.Context, os.Signal)) {
+func ServeShutdown(ctx context.Context, server *http.Server, stopTime time.Duration, stopmainfunc ...StopFunc) {
 	defer func() {
 		if cover := recover(); cover != nil {
 			// 遇到启动不起来, 异常退出, 打印堆栈方便排除问题
@@ -82,27 +84,40 @@ func ServeShutdown(ctx context.Context, server *http.Server, stopTime time.Durat
 
 	// 监听系统信号（优雅退出）
 	sc := make(chan os.Signal, 1)
+
 	// 监听 Ctrl+C 和 kill or killall 命令
-	// syscall.SIGTERM 重新加载 配置文件
 	// 对于 Web 轻量级应用, 花几秒重启代价最小, 还能避免复杂的重度资源处理逻辑
-	signal.Notify(sc, syscall.SIGINT, syscall.SIGHUP)
+	signal.Notify(sc, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM)
+	defer signal.Stop(sc)
 
 	// 等待终止信号
 	sig := <-sc
 	slog.InfoContext(ctx, "Server Received Shutting down...", "signal", sig)
 
-	// 这部分处理 sig 信号退出
-	for _, stopfn := range stopfunc {
-		stopfn(ctx, sig)
-	}
-
 	// 优雅 stop HTTP 服务器, 设置超时时间的上下文
 	timeoutctx, cancel := context.WithTimeout(ctx, stopTime)
 	defer cancel()
+
+	// 这部分处理 sig 信号退出
+	var stopDone <-chan struct{}
+	if len(stopmainfunc) > 0 {
+		stopDone = stopmainfunc[0](timeoutctx)
+	}
+
 	if err := server.Shutdown(timeoutctx); err != nil {
 		slog.ErrorContext(ctx, "Server.Shutdown error", "error", err)
 	}
 	slog.InfoContext(ctx, "Server gracefully stopped", "SystemBeginTime", BeginTime, "stopTime", stopTime)
+
+	// 等后台任务真正退出（或超时）
+	if stopDone != nil {
+		select {
+		case <-stopDone:
+			slog.InfoContext(ctx, "Background tasks stopped")
+		case <-timeoutctx.Done():
+			slog.WarnContext(ctx, "Background tasks stop timeout", "err", timeoutctx.Err())
+		}
+	}
 }
 
 /*
@@ -124,13 +139,13 @@ func ServeShutdown(ctx context.Context, server *http.Server, stopTime time.Durat
 // addr 类似 "0.0.0.0:443"
 // handler 类似 middleware.MainMiddleware(http.DefaultServeMux)
 // 若 certFile 和 keyFile 不为空，则启用 HTTPS
-func ServeLoopTLS(ctx context.Context, certFile, keyFile, addr string, handler http.Handler, stopTime time.Duration, stopfunc ...func(context.Context, os.Signal)) {
+func ServeLoopTLS(ctx context.Context, certFile, keyFile, addr string, handler http.Handler, stopTime time.Duration, stopmainfunc ...StopFunc) {
 	serve := &http.Server{
 		Addr:    addr,
 		Handler: handler,
 	}
 
-	go ServeShutdown(ctx, serve, stopTime, stopfunc...)
+	go ServeShutdown(ctx, serve, stopTime, stopmainfunc...)
 
 	slog.InfoContext(ctx, "🔒 HTTPS Server running", slog.String("addr", serve.Addr))
 	err := serve.ListenAndServeTLS(certFile, keyFile)
