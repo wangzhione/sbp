@@ -10,8 +10,7 @@ Simple Beautiful Package 高频使用的 Go 代码工具包合集
 
 - [Introduction](#Introduction)
 - [Catalogs](#Catalogs)
-- [Releases](#Releases)
-- [How To Use](#How-To-Use)
+- [Releases & How To Use](#releases--how-to-use)
 - [License](#License)
 
 ## Introduction
@@ -29,12 +28,7 @@ We depend on the same code(this repo) in our production environment.
 
 > 设计者注: 通常 **util** 与业务无关的，可以独立出来，可供其他项目使用通用代码集。方法通常是 public static; **tool** 可以与某些业务有关，通用性限于某几个业务类之间; **helper** 通常与业务相关. 随后是否加 s, 不加 s 看个人喜好了. 
 
-## Releases
-
-`sbp` recommends users to "live-at-head" (update to the latest commit from the main branch as often as possible).
-We develop at `develop` branch and will only merge to `master` when `develop` is stable.
-
-## How To Use
+## Releases & How To Use
 
 You can use `go get -u github.com/wangzhione/sbp@master` to get or update `sbp`.
 
@@ -44,15 +38,15 @@ You can use `go get -u github.com/wangzhione/sbp@master` to get or update `sbp`.
 
 欢迎喜欢用的朋友, 补充常用 package 代码集, 或者发评论提思路, 主动帮忙添加.
 
-## 扩展阅读
+## [可选] 扩展阅读
 
 - [Effective Go](https://golang.org/doc/effective_go)
 - [Pingcap General advice](https://pingcap.github.io/style-guide/general.html)
 - [Uber Go Style Guide](https://github.com/uber-go/guide/blob/master/style.md)
 
-## 拓展配置
+## [可选] Visual Studio Code Golang 
 
-自己用的是 Visual Studio Code 简单说一下, 用这个 IDE 开发 Golang 基础配置在全局 settings.json 加入和 go env 有关配置, 用于控制 go import 和 go test 相关行为
+IDE 开发 Golang 基础配置在全局 settings.json 加入和 go env 有关配置, 用于控制 go import 和 go test 相关行为
 
 ```JSON
 {
