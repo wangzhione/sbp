@@ -9,8 +9,10 @@ import "cmp"
 // structs.Ptr(BucketNo)
 //
 // 对于 var Oh string , 更方便走 &Oh
+//
+//go:fix inline
 func Ptr[T any](v T) *T {
-	return &v
+	return new(v)
 }
 
 func Max[T cmp.Ordered](vals ...T) (maxval T) {

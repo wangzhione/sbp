@@ -83,9 +83,9 @@ func ParseCommand(command string) (*MySQLConfig, error) {
 				config.Username = args[i+1]
 				i++ // Skip the next argument since it's already used
 			}
-		} else if strings.HasPrefix(arg, "-u") {
+		} else if after, ok := strings.CutPrefix(arg, "-u"); ok {
 			// Handle `-uUserName` format
-			config.Username = strings.TrimPrefix(arg, "-u")
+			config.Username = after
 		} else if arg == "-p" {
 			// Handle `-p` with a value in the next argument
 			if i+1 < len(args) {

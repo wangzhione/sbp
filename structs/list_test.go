@@ -866,7 +866,7 @@ func TestConcurrentSafety(t *testing.T) {
 	// 测试在并发环境下的基本操作不会panic
 	done := make(chan bool, 10)
 
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		go func(id int) {
 			defer func() {
 				if r := recover(); r != nil {
@@ -876,7 +876,7 @@ func TestConcurrentSafety(t *testing.T) {
 			}()
 
 			// 执行一些基本操作
-			for j := 0; j < 100; j++ {
+			for j := range 100 {
 				list.PushBack(id*100 + j)
 				if list.Len() > 0 {
 					node := list.PopFront()
@@ -892,7 +892,7 @@ func TestConcurrentSafety(t *testing.T) {
 	}
 
 	// 等待所有协程完成
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		<-done
 	}
 }
@@ -957,7 +957,7 @@ func BenchmarkPopBack(b *testing.B) {
 func BenchmarkLen(b *testing.B) {
 	list := &List[int]{}
 	// 预填充数据
-	for i := 0; i < 1000; i++ {
+	for i := range 1000 {
 		list.PushBack(i)
 	}
 
@@ -971,7 +971,7 @@ func BenchmarkLen(b *testing.B) {
 func BenchmarkMoveToFront(b *testing.B) {
 	list := &List[int]{}
 	// 预填充数据
-	for i := 0; i < 1000; i++ {
+	for i := range 1000 {
 		list.PushBack(i)
 	}
 
@@ -988,7 +988,7 @@ func BenchmarkMoveToFront(b *testing.B) {
 func BenchmarkMoveToBack(b *testing.B) {
 	list := &List[int]{}
 	// 预填充数据
-	for i := 0; i < 1000; i++ {
+	for i := range 1000 {
 		list.PushBack(i)
 	}
 
@@ -1005,7 +1005,7 @@ func BenchmarkMoveToBack(b *testing.B) {
 func BenchmarkInsertAfter(b *testing.B) {
 	list := &List[int]{}
 	// 预填充数据
-	for i := 0; i < 1000; i++ {
+	for i := range 1000 {
 		list.PushBack(i)
 	}
 
@@ -1023,7 +1023,7 @@ func BenchmarkInsertAfter(b *testing.B) {
 func BenchmarkInsertBefore(b *testing.B) {
 	list := &List[int]{}
 	// 预填充数据
-	for i := 0; i < 1000; i++ {
+	for i := range 1000 {
 		list.PushBack(i)
 	}
 
@@ -1078,34 +1078,34 @@ func BenchmarkMixedOperations(b *testing.B) {
 func TestTableDrivenTests(t *testing.T) {
 	tests := []struct {
 		name     string
-		values   []interface{}
-		expected []interface{}
+		values   []any
+		expected []any
 	}{
 		{
 			name:     "整数类型",
-			values:   []interface{}{1, 2, 3, 4, 5},
-			expected: []interface{}{1, 2, 3, 4, 5},
+			values:   []any{1, 2, 3, 4, 5},
+			expected: []any{1, 2, 3, 4, 5},
 		},
 		{
 			name:     "字符串类型",
-			values:   []interface{}{"hello", "world", "test"},
-			expected: []interface{}{"hello", "world", "test"},
+			values:   []any{"hello", "world", "test"},
+			expected: []any{"hello", "world", "test"},
 		},
 		{
 			name:     "浮点数类型",
-			values:   []interface{}{1.1, 2.2, 3.3},
-			expected: []interface{}{1.1, 2.2, 3.3},
+			values:   []any{1.1, 2.2, 3.3},
+			expected: []any{1.1, 2.2, 3.3},
 		},
 		{
 			name:     "布尔类型",
-			values:   []interface{}{true, false, true},
-			expected: []interface{}{true, false, true},
+			values:   []any{true, false, true},
+			expected: []any{true, false, true},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			list := &List[interface{}]{}
+			list := &List[any]{}
 			for _, value := range tt.values {
 				list.PushBack(value)
 			}
@@ -1136,7 +1136,7 @@ func TestMemoryLeaks(t *testing.T) {
 	list := &List[int]{}
 
 	// 大量添加和删除操作
-	for i := 0; i < 10000; i++ {
+	for i := range 10000 {
 		list.PushBack(i)
 		if i%2 == 0 {
 			node := list.PopFront()
@@ -1169,7 +1169,7 @@ func TestStressTest(t *testing.T) {
 	list := &List[int]{}
 
 	// 大量操作
-	for i := 0; i < 1000; i++ {
+	for i := range 1000 {
 		// 随机操作
 		switch i % 6 {
 		case 0:

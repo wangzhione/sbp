@@ -443,7 +443,7 @@ func BenchmarkLRUGet(b *testing.B) {
 	lru := NewLRUCache[int, int](1000)
 
 	// 预填充数据
-	for i := 0; i < 1000; i++ {
+	for i := range 1000 {
 		lru.Put(i, i*2)
 	}
 
@@ -468,7 +468,7 @@ func BenchmarkLRUDelete(b *testing.B) {
 	lru := NewLRUCache[int, int](1000)
 
 	// 预填充数据
-	for i := 0; i < 1000; i++ {
+	for i := range 1000 {
 		lru.Put(i, i*2)
 	}
 
@@ -503,7 +503,7 @@ func BenchmarkLRULargeCapacity(b *testing.B) {
 	lru := NewLRUCache[int, int](10000)
 
 	// 预填充数据
-	for i := 0; i < 10000; i++ {
+	for i := range 10000 {
 		lru.Put(i, i*2)
 	}
 

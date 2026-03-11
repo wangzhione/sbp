@@ -13,10 +13,8 @@ func TestID_Concurrent(t *testing.T) {
 	errCh := make(chan error, n)
 
 	for range n {
-		wg.Add(1)
 
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			id := ID()
 			if id == "" {
 				errCh <- fmt.Errorf("goroutine ID should not be empty")
@@ -28,7 +26,7 @@ func TestID_Concurrent(t *testing.T) {
 			}
 
 			t.Log(id)
-		}()
+		})
 	}
 
 	wg.Wait()

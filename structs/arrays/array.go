@@ -1,8 +1,6 @@
 // Package arrays provides utility functions for working with slices and arrays.
 package arrays
 
-import "github.com/wangzhione/sbp/structs"
-
 // go std slices 很 strong
 
 // Contains checks if a value exists in a slice
@@ -55,7 +53,7 @@ func Filter[T any](arr []T, predicate func(T) bool) (result []T) {
 func SlicePtrs[T any](vv ...T) []*T {
 	ptrs := make([]*T, len(vv))
 	for i := range vv {
-		ptrs[i] = structs.Ptr(vv[i])
+		ptrs[i] = new(vv[i])
 	}
 	return ptrs
 }

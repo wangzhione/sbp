@@ -161,7 +161,7 @@ func BenchmarkStrconvAtoi(b *testing.B) {
 // BenchmarkSmallNumbers 专门测试小数字(0-99)的性能差异
 func BenchmarkSmallNumbers(b *testing.B) {
 	// 测试0-99的小数字
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		b.Run("FormatINT_"+strconv.Itoa(i), func(b *testing.B) {
 			b.ResetTimer()
 			for j := 0; j < b.N; j++ {
@@ -174,7 +174,7 @@ func BenchmarkSmallNumbers(b *testing.B) {
 // BenchmarkSmallNumbersStrconv 测试标准库小数字性能
 func BenchmarkSmallNumbersStrconv(b *testing.B) {
 	// 测试0-99的小数字
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		b.Run("StrconvItoa_"+strconv.Itoa(i), func(b *testing.B) {
 			b.ResetTimer()
 			for j := 0; j < b.N; j++ {
