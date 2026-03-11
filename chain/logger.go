@@ -34,7 +34,7 @@ func GetfileByHour(logsDir string) (now time.Time, filename string) {
 }
 
 // Startlogger 启动一个 slog 实例, DefaultGetFile 默认是 GetfileByDay; 或者重新设置 DefaultGetFile
-func Startlogger() error {
+func Startlogger(iscloserotateloop bool) error {
 	our := &hourordaylogger{ // our 类似跨函数闭包
 		LogsDir:   LogsDir,
 		getfilefn: DefaultGetFile,
@@ -49,7 +49,11 @@ func Startlogger() error {
 	if err := our.rotate(); err != nil {
 		return err
 	}
-	go our.rotateloop()
+
+	if !iscloserotateloop {
+		go our.rotateloop()
+	}
+
 	return nil
 }
 
