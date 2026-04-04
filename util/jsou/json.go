@@ -2,6 +2,7 @@
 package jsou
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -39,6 +40,11 @@ import (
 func String(obj any) string {
 	data, _ := json.Marshal(obj)
 	return string(data)
+}
+
+func Reader(obj any) io.Reader {
+	data, _ := json.Marshal(obj)
+	return bytes.NewReader(data)
 }
 
 // Unmarshal 将 JSON 字符串解析为结构体（泛型）
