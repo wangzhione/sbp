@@ -3,12 +3,11 @@ package httpip
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
-
-	"github.com/wangzhione/sbp/chain"
 )
 
 // 结构体定义（用于测试 JSON 响应）
@@ -90,12 +89,26 @@ func TestPostRequest(t *testing.T) {
 // HTTP Code 403 服务器已经理解了请求，但拒绝执行它。
 
 func TestCall(t *testing.T) {
-	ctx := chain.Context()
-	url := `https://chatgpt.com`
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Fatalf("unexpected method: %s", r.Method)
+		}
 
-	respData, err := Call(ctx, http.MethodGet, url, nil, nil)
+		w.Header().Set("Content-Type", "text/plain")
+		_, _ = io.WriteString(w, "call success")
+	}))
+	defer server.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	respData, err := Call(ctx, http.MethodGet, server.URL, nil, nil)
 	if err != nil {
-		t.Fatal("Call error", err, url)
+		t.Fatal("Call error", err, server.URL)
+	}
+
+	if string(respData) != "call success" {
+		t.Fatalf("unexpected response: %q", string(respData))
 	}
 
 	t.Log(string(respData))

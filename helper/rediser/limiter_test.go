@@ -6,12 +6,7 @@ import (
 )
 
 func TestLimiter_Allow(t *testing.T) {
-	command := "redis-cli"
-
-	r, err := NewDefaultRedis(ctx, command)
-	if err != nil {
-		t.Fatal("fatal new redis", err, command)
-	}
+	r := requireRedis(t)
 
 	key := "mykey"
 	ttl := 3 * time.Second

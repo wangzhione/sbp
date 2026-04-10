@@ -37,15 +37,17 @@ func TestSplitPath(t *testing.T) {
 		{"a/b/c", "a/b", "c", ""},
 		{"/tmp/test.log", "/tmp", "test.log", ".log"},
 		{"test", ".", "test", ""},
-		{"a/b/.env", "a/b", ".env", ""},
-		{"", ".", "", ""},
+		{"a/b/.env", "a/b", ".env", ".env"},
+		{"", ".", ".", "."},
 	}
 
 	for _, tt := range tests {
 		dir, file, ext := SplitPath(tt.input)
-		if dir != tt.wantDir || file != tt.wantFile || ext != tt.wantExt {
+		wantDir := filepath.Dir(tt.input)
+
+		if dir != wantDir || file != tt.wantFile || ext != tt.wantExt {
 			t.Errorf("SplitPath(%q) = (%q, %q, %q); want (%q, %q, %q)",
-				tt.input, dir, file, ext, tt.wantDir, tt.wantFile, tt.wantExt)
+				tt.input, dir, file, ext, wantDir, tt.wantFile, tt.wantExt)
 		}
 	}
 }

@@ -3,23 +3,50 @@ package mysql
 import (
 	"context"
 	"database/sql"
+	"os"
 	"runtime"
 	"testing"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/wangzhione/sbp/chain"
+	"github.com/wangzhione/sbp/helper/sqler"
 	"github.com/wangzhione/sbp/util/jsou"
 )
 
 var connects = "mysql -u root -p123456 -h 127.0.0.1 -P 3306 resource_ai_drama"
 
-func TestNewDB(t *testing.T) {
-	connects = "mysql -u root -p123456 resource_ai_drama"
+// testMySQLCommand 优先从环境变量读取连接串，便于本机和 CI 注入真实测试库。
+// 未配置时使用仓库里的默认示例命令。
+func testMySQLCommand() string {
+	if command := os.Getenv("SBP_TEST_MYSQL"); command != "" {
+		return command
+	}
+	return connects
+}
 
-	s, err := NewDB(chain.BC, connects)
+// requireMySQL 用于 MySQL 集成测试前置检查。
+// 当前环境没有可用 MySQL 时直接跳过，保证默认 go test ./... 只因代码问题失败。
+func requireMySQL(t *testing.T) *sqler.DB {
+	t.Helper()
+
+	s, err := NewDB(chain.BC, testMySQLCommand())
 	if err != nil {
-		t.Fatal("NewDB fatal", err)
+		t.Skipf("skip mysql integration test: %v", err)
+	}
+
+	t.Cleanup(func() {
+		_ = s.Close(chain.BC)
+	})
+
+	return s
+}
+
+func TestNewDB(t *testing.T) {
+	command := "mysql -u root -p123456 resource_ai_drama"
+	s, err := NewDB(chain.BC, command)
+	if err != nil {
+		t.Skipf("skip mysql integration test: %v", err)
 	}
 
 	if s != nil {
@@ -42,13 +69,10 @@ func TestNewDB(t *testing.T) {
 }
 
 func TestQueryRow(t *testing.T) {
-	s, err := NewDB(chain.BC, connects)
-	if err != nil {
-		t.Fatal("NewDB fatal", err)
-	}
+	s := requireMySQL(t)
 
 	var count int
-	err = s.QueryRow(chain.BC, "select count(*) from t_user", nil, &count)
+	err := s.QueryRow(chain.BC, "select count(*) from t_user", nil, &count)
 	if err != nil {
 		t.Fatal("s.QueryRow fatal", err)
 	}
@@ -75,15 +99,12 @@ type User struct {
 }
 
 func TestDB_QueryCallBack(t *testing.T) {
-	s, err := NewDB(chain.BC, connects)
-	if err != nil {
-		t.Fatal("NewDB fatal", err)
-	}
+	s := requireMySQL(t)
 
 	// 现代 Go 开发, 一定要集合 AI, 例如 ChatGPT 辅助, 很多工作都好节省
 	var users []User
 	query := "SELECT id, user_name, password, password_salt, email_not_verified, user_email, update_time, create_time, delete_time FROM t_user WHERE delete_time = 0"
-	err = s.QueryCallBack(chain.BC, func(ctx context.Context, rows *sql.Rows) error {
+	err := s.QueryCallBack(chain.BC, func(ctx context.Context, rows *sql.Rows) error {
 		// 遍历查询结果
 		for rows.Next() {
 			var user User
@@ -108,10 +129,7 @@ func TestDB_QueryCallBack(t *testing.T) {
 }
 
 func TestDB_QueryAll(t *testing.T) {
-	s, err := NewDB(chain.BC, connects)
-	if err != nil {
-		t.Fatal("NewDB fatal", err)
-	}
+	s := requireMySQL(t)
 
 	// query := "SELECT id, user_name, password, password_salt, email_not_verified, user_email, update_time, create_time, delete_time FROM t_user WHERE delete_time = 0"
 	query := "select * from `t_split_resource_task`"

@@ -44,6 +44,11 @@ func (config *MySQLConfig) DataSourceName() string {
 	if config.Location == "" {
 		config.Location = "UTC"
 	}
+	// Host 为空时补成本机回环地址，避免生成 tcp(:3306) 这种无主机名的 DSN。
+	// 这里不直接用 localhost，是为了减少本机解析到 IPv6/hosts 配置带来的额外差异。
+	if config.Host == "" {
+		config.Host = "127.0.0.1"
+	}
 
 	// 构建 DSN（Data Source Name）
 	return fmt.Sprintf(

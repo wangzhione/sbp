@@ -9,7 +9,6 @@ import (
 
 var (
 	streamkey = "test_stream"
-	command   = "redis-cli"
 )
 
 func init() {
@@ -40,9 +39,11 @@ func init() {
 */
 
 func TestQueueProduceAndConsume(t *testing.T) {
-	r, err := NewDefaultRedis(ctx, command)
+	r := requireRedis(t)
+
+	err := r.Del(ctx, streamkey)
 	if err != nil {
-		t.Fatal("fatal new redis", err, command)
+		t.Fatal("r.Del stream key before test", err)
 	}
 
 	q, err := r.NewQueue(ctx, streamkey, 100)
