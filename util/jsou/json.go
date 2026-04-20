@@ -1,4 +1,37 @@
 // Package jsou provides utility functions for working with JSON data, including marshaling, unmarshaling, file operations, and debugging helpers.
+//
+// 这个库继承自官方 "encoding/json"
+//
+// 注意：在以下特殊情况下可能触发 panic（非返回 error）, 依赖程序最外层去捕获 recover()。
+//
+//  1. Marshal() 参数类型不受支持：
+//     例如 func、chan、complex、unsafe.Pointer 等类型，内部反射找不到编码器会直接 panic。
+//
+//  2. Unmarshal() 目标不是指针或为 nil 接口值：
+//     Unmarshal() 必须接收 "可写入" 的目标，否则会直接 panic。
+//     常见错误：
+//     var v map[string]any
+//     json.Unmarshal(data, v)        // ❌ panic: Unmarshal(non-pointer map[string]any)
+//     因为 v 只是一个值（非指针），函数内部无法修改它的内容。
+//     正确写法应为：
+//     json.Unmarshal(data, &v)       // ✅ 传入指针，允许修改内容
+//     同理，如果目标是一个 nil 接口（例如 var v any，未取地址），也会 panic，
+//     因为无法动态设置其值，同样需传入 &v。
+//
+//  3. struct tag 非法（如 json:"a,b,c"）：
+//     标准库解析 tag 失败会 panic，应确保 tag 符合 "name[,option]" 形式。
+//
+//  4. 结构体循环引用导致栈溢出：
+//     结构体字段指向自身（或间接循环）时递归展开无限循环，最终触发 stack overflow。
+//
+//  5. 自定义 MarshalJSON / UnmarshalJSON 方法内部 panic：
+//     若用户自定义序列化逻辑中主动 panic（或访问空指针）会向上传递。
+//
+//  6. Reader 实现本身如果发生 panic，读取过程会向上传播 panic；
+//     但输入包含非法 UTF-8 字节本身通常不会在字符串转换或普通读取时 panic，
+//     更常见的是返回解析错误、产生 RuneError，或得到包含原始字节的字符串。
+//
+// 相关协议部分阅读 https://www.json.org/json-zh.html
 package jsou
 
 import (
@@ -9,32 +42,6 @@ import (
 	"os"
 	"reflect"
 )
-
-// 这个库继承自官方 "encoding/json", 特殊情况存在 panic, 依赖程序最外层去捕获 recover()。
-//
-// 注意：在以下特殊情况下可能触发 panic（非返回 error）：
-// 1. Marshal() 参数类型不受支持：
-//    例如 func、chan、complex、unsafe.Pointer 等类型，内部反射找不到编码器会直接 panic。
-// 2. Unmarshal() 目标不是指针或为 nil 接口值：
-//    Unmarshal() 必须接收“可写入”的目标，否则会直接 panic。
-//    常见错误：
-//       var v map[string]interface{}
-//       json.Unmarshal(data, v)        // ❌ panic: Unmarshal(non-pointer map[string]interface {})
-//    因为 v 只是一个值（非指针），函数内部无法修改它的内容。
-//    正确写法应为：
-//       json.Unmarshal(data, &v)       // ✅ 传入指针，允许修改内容
-//    同理，如果目标是一个 nil 接口（例如 var v interface{}，未取地址），
-//    也会 panic，因为无法动态设置其值，需传入 &v。
-// 3. struct tag 非法（如 json:"a,b,c"）：
-//    标准库解析 tag 失败会 panic，应确保 tag 符合 "name[,option]" 形式。
-// 4. 结构体循环引用导致栈溢出：
-//    结构体字段指向自身（或间接循环）时递归展开无限循环，最终触发 stack overflow。
-// 5. 自定义 MarshalJSON / UnmarshalJSON 方法内部 panic：
-//    若用户自定义序列化逻辑中主动 panic（或访问空指针）会向上传递。
-// 6. 输入数据包含非法 UTF-8 字节或 Reader 实现 panic：
-//    在字符串转换或流读取时可能触发 panic（常见于损坏或非文本输入）。
-
-// 相关协议部分阅读 https://www.json.org/json-zh.html
 
 // String 结构体转换为 JSON 字符串
 func String(obj any) string {
@@ -53,7 +60,8 @@ func Unmarshal[R any, P ~string | ~[]byte](data P) (obj R, err error) {
 	return
 }
 
-// To 将一个类型的值转换为(另)一个类型的值（泛型）; 类似 Simple DeepCopy
+// To 通过 JSON 编码再解码，将 a 转成目标类型 R。
+// 注意：这不是严格意义上的 DeepCopy，会受 JSON 序列化规则影响。
 func To[R any](a any) (b R, err error) {
 	data, err := json.Marshal(a)
 	if err != nil {
@@ -79,7 +87,7 @@ func Array[P ~string | ~[]byte](data P) (obj []any, err error) {
 func WriteFile(patha string, obj any) error {
 	data, err := json.Marshal(obj)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	// 所有者 (owner)	6 → rw-	可读可写
@@ -144,10 +152,14 @@ func DEBUG(args ...any) {
 		}
 
 		t := reflect.TypeOf(arg)
-		if t.PkgPath() != "" {
-			fmt.Fprintf(w, "DEBUG %s.%s\n", t.PkgPath(), t.Name())
+		base := t
+		for base.Kind() == reflect.Pointer {
+			base = base.Elem()
+		}
+		if pkgpath, name := base.PkgPath(), base.Name(); pkgpath != "" && name != "" {
+			fmt.Fprintf(w, "DEBUG %s [%s.%s]\n", t.String(), pkgpath, name)
 		} else {
-			fmt.Fprintf(w, "DEBUG %s\n", t.Name())
+			fmt.Fprintf(w, "DEBUG %s\n", t.String())
 		}
 
 		// 尝试格式化 JSON
