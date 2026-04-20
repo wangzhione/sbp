@@ -18,6 +18,10 @@ func Atoi(s []byte) (int, error) {
 		case '-', '+':
 			i = 1
 		}
+		if i == sLen {
+			// 只有符号没有数字时, 返回语法错误
+			return 0, strconv.ErrSyntax
+		}
 
 		n := 0
 		for ; i < sLen; i++ {
@@ -65,6 +69,11 @@ func ParseInt(s []byte, bitSize int) (int64, error) {
 	case '-':
 		s = s[1:]
 		neg = true
+	}
+
+	if len(s) == 0 {
+		// 只有符号没有数字时, 返回语法错误
+		return 0, strconv.ErrSyntax
 	}
 
 	// Convert unsigned and check range.

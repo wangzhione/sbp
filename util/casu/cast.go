@@ -21,7 +21,7 @@ func FormatINT[T INT](i T) string {
 		if i < 10 {
 			return digits[i : i+1]
 		}
-		return smallsString[i*2 : i*2+2]
+		return smalls[i*2 : i*2+2]
 	}
 
 	return format10(uint64(i), i < 0)
@@ -66,13 +66,15 @@ func ParseINTE[T INT](s string) (i T, err error) {
 // ParseBool 无异常 ParseBool 版本, 可以配合 strconv.FormatBool 互相转换
 // 其中 strconv.FormatBool returns "true" or "false" according to the value of b.
 func ParseBool(s string) bool {
-	switch s {
-	case "1", "T", "t",
-		"TRUE", "true", "True",
-		"truE", "trUe", "trUE",
-		"tRue", "tRuE", "tRUe", "tRUE",
-		"TruE", "TrUe", "TrUE", "TRue", "TRuE", "TRUe":
-		return true
+	switch len(s) {
+	case 1:
+		c := s[0]
+		return c == '1' || (c|0x20) == 't'
+	case 4:
+		return (s[0]|0x20) == 't' &&
+			(s[1]|0x20) == 'r' &&
+			(s[2]|0x20) == 'u' &&
+			(s[3]|0x20) == 'e'
 	default:
 		return false
 	}
