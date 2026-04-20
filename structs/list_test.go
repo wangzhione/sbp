@@ -9,7 +9,7 @@ func verifyListStructure[T comparable](t *testing.T, list *List[T], expected []T
 	t.Helper()
 
 	if len(expected) == 0 {
-		if list.Front != nil || list.Back != nil {
+		if list.Head != nil || list.Tail != nil {
 			t.Error("空链表应该 Front 和 Back 都为 nil")
 		}
 		return
@@ -21,41 +21,41 @@ func verifyListStructure[T comparable](t *testing.T, list *List[T], expected []T
 	}
 
 	// 验证 Front 和 Back
-	if list.Front == nil || list.Back == nil {
+	if list.Head == nil || list.Tail == nil {
 		t.Error("非空链表不应该有 nil 的 Front 或 Back")
 		return
 	}
 
-	if list.Front.Value != expected[0] {
-		t.Errorf("Front 值应该为 %v，实际为 %v", expected[0], list.Front.Value)
+	if list.Head.V != expected[0] {
+		t.Errorf("Front 值应该为 %v，实际为 %v", expected[0], list.Head.V)
 	}
 
-	if list.Back.Value != expected[len(expected)-1] {
-		t.Errorf("Back 值应该为 %v，实际为 %v", expected[len(expected)-1], list.Back.Value)
+	if list.Tail.V != expected[len(expected)-1] {
+		t.Errorf("Back 值应该为 %v，实际为 %v", expected[len(expected)-1], list.Tail.V)
 	}
 
 	// 验证正向遍历
-	current := list.Front
+	current := list.Head
 	for i, exp := range expected {
 		if current == nil {
 			t.Errorf("位置 %d 的节点不应该为 nil", i)
 			break
 		}
-		if current.Value != exp {
-			t.Errorf("位置 %d 的值应该为 %v，实际为 %v", i, exp, current.Value)
+		if current.V != exp {
+			t.Errorf("位置 %d 的值应该为 %v，实际为 %v", i, exp, current.V)
 		}
 		current = current.Next
 	}
 
 	// 验证反向遍历
-	current = list.Back
+	current = list.Tail
 	for i := len(expected) - 1; i >= 0; i-- {
 		if current == nil {
 			t.Errorf("反向遍历位置 %d 的节点不应该为 nil", i)
 			break
 		}
-		if current.Value != expected[i] {
-			t.Errorf("反向遍历位置 %d 的值应该为 %v，实际为 %v", i, expected[i], current.Value)
+		if current.V != expected[i] {
+			t.Errorf("反向遍历位置 %d 的值应该为 %v，实际为 %v", i, expected[i], current.V)
 		}
 		current = current.Prev
 	}
@@ -73,8 +73,8 @@ func createTestList[T any](values ...T) *List[T] {
 // 辅助函数：获取链表所有值
 func getListValues[T any](list *List[T]) []T {
 	var values []T
-	for current := list.Front; current != nil; current = current.Next {
-		values = append(values, current.Value)
+	for current := list.Head; current != nil; current = current.Next {
+		values = append(values, current.V)
 	}
 	return values
 }
@@ -87,14 +87,14 @@ func TestNewList(t *testing.T) {
 	verifyListStructure(t, list, []int{})
 }
 
-// TestNewListNode 测试创建新节点
-func TestNewListNode(t *testing.T) {
+// TestNewLode 测试创建新节点
+func TestNewLode(t *testing.T) {
 	value := 42
-	node := NewListNode(value)
+	node := NewLode(value)
 
 	// 验证节点值正确
-	if node.Value != value {
-		t.Errorf("节点值应该为 %d，实际为 %v", value, node.Value)
+	if node.V != value {
+		t.Errorf("节点值应该为 %d，实际为 %v", value, node.V)
 	}
 
 	// 验证新节点的前后指针为 nil
@@ -103,17 +103,6 @@ func TestNewListNode(t *testing.T) {
 	}
 	if node.Next != nil {
 		t.Errorf("新节点的 Next 应该为 nil，实际为 %v", node.Next)
-	}
-
-	// 测试 GetValue 方法
-	if node.GetValue() != value {
-		t.Errorf("GetValue() 应该返回 %d，实际为 %v", value, node.GetValue())
-	}
-
-	// 测试 nil 节点的 GetValue 方法
-	var nilNode *ListNode[int]
-	if nilNode.GetValue() != 0 {
-		t.Errorf("nil 节点的 GetValue() 应该返回零值，实际为 %v", nilNode.GetValue())
 	}
 }
 
@@ -151,24 +140,24 @@ func TestPushBackNode(t *testing.T) {
 
 	// 测试添加 nil 节点
 	list.PushBackNode(nil)
-	if list.Front != nil || list.Back != nil {
+	if list.Head != nil || list.Tail != nil {
 		t.Error("添加 nil 节点后，链表应该仍然为空")
 	}
 
 	// 测试向空链表添加节点
-	node1 := NewListNode(1)
+	node1 := NewLode(1)
 	list.PushBackNode(node1)
-	if list.Front != node1 || list.Back != node1 {
+	if list.Head != node1 || list.Tail != node1 {
 		t.Error("向空链表添加节点后，Front 和 Back 都应该指向该节点")
 	}
 
 	// 测试向非空链表添加节点
-	node2 := NewListNode(2)
+	node2 := NewLode(2)
 	list.PushBackNode(node2)
-	if list.Back != node2 {
+	if list.Tail != node2 {
 		t.Error("添加节点后，Back 应该指向新添加的节点")
 	}
-	if list.Front.Next != node2 {
+	if list.Head.Next != node2 {
 		t.Error("新添加的节点应该成为第二个节点")
 	}
 }
@@ -179,24 +168,24 @@ func TestPushFrontNode(t *testing.T) {
 
 	// 测试添加 nil 节点
 	list.PushFrontNode(nil)
-	if list.Front != nil || list.Back != nil {
+	if list.Head != nil || list.Tail != nil {
 		t.Error("添加 nil 节点后，链表应该仍然为空")
 	}
 
 	// 测试向空链表添加节点
-	node1 := NewListNode(1)
+	node1 := NewLode(1)
 	list.PushFrontNode(node1)
-	if list.Front != node1 || list.Back != node1 {
+	if list.Head != node1 || list.Tail != node1 {
 		t.Error("向空链表添加节点后，Front 和 Back 都应该指向该节点")
 	}
 
 	// 测试向非空链表添加节点
-	node2 := NewListNode(2)
+	node2 := NewLode(2)
 	list.PushFrontNode(node2)
-	if list.Front != node2 {
+	if list.Head != node2 {
 		t.Error("添加节点后，Front 应该指向新添加的节点")
 	}
-	if list.Back.Prev != node2 {
+	if list.Tail.Prev != node2 {
 		t.Error("新添加的节点应该成为第二个节点")
 	}
 }
@@ -207,7 +196,7 @@ func TestRemoveNode(t *testing.T) {
 
 	// 测试移除 nil 节点
 	list.Detach(nil)
-	if list.Front != nil || list.Back != nil {
+	if list.Head != nil || list.Tail != nil {
 		t.Error("移除 nil 节点后，链表应该仍然为空")
 	}
 
@@ -217,35 +206,35 @@ func TestRemoveNode(t *testing.T) {
 	list.PushBack(3)
 
 	// 测试移除中间节点
-	middleNode := list.Front.Next
+	middleNode := list.Head.Next
 	list.Detach(middleNode)
 
 	// 验证移除后的链表结构
-	if list.Front.Value != 1 {
-		t.Errorf("移除中间节点后，Front 值应该为 1，实际为 %v", list.Front.Value)
+	if list.Head.V != 1 {
+		t.Errorf("移除中间节点后，Front 值应该为 1，实际为 %v", list.Head.V)
 	}
-	if list.Back.Value != 3 {
-		t.Errorf("移除中间节点后，Back 值应该为 3，实际为 %v", list.Back.Value)
+	if list.Tail.V != 3 {
+		t.Errorf("移除中间节点后，Back 值应该为 3，实际为 %v", list.Tail.V)
 	}
-	if list.Front.Next != list.Back {
+	if list.Head.Next != list.Tail {
 		t.Error("移除中间节点后，Front.Next 应该直接指向 Back")
 	}
-	if list.Back.Prev != list.Front {
+	if list.Tail.Prev != list.Head {
 		t.Error("移除中间节点后，Back.Prev 应该直接指向 Front")
 	}
 
 	// 测试移除头节点
-	list.Detach(list.Front)
-	if list.Front.Value != 3 {
-		t.Errorf("移除头节点后，Front 值应该为 3，实际为 %v", list.Front.Value)
+	list.Detach(list.Head)
+	if list.Head.V != 3 {
+		t.Errorf("移除头节点后，Front 值应该为 3，实际为 %v", list.Head.V)
 	}
-	if list.Back.Value != 3 {
-		t.Errorf("移除头节点后，Back 值应该为 3，实际为 %v", list.Back.Value)
+	if list.Tail.V != 3 {
+		t.Errorf("移除头节点后，Back 值应该为 3，实际为 %v", list.Tail.V)
 	}
 
 	// 测试移除尾节点（也是最后一个节点）
-	list.Detach(list.Back)
-	if list.Front != nil || list.Back != nil {
+	list.Detach(list.Tail)
+	if list.Head != nil || list.Tail != nil {
 		t.Error("移除最后一个节点后，链表应该为空")
 	}
 }
@@ -259,25 +248,25 @@ func TestInsertAfter(t *testing.T) {
 	list.PushBack(3)
 
 	// 在第一个节点后插入新节点
-	newNode := NewListNode(2)
-	list.InsertAfter(list.Front, newNode)
+	newNode := NewLode(2)
+	list.InsertAfter(list.Head, newNode)
 
 	// 验证链表结构
-	if list.Front.Value != 1 {
-		t.Errorf("Front 值应该为 1，实际为 %v", list.Front.Value)
+	if list.Head.V != 1 {
+		t.Errorf("Front 值应该为 1，实际为 %v", list.Head.V)
 	}
-	if list.Front.Next.Value != 2 {
-		t.Errorf("第二个节点值应该为 2，实际为 %v", list.Front.Next.Value)
+	if list.Head.Next.V != 2 {
+		t.Errorf("第二个节点值应该为 2，实际为 %v", list.Head.Next.V)
 	}
-	if list.Back.Value != 3 {
-		t.Errorf("Back 值应该为 3，实际为 %v", list.Back.Value)
+	if list.Tail.V != 3 {
+		t.Errorf("Back 值应该为 3，实际为 %v", list.Tail.V)
 	}
 
 	// 验证连接关系
-	if newNode.Prev != list.Front {
+	if newNode.Prev != list.Head {
 		t.Error("新节点的 Prev 应该指向第一个节点")
 	}
-	if newNode.Next != list.Back {
+	if newNode.Next != list.Tail {
 		t.Error("新节点的 Next 应该指向最后一个节点")
 	}
 }
@@ -291,25 +280,25 @@ func TestInsertBefore(t *testing.T) {
 	list.PushBack(3)
 
 	// 在第二个节点前插入新节点
-	newNode := NewListNode(2)
-	list.InsertBefore(list.Back, newNode)
+	newNode := NewLode(2)
+	list.InsertBefore(list.Tail, newNode)
 
 	// 验证链表结构
-	if list.Front.Value != 1 {
-		t.Errorf("Front 值应该为 1，实际为 %v", list.Front.Value)
+	if list.Head.V != 1 {
+		t.Errorf("Front 值应该为 1，实际为 %v", list.Head.V)
 	}
-	if list.Front.Next.Value != 2 {
-		t.Errorf("第二个节点值应该为 2，实际为 %v", list.Front.Next.Value)
+	if list.Head.Next.V != 2 {
+		t.Errorf("第二个节点值应该为 2，实际为 %v", list.Head.Next.V)
 	}
-	if list.Back.Value != 3 {
-		t.Errorf("Back 值应该为 3，实际为 %v", list.Back.Value)
+	if list.Tail.V != 3 {
+		t.Errorf("Back 值应该为 3，实际为 %v", list.Tail.V)
 	}
 
 	// 验证连接关系
-	if newNode.Prev != list.Front {
+	if newNode.Prev != list.Head {
 		t.Error("新节点的 Prev 应该指向第一个节点")
 	}
-	if newNode.Next != list.Back {
+	if newNode.Next != list.Tail {
 		t.Error("新节点的 Next 应该指向最后一个节点")
 	}
 }
@@ -326,32 +315,32 @@ func TestComplexOperations(t *testing.T) {
 
 	// 验证初始状态
 	expected := []string{"0", "A", "B", "C"}
-	current := list.Front
+	current := list.Head
 	for i, exp := range expected {
 		if current == nil {
 			t.Errorf("位置 %d 的节点不应该为 nil", i)
 			break
 		}
-		if current.Value != exp {
-			t.Errorf("位置 %d 的值应该为 %s，实际为 %s", i, exp, current.Value)
+		if current.V != exp {
+			t.Errorf("位置 %d 的值应该为 %s，实际为 %s", i, exp, current.V)
 		}
 		current = current.Next
 	}
 
 	// 测试插入操作
-	newNode := NewListNode("X")
-	list.InsertAfter(list.Front, newNode)
+	newNode := NewLode("X")
+	list.InsertAfter(list.Head, newNode)
 
 	// 验证插入后的状态
 	expected = []string{"0", "X", "A", "B", "C"}
-	current = list.Front
+	current = list.Head
 	for i, exp := range expected {
 		if current == nil {
 			t.Errorf("插入后位置 %d 的节点不应该为 nil", i)
 			break
 		}
-		if current.Value != exp {
-			t.Errorf("插入后位置 %d 的值应该为 %s，实际为 %s", i, exp, current.Value)
+		if current.V != exp {
+			t.Errorf("插入后位置 %d 的值应该为 %s，实际为 %s", i, exp, current.V)
 		}
 		current = current.Next
 	}
@@ -361,14 +350,14 @@ func TestComplexOperations(t *testing.T) {
 
 	// 验证移除后的状态
 	expected = []string{"0", "A", "B", "C"}
-	current = list.Front
+	current = list.Head
 	for i, exp := range expected {
 		if current == nil {
 			t.Errorf("移除后位置 %d 的节点不应该为 nil", i)
 			break
 		}
-		if current.Value != exp {
-			t.Errorf("移除后位置 %d 的值应该为 %s，实际为 %s", i, exp, current.Value)
+		if current.V != exp {
+			t.Errorf("移除后位置 %d 的值应该为 %s，实际为 %s", i, exp, current.V)
 		}
 		current = current.Next
 	}
@@ -380,16 +369,16 @@ func TestEmptyListOperations(t *testing.T) {
 
 	// 测试对空链表进行各种操作
 	list.PushBack(1)
-	if list.Front == nil || list.Back == nil {
+	if list.Head == nil || list.Tail == nil {
 		t.Error("向空链表 PushBack 后，Front 和 Back 不应该为 nil")
 	}
 
 	// 清空链表
-	list.Detach(list.Front)
+	list.Detach(list.Head)
 
 	// 测试对空链表进行 PushFront
 	list.PushFront(2)
-	if list.Front == nil || list.Back == nil {
+	if list.Head == nil || list.Tail == nil {
 		t.Error("向空链表 PushFront 后，Front 和 Back 不应该为 nil")
 	}
 }
@@ -419,7 +408,7 @@ func TestLen(t *testing.T) {
 
 	// 逐步删除元素并测试长度
 	for i := 4; i >= 0; i-- {
-		list.Detach(list.Front)
+		list.Detach(list.Head)
 		if list.Len() != i {
 			t.Errorf("删除元素后，长度应该为 %d，实际为 %d", i, list.Len())
 		}
@@ -448,7 +437,7 @@ func TestIsEmpty(t *testing.T) {
 	}
 
 	// 删除元素后测试
-	list.Detach(list.Front)
+	list.Detach(list.Head)
 	if !list.IsEmpty() {
 		t.Error("删除所有元素后，链表应该为空")
 	}
@@ -475,8 +464,8 @@ func TestPopFront(t *testing.T) {
 		t.Error("应该能成功弹出首节点")
 		return
 	}
-	if node.Value != 1 {
-		t.Errorf("弹出节点的值应该为 1，实际为 %d", node.Value)
+	if node.V != 1 {
+		t.Errorf("弹出节点的值应该为 1，实际为 %d", node.V)
 	}
 
 	// 验证节点已完全分离
@@ -485,17 +474,17 @@ func TestPopFront(t *testing.T) {
 	}
 
 	// 验证弹出后的链表结构
-	if list.Front.Value != 2 {
-		t.Errorf("弹出后 Front 值应该为 2，实际为 %d", list.Front.Value)
+	if list.Head.V != 2 {
+		t.Errorf("弹出后 Front 值应该为 2，实际为 %d", list.Head.V)
 	}
-	if list.Back.Value != 3 {
-		t.Errorf("弹出后 Back 值应该为 3，实际为 %d", list.Back.Value)
+	if list.Tail.V != 3 {
+		t.Errorf("弹出后 Back 值应该为 3，实际为 %d", list.Tail.V)
 	}
 
 	// 测试弹出所有元素
 	list.PopFront()
 	node = list.PopFront()
-	if node == nil || node.Value != 3 {
+	if node == nil || node.V != 3 {
 		t.Errorf("最后一个节点应该为 3，实际为 %v", node)
 	}
 
@@ -526,8 +515,8 @@ func TestPopBack(t *testing.T) {
 		t.Error("应该能成功弹出尾节点")
 		return
 	}
-	if node.Value != 3 {
-		t.Errorf("弹出节点的值应该为 3，实际为 %d", node.Value)
+	if node.V != 3 {
+		t.Errorf("弹出节点的值应该为 3，实际为 %d", node.V)
 	}
 
 	// 验证节点已完全分离
@@ -536,17 +525,17 @@ func TestPopBack(t *testing.T) {
 	}
 
 	// 验证弹出后的链表结构
-	if list.Front.Value != 1 {
-		t.Errorf("弹出后 Front 值应该为 1，实际为 %d", list.Front.Value)
+	if list.Head.V != 1 {
+		t.Errorf("弹出后 Front 值应该为 1，实际为 %d", list.Head.V)
 	}
-	if list.Back.Value != 2 {
-		t.Errorf("弹出后 Back 值应该为 2，实际为 %d", list.Back.Value)
+	if list.Tail.V != 2 {
+		t.Errorf("弹出后 Back 值应该为 2，实际为 %d", list.Tail.V)
 	}
 
 	// 测试弹出所有元素
 	list.PopBack()
 	node = list.PopBack()
-	if node == nil || node.Value != 1 {
+	if node == nil || node.V != 1 {
 		t.Errorf("最后一个节点应该为 1，实际为 %v", node)
 	}
 
@@ -577,8 +566,8 @@ func TestPopFrontNode(t *testing.T) {
 		t.Error("应该能成功弹出首节点")
 		return
 	}
-	if node.Value != 1 {
-		t.Errorf("弹出节点的值应该为 1，实际为 %d", node.Value)
+	if node.V != 1 {
+		t.Errorf("弹出节点的值应该为 1，实际为 %d", node.V)
 	}
 
 	// 验证节点已完全分离
@@ -587,11 +576,11 @@ func TestPopFrontNode(t *testing.T) {
 	}
 
 	// 验证弹出后的链表结构
-	if list.Front.Value != 2 {
-		t.Errorf("弹出后 Front 值应该为 2，实际为 %d", list.Front.Value)
+	if list.Head.V != 2 {
+		t.Errorf("弹出后 Front 值应该为 2，实际为 %d", list.Head.V)
 	}
-	if list.Back.Value != 3 {
-		t.Errorf("弹出后 Back 值应该为 3，实际为 %d", list.Back.Value)
+	if list.Tail.V != 3 {
+		t.Errorf("弹出后 Back 值应该为 3，实际为 %d", list.Tail.V)
 	}
 }
 
@@ -616,8 +605,8 @@ func TestPopBackNode(t *testing.T) {
 		t.Error("应该能成功弹出尾节点")
 		return
 	}
-	if node.Value != 3 {
-		t.Errorf("弹出节点的值应该为 3，实际为 %d", node.Value)
+	if node.V != 3 {
+		t.Errorf("弹出节点的值应该为 3，实际为 %d", node.V)
 	}
 
 	// 验证节点已完全分离
@@ -626,11 +615,11 @@ func TestPopBackNode(t *testing.T) {
 	}
 
 	// 验证弹出后的链表结构
-	if list.Front.Value != 1 {
-		t.Errorf("弹出后 Front 值应该为 1，实际为 %d", list.Front.Value)
+	if list.Head.V != 1 {
+		t.Errorf("弹出后 Front 值应该为 1，实际为 %d", list.Head.V)
 	}
-	if list.Back.Value != 2 {
-		t.Errorf("弹出后 Back 值应该为 2，实际为 %d", list.Back.Value)
+	if list.Tail.V != 2 {
+		t.Errorf("弹出后 Back 值应该为 2，实际为 %d", list.Tail.V)
 	}
 }
 
@@ -640,7 +629,7 @@ func TestMoveToFront(t *testing.T) {
 
 	// 测试空链表
 	list.MoveToFront(nil)
-	if list.Front != nil || list.Back != nil {
+	if list.Head != nil || list.Tail != nil {
 		t.Error("空链表操作后应该仍然为空")
 	}
 
@@ -651,35 +640,35 @@ func TestMoveToFront(t *testing.T) {
 	list.PushBack(4)
 
 	// 测试移动尾节点到头部
-	tailNode := list.Back
+	tailNode := list.Tail
 	list.MoveToFront(tailNode)
 
 	// 验证移动后的链表结构 [4, 1, 2, 3]
 	expected := []int{4, 1, 2, 3}
-	current := list.Front
+	current := list.Head
 	for i, exp := range expected {
 		if current == nil {
 			t.Errorf("位置 %d 的节点不应该为 nil", i)
 			break
 		}
-		if current.Value != exp {
-			t.Errorf("位置 %d 的值应该为 %d，实际为 %d", i, exp, current.Value)
+		if current.V != exp {
+			t.Errorf("位置 %d 的值应该为 %d，实际为 %d", i, exp, current.V)
 		}
 		current = current.Next
 	}
 
 	// 验证头尾指针
-	if list.Front.Value != 4 {
-		t.Errorf("Front 值应该为 4，实际为 %d", list.Front.Value)
+	if list.Head.V != 4 {
+		t.Errorf("Front 值应该为 4，实际为 %d", list.Head.V)
 	}
-	if list.Back.Value != 3 {
-		t.Errorf("Back 值应该为 3，实际为 %d", list.Back.Value)
+	if list.Tail.V != 3 {
+		t.Errorf("Back 值应该为 3，实际为 %d", list.Tail.V)
 	}
 
 	// 测试移动已经是头部的节点
-	headNode := list.Front
+	headNode := list.Head
 	list.MoveToFront(headNode)
-	if list.Front != headNode {
+	if list.Head != headNode {
 		t.Error("移动头部节点后，Front 应该仍然指向该节点")
 	}
 }
@@ -690,7 +679,7 @@ func TestMoveToBack(t *testing.T) {
 
 	// 测试空链表
 	list.MoveToBack(nil)
-	if list.Front != nil || list.Back != nil {
+	if list.Head != nil || list.Tail != nil {
 		t.Error("空链表操作后应该仍然为空")
 	}
 
@@ -701,35 +690,35 @@ func TestMoveToBack(t *testing.T) {
 	list.PushBack(4)
 
 	// 测试移动头节点到尾部
-	headNode := list.Front
+	headNode := list.Head
 	list.MoveToBack(headNode)
 
 	// 验证移动后的链表结构 [2, 3, 4, 1]
 	expected := []int{2, 3, 4, 1}
-	current := list.Front
+	current := list.Head
 	for i, exp := range expected {
 		if current == nil {
 			t.Errorf("位置 %d 的节点不应该为 nil", i)
 			break
 		}
-		if current.Value != exp {
-			t.Errorf("位置 %d 的值应该为 %d，实际为 %d", i, exp, current.Value)
+		if current.V != exp {
+			t.Errorf("位置 %d 的值应该为 %d，实际为 %d", i, exp, current.V)
 		}
 		current = current.Next
 	}
 
 	// 验证头尾指针
-	if list.Front.Value != 2 {
-		t.Errorf("Front 值应该为 2，实际为 %d", list.Front.Value)
+	if list.Head.V != 2 {
+		t.Errorf("Front 值应该为 2，实际为 %d", list.Head.V)
 	}
-	if list.Back.Value != 1 {
-		t.Errorf("Back 值应该为 1，实际为 %d", list.Back.Value)
+	if list.Tail.V != 1 {
+		t.Errorf("Back 值应该为 1，实际为 %d", list.Tail.V)
 	}
 
 	// 测试移动已经是尾部的节点
-	tailNode := list.Back
+	tailNode := list.Tail
 	list.MoveToBack(tailNode)
-	if list.Back != tailNode {
+	if list.Tail != tailNode {
 		t.Error("移动尾部节点后，Back 应该仍然指向该节点")
 	}
 }
@@ -744,10 +733,10 @@ func TestEdgeCases(t *testing.T) {
 
 	// 2. 向空链表插入
 	list.PushBack(1)
-	list.InsertAfter(nil, NewListNode(2)) // 应该不执行任何操作
+	list.InsertAfter(nil, NewLode(2)) // 应该不执行任何操作
 
 	// 3. 插入自己
-	node := list.Front
+	node := list.Head
 	list.InsertAfter(node, node) // 应该不执行任何操作
 
 	// 测试 InsertBefore 的边界情况
@@ -755,12 +744,12 @@ func TestEdgeCases(t *testing.T) {
 	list.InsertBefore(nil, nil) // 应该不执行任何操作
 
 	// 2. 向空链表插入
-	list.Detach(list.Front)
-	list.InsertBefore(nil, NewListNode(2)) // 应该不执行任何操作
+	list.Detach(list.Head)
+	list.InsertBefore(nil, NewLode(2)) // 应该不执行任何操作
 
 	// 3. 插入自己
 	list.PushBack(1)
-	node = list.Front
+	node = list.Head
 	list.InsertBefore(node, node) // 应该不执行任何操作
 
 	// 测试 RemoveNode 的边界情况
@@ -768,22 +757,22 @@ func TestEdgeCases(t *testing.T) {
 	list.Detach(nil)
 
 	// 2. 从空链表移除
-	list.Detach(list.Front)
-	list.Detach(NewListNode(99))
+	list.Detach(list.Head)
+	list.Detach(NewLode(99))
 
 	// 测试 MoveToFront 的边界情况
 	// 1. 移动 nil 节点
 	list.MoveToFront(nil)
 
 	// 2. 从空链表移动
-	list.MoveToFront(NewListNode(99))
+	list.MoveToFront(NewLode(99))
 
 	// 测试 MoveToBack 的边界情况
 	// 1. 移动 nil 节点
 	list.MoveToBack(nil)
 
 	// 2. 从空链表移动
-	list.MoveToBack(NewListNode(99))
+	list.MoveToBack(NewLode(99))
 }
 
 // TestComplexScenarios 测试复杂场景
@@ -798,23 +787,23 @@ func TestComplexScenarios(t *testing.T) {
 	list.PushBack("D")
 
 	// 在 B 后插入 X: A -> B -> X -> C -> D
-	newNode := NewListNode("X")
-	list.InsertAfter(list.Front.Next, newNode)
+	newNode := NewLode("X")
+	list.InsertAfter(list.Head.Next, newNode)
 
 	// 在 C 前插入 Y: A -> B -> X -> Y -> C -> D
-	newNode2 := NewListNode("Y")
-	list.InsertBefore(list.Back.Prev, newNode2)
+	newNode2 := NewLode("Y")
+	list.InsertBefore(list.Tail.Prev, newNode2)
 
 	// 验证最终结构
 	expected := []string{"A", "B", "X", "Y", "C", "D"}
-	current := list.Front
+	current := list.Head
 	for i, exp := range expected {
 		if current == nil {
 			t.Errorf("位置 %d 的节点不应该为 nil", i)
 			break
 		}
-		if current.Value != exp {
-			t.Errorf("位置 %d 的值应该为 %s，实际为 %s", i, exp, current.Value)
+		if current.V != exp {
+			t.Errorf("位置 %d 的值应该为 %s，实际为 %s", i, exp, current.V)
 		}
 		current = current.Next
 	}
@@ -822,22 +811,22 @@ func TestComplexScenarios(t *testing.T) {
 	// 场景2：移动操作组合
 	// 移动 Y 到头部: Y -> A -> B -> X -> C -> D
 	list.MoveToFront(newNode2)
-	if list.Front.Value != "Y" {
-		t.Errorf("移动后 Front 应该为 Y，实际为 %s", list.Front.Value)
+	if list.Head.V != "Y" {
+		t.Errorf("移动后 Front 应该为 Y，实际为 %s", list.Head.V)
 	}
 
 	// 移动 X 到尾部: Y -> A -> B -> C -> D -> X
 	list.MoveToBack(newNode)
-	if list.Back.Value != "X" {
-		t.Errorf("移动后 Back 应该为 X，实际为 %s", list.Back.Value)
+	if list.Tail.V != "X" {
+		t.Errorf("移动后 Back 应该为 X，实际为 %s", list.Tail.V)
 	}
 
 	// 场景3：手动删除特定元素
 	// 删除所有元音字母 A 和 Y
-	current = list.Front
+	current = list.Head
 	for current != nil {
 		next := current.Next
-		if current.Value == "A" || current.Value == "Y" {
+		if current.V == "A" || current.V == "Y" {
 			list.Detach(current)
 		}
 		current = next
@@ -845,14 +834,14 @@ func TestComplexScenarios(t *testing.T) {
 
 	// 验证删除后的结构: B -> C -> D -> X
 	expected = []string{"B", "C", "D", "X"}
-	current = list.Front
+	current = list.Head
 	for i, exp := range expected {
 		if current == nil {
 			t.Errorf("删除后位置 %d 的节点不应该为 nil", i)
 			break
 		}
-		if current.Value != exp {
-			t.Errorf("删除后位置 %d 的值应该为 %s，实际为 %s", i, exp, current.Value)
+		if current.V != exp {
+			t.Errorf("删除后位置 %d 的值应该为 %s，实际为 %s", i, exp, current.V)
 		}
 		current = current.Next
 	}
@@ -930,7 +919,7 @@ func BenchmarkPopFront(b *testing.B) {
 		node := list.PopFront()
 		if node != nil {
 			// 验证节点已分离
-			_ = node.Value
+			_ = node.V
 		}
 	}
 }
@@ -948,7 +937,7 @@ func BenchmarkPopBack(b *testing.B) {
 		node := list.PopBack()
 		if node != nil {
 			// 验证节点已分离
-			_ = node.Value
+			_ = node.V
 		}
 	}
 }
@@ -978,8 +967,8 @@ func BenchmarkMoveToFront(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		// 移动尾节点到头部
-		if list.Back != nil {
-			list.MoveToFront(list.Back)
+		if list.Tail != nil {
+			list.MoveToFront(list.Tail)
 		}
 	}
 }
@@ -995,8 +984,8 @@ func BenchmarkMoveToBack(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		// 移动头节点到尾部
-		if list.Front != nil {
-			list.MoveToBack(list.Front)
+		if list.Head != nil {
+			list.MoveToBack(list.Head)
 		}
 	}
 }
@@ -1012,9 +1001,9 @@ func BenchmarkInsertAfter(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		// 在中间位置插入
-		if list.Front != nil && list.Front.Next != nil {
-			newNode := NewListNode(i)
-			list.InsertAfter(list.Front, newNode)
+		if list.Head != nil && list.Head.Next != nil {
+			newNode := NewLode(i)
+			list.InsertAfter(list.Head, newNode)
 		}
 	}
 }
@@ -1030,9 +1019,9 @@ func BenchmarkInsertBefore(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		// 在中间位置插入
-		if list.Back != nil && list.Back.Prev != nil {
-			newNode := NewListNode(i)
-			list.InsertBefore(list.Back, newNode)
+		if list.Tail != nil && list.Tail.Prev != nil {
+			newNode := NewLode(i)
+			list.InsertBefore(list.Tail, newNode)
 		}
 	}
 }
@@ -1051,21 +1040,21 @@ func BenchmarkMixedOperations(b *testing.B) {
 		if i%3 == 0 && !list.IsEmpty() {
 			node := list.PopFront()
 			if node != nil {
-				_ = node.Value
+				_ = node.V
 			}
 		}
 		if i%5 == 0 && !list.IsEmpty() {
 			node := list.PopBack()
 			if node != nil {
-				_ = node.Value
+				_ = node.V
 			}
 		}
 		if i%7 == 0 && list.Len() > 10 {
 			// 手动删除一些元素
-			current := list.Front
+			current := list.Head
 			for current != nil && list.Len() > 5 {
 				next := current.Next
-				if current.Value%10 == 0 {
+				if current.V%10 == 0 {
 					list.Detach(current)
 				}
 				current = next
@@ -1116,14 +1105,14 @@ func TestTableDrivenTests(t *testing.T) {
 			}
 
 			// 验证值
-			current := list.Front
+			current := list.Head
 			for i, exp := range tt.expected {
 				if current == nil {
 					t.Errorf("位置 %d 的节点不应该为 nil", i)
 					break
 				}
-				if current.Value != exp {
-					t.Errorf("位置 %d 的值应该为 %v，实际为 %v", i, exp, current.Value)
+				if current.V != exp {
+					t.Errorf("位置 %d 的值应该为 %v，实际为 %v", i, exp, current.V)
 				}
 				current = current.Next
 			}
@@ -1199,10 +1188,10 @@ func TestStressTest(t *testing.T) {
 		case 4:
 			if !list.IsEmpty() && list.Len() > 1 {
 				// 手动删除一些元素
-				current := list.Front
+				current := list.Head
 				for current != nil && list.Len() > 1 {
 					next := current.Next
-					if current.Value%10 == 0 {
+					if current.V%10 == 0 {
 						list.Detach(current)
 					}
 					current = next
@@ -1210,8 +1199,8 @@ func TestStressTest(t *testing.T) {
 			}
 		case 5:
 			if !list.IsEmpty() && list.Len() > 1 {
-				if list.Back != nil {
-					list.MoveToFront(list.Back)
+				if list.Tail != nil {
+					list.MoveToFront(list.Tail)
 				}
 			}
 		}
@@ -1219,8 +1208,8 @@ func TestStressTest(t *testing.T) {
 		// 每100次操作验证一次链表结构
 		if i%100 == 0 {
 			// 验证链表没有循环引用
-			visited := make(map[*ListNode[int]]bool)
-			current := list.Front
+			visited := make(map[*Lode[int]]bool)
+			current := list.Head
 			for current != nil {
 				if visited[current] {
 					t.Error("检测到循环引用")
@@ -1254,8 +1243,8 @@ func TestIteratorPattern(t *testing.T) {
 	// 反向迭代
 	reverseExpected := []int{5, 4, 3, 2, 1}
 	var reverseActual []int
-	for current := list.Back; current != nil; current = current.Prev {
-		reverseActual = append(reverseActual, current.Value)
+	for current := list.Tail; current != nil; current = current.Prev {
+		reverseActual = append(reverseActual, current.V)
 	}
 
 	if len(reverseActual) != len(reverseExpected) {

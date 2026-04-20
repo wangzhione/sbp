@@ -11,23 +11,23 @@ type LRUItem[K comparable, V any] struct {
 }
 
 // LRUCache 基于双向链表和哈希表实现的LRU缓存
-// 复用 list.go 中的 List 和 ListNode 结构
+// 复用 list.go 中的 List 和 Lode 结构
 type LRUCache[K comparable, V any] struct {
-	capacity int                            // 缓存容量
-	list     *List[LRUItem[K, V]]           // 双向链表，用于维护访问顺序
-	cache    map[K]*ListNode[LRUItem[K, V]] // 哈希表，用于O(1)查找
+	capacity int                        // 缓存容量
+	list     *List[LRUItem[K, V]]       // 双向链表，用于维护访问顺序
+	cache    map[K]*Lode[LRUItem[K, V]] // 哈希表，用于O(1)查找
 }
 
 // NewLRUCache 创建一个新的LRU缓存
 func NewLRUCache[K comparable, V any](capacity int) *LRUCache[K, V] {
 	if capacity <= 0 {
-		panic("LRU缓存容量必须大于0")
+		panic("LRU缓存容量必须大于 0")
 	}
 
 	return &LRUCache[K, V]{
 		capacity: capacity,
 		list:     &List[LRUItem[K, V]]{},
-		cache:    make(map[K]*ListNode[LRUItem[K, V]]),
+		cache:    make(map[K]*Lode[LRUItem[K, V]]),
 	}
 }
 
@@ -36,7 +36,7 @@ func (lru *LRUCache[K, V]) Get(key K) (V, bool) {
 	if node, exists := lru.cache[key]; exists {
 		// 将节点移动到头部，标记为最近使用
 		lru.list.MoveToFront(node)
-		return node.Value.Value, true
+		return node.V.Value, true
 	}
 	var zero V
 	return zero, false
@@ -46,7 +46,7 @@ func (lru *LRUCache[K, V]) Get(key K) (V, bool) {
 func (lru *LRUCache[K, V]) Put(key K, value V) {
 	if node, exists := lru.cache[key]; exists {
 		// 更新已存在的节点
-		node.Value.Value = value
+		node.V.Value = value
 		lru.list.MoveToFront(node)
 	} else {
 		// 创建新条目
@@ -56,12 +56,12 @@ func (lru *LRUCache[K, V]) Put(key K, value V) {
 			// 缓存已满，移除最久未使用的节点
 			tailNode := lru.list.PopBack()
 			if tailNode != nil {
-				delete(lru.cache, tailNode.Value.Key)
+				delete(lru.cache, tailNode.V.Key)
 			}
 		}
 
 		// 添加新节点到头部
-		newNode := NewListNode(item)
+		newNode := NewLode(item)
 		lru.list.PushFrontNode(newNode)
 		lru.cache[key] = newNode
 	}
@@ -99,16 +99,16 @@ func (lru *LRUCache[K, V]) IsFull() bool {
 
 // Clear 清空缓存
 func (lru *LRUCache[K, V]) Clear() {
-	lru.cache = make(map[K]*ListNode[LRUItem[K, V]])
+	lru.cache = make(map[K]*Lode[LRUItem[K, V]])
 	lru.list = &List[LRUItem[K, V]]{}
 }
 
 // Keys 返回缓存中所有的键（按访问顺序，最近使用的在前）
 func (lru *LRUCache[K, V]) Keys() []K {
 	keys := make([]K, 0, lru.list.Len())
-	current := lru.list.Front
+	current := lru.list.Head
 	for current != nil {
-		keys = append(keys, current.Value.Key)
+		keys = append(keys, current.V.Key)
 		current = current.Next
 	}
 	return keys
@@ -117,9 +117,9 @@ func (lru *LRUCache[K, V]) Keys() []K {
 // Values 返回缓存中所有的值（按访问顺序，最近使用的在前）
 func (lru *LRUCache[K, V]) Values() []V {
 	values := make([]V, 0, lru.list.Len())
-	current := lru.list.Front
+	current := lru.list.Head
 	for current != nil {
-		values = append(values, current.Value.Value)
+		values = append(values, current.V.Value)
 		current = current.Next
 	}
 	return values
@@ -141,10 +141,10 @@ func TestNewLRUCache(t *testing.T) {
 		t.Error("LRU缓存不应该为nil")
 	}
 	if lru.Cap() != 3 {
-		t.Errorf("容量应该为3，实际为%d", lru.Cap())
+		t.Errorf("容量应该为 3，实际为%d", lru.Cap())
 	}
 	if lru.Len() != 0 {
-		t.Errorf("初始长度应该为0，实际为%d", lru.Len())
+		t.Errorf("初始长度应该为 0，实际为%d", lru.Len())
 	}
 	if !lru.IsEmpty() {
 		t.Error("新创建的缓存应该为空")
@@ -190,11 +190,11 @@ func TestLRUGet(t *testing.T) {
 	keys := lru.Keys()
 	expected := []int{1, 3, 2} // 1被访问后应该移到最前面
 	if len(keys) != len(expected) {
-		t.Errorf("键的数量应该为%d，实际为%d", len(expected), len(keys))
+		t.Errorf("键的数量应该为 %d，实际为 %d", len(expected), len(keys))
 	}
 	for i, key := range keys {
 		if key != expected[i] {
-			t.Errorf("位置%d的键应该为%d，实际为%d", i, expected[i], key)
+			t.Errorf("位置 %d 的键应该为 %d，实际为 %d", i, expected[i], key)
 		}
 	}
 }
@@ -206,7 +206,7 @@ func TestLRUPut(t *testing.T) {
 	// 测试添加新键值对
 	lru.Put(1, "one")
 	if lru.Len() != 1 {
-		t.Errorf("长度应该为1，实际为%d", lru.Len())
+		t.Errorf("长度应该为 1，实际为 %d", lru.Len())
 	}
 	if !lru.Contains(1) {
 		t.Error("应该包含键1")
@@ -216,7 +216,7 @@ func TestLRUPut(t *testing.T) {
 	lru.Put(1, "updated")
 	value, exists := lru.Get(1)
 	if !exists || value != "updated" {
-		t.Errorf("更新后的值应该为'updated'，实际为%v", value)
+		t.Errorf("更新后的值应该为 'updated'，实际为 %v", value)
 	}
 
 	// 测试容量限制
@@ -225,7 +225,7 @@ func TestLRUPut(t *testing.T) {
 	lru.Put(4, "four") // 这应该移除键1
 
 	if lru.Len() != 3 {
-		t.Errorf("长度应该为3，实际为%d", lru.Len())
+		t.Errorf("长度应该为 3，实际为 %d", lru.Len())
 	}
 	if lru.Contains(1) {
 		t.Error("键1应该被移除")
@@ -239,7 +239,7 @@ func TestLRUPut(t *testing.T) {
 	expected := []int{4, 3, 2}
 	for i, key := range keys {
 		if key != expected[i] {
-			t.Errorf("位置%d的键应该为%d，实际为%d", i, expected[i], key)
+			t.Errorf("位置 %d 的键应该为 %d，实际为 %d", i, expected[i], key)
 		}
 	}
 }
@@ -250,7 +250,7 @@ func TestLRUDelete(t *testing.T) {
 
 	// 测试删除不存在的键
 	if lru.Delete(1) {
-		t.Error("删除不存在的键应该返回false")
+		t.Error("删除不存在的键应该返回 false")
 	}
 
 	// 添加一些数据
@@ -260,10 +260,10 @@ func TestLRUDelete(t *testing.T) {
 
 	// 测试删除存在的键
 	if !lru.Delete(2) {
-		t.Error("删除存在的键应该返回true")
+		t.Error("删除存在的键应该返回 true")
 	}
 	if lru.Len() != 2 {
-		t.Errorf("删除后长度应该为2，实际为%d", lru.Len())
+		t.Errorf("删除后长度应该为 2，实际为 %d", lru.Len())
 	}
 	if lru.Contains(2) {
 		t.Error("键2应该被删除")
@@ -274,7 +274,7 @@ func TestLRUDelete(t *testing.T) {
 	expected := []int{3, 1}
 	for i, key := range keys {
 		if key != expected[i] {
-			t.Errorf("位置%d的键应该为%d，实际为%d", i, expected[i], key)
+			t.Errorf("位置 %d 的键应该为 %d，实际为 %d", i, expected[i], key)
 		}
 	}
 }
@@ -292,7 +292,7 @@ func TestLRUClear(t *testing.T) {
 	lru.Clear()
 
 	if lru.Len() != 0 {
-		t.Errorf("清空后长度应该为0，实际为%d", lru.Len())
+		t.Errorf("清空后长度应该为 0，实际为 %d", lru.Len())
 	}
 	if !lru.IsEmpty() {
 		t.Error("清空后缓存应该为空")
@@ -316,7 +316,7 @@ func TestLRUAccessOrder(t *testing.T) {
 	expected := []int{3, 2, 1}
 	for i, key := range keys {
 		if key != expected[i] {
-			t.Errorf("初始位置%d的键应该为%d，实际为%d", i, expected[i], key)
+			t.Errorf("初始位置 %d 的键应该为 %d，实际为 %d", i, expected[i], key)
 		}
 	}
 
@@ -326,7 +326,7 @@ func TestLRUAccessOrder(t *testing.T) {
 	expected = []int{2, 3, 1}
 	for i, key := range keys {
 		if key != expected[i] {
-			t.Errorf("访问后位置%d的键应该为%d，实际为%d", i, expected[i], key)
+			t.Errorf("访问后位置 %d 的键应该为 %d，实际为 %d", i, expected[i], key)
 		}
 	}
 
@@ -336,7 +336,7 @@ func TestLRUAccessOrder(t *testing.T) {
 	expected = []int{1, 2, 3}
 	for i, key := range keys {
 		if key != expected[i] {
-			t.Errorf("更新后位置%d的键应该为%d，实际为%d", i, expected[i], key)
+			t.Errorf("更新后位置 %d 的键应该为 %d，实际为 %d", i, expected[i], key)
 		}
 	}
 }
@@ -351,7 +351,7 @@ func TestLRUCapacity(t *testing.T) {
 	lru.Put(3, "three") // 应该移除键1
 
 	if lru.Len() != 2 {
-		t.Errorf("长度应该为2，实际为%d", lru.Len())
+		t.Errorf("长度应该为 2，实际为 %d", lru.Len())
 	}
 	if lru.Contains(1) {
 		t.Error("键1应该被移除")
@@ -365,7 +365,7 @@ func TestLRUCapacity(t *testing.T) {
 	expected := []int{3, 2}
 	for i, key := range keys {
 		if key != expected[i] {
-			t.Errorf("位置%d的键应该为%d，实际为%d", i, expected[i], key)
+			t.Errorf("位置 %d 的键应该为 %d，实际为 %d", i, expected[i], key)
 		}
 	}
 }
@@ -377,15 +377,15 @@ func TestLRUEdgeCases(t *testing.T) {
 
 	lru.Put(1, "one")
 	if !lru.Contains(1) {
-		t.Error("应该包含键1")
+		t.Error("应该包含键 1")
 	}
 
 	lru.Put(2, "two") // 应该移除键1
 	if lru.Contains(1) {
-		t.Error("键1应该被移除")
+		t.Error("键	1 应该被移除")
 	}
 	if !lru.Contains(2) {
-		t.Error("应该包含键2")
+		t.Error("应该包含键 2")
 	}
 
 	// 测试空缓存的各种操作
@@ -412,7 +412,7 @@ func TestLRUDifferentTypes(t *testing.T) {
 	stringLRU.Put("b", 2)
 	value, exists := stringLRU.Get("a")
 	if !exists || value != 1 {
-		t.Errorf("字符串键测试失败，期望1，实际%v", value)
+		t.Errorf("字符串键测试失败，期望 1，实际 %v", value)
 	}
 
 	// 测试结构体值
@@ -447,8 +447,7 @@ func BenchmarkLRUGet(b *testing.B) {
 		lru.Put(i, i*2)
 	}
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for i := 0; b.Loop(); i++ {
 		lru.Get(i % 1000)
 	}
 }
@@ -457,8 +456,7 @@ func BenchmarkLRUGet(b *testing.B) {
 func BenchmarkLRUPut(b *testing.B) {
 	lru := NewLRUCache[int, int](1000)
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for i := 0; b.Loop(); i++ {
 		lru.Put(i%1000, i*2)
 	}
 }
@@ -472,8 +470,7 @@ func BenchmarkLRUDelete(b *testing.B) {
 		lru.Put(i, i*2)
 	}
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for i := 0; b.Loop(); i++ {
 		lru.Delete(i % 1000)
 	}
 }
@@ -482,8 +479,7 @@ func BenchmarkLRUDelete(b *testing.B) {
 func BenchmarkLRUMixedOperations(b *testing.B) {
 	lru := NewLRUCache[int, int](1000)
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for i := 0; b.Loop(); i++ {
 		key := i % 1000
 		switch i % 4 {
 		case 0:
@@ -507,8 +503,7 @@ func BenchmarkLRULargeCapacity(b *testing.B) {
 		lru.Put(i, i*2)
 	}
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for i := 0; b.Loop(); i++ {
 		lru.Get(i % 10000)
 	}
 }
@@ -517,8 +512,7 @@ func BenchmarkLRULargeCapacity(b *testing.B) {
 func BenchmarkLRUSmallCapacity(b *testing.B) {
 	lru := NewLRUCache[int, int](10)
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for i := 0; b.Loop(); i++ {
 		lru.Put(i, i*2)
 	}
 }
@@ -528,18 +522,18 @@ func verifyLRUState[K comparable, V any](t *testing.T, lru *LRUCache[K, V], expe
 	t.Helper()
 
 	if lru.Len() != expectedSize {
-		t.Errorf("LRU长度应该为%d，实际为%d", expectedSize, lru.Len())
+		t.Errorf("LRU长度应该为 %d，实际为 %d", expectedSize, lru.Len())
 	}
 
 	actualKeys := lru.Keys()
 	if len(actualKeys) != len(expectedKeys) {
-		t.Errorf("键的数量应该为%d，实际为%d", len(expectedKeys), len(actualKeys))
+		t.Errorf("键的数量应该为 %d，实际为 %d", len(expectedKeys), len(actualKeys))
 		return
 	}
 
 	for i, key := range actualKeys {
 		if key != expectedKeys[i] {
-			t.Errorf("位置%d的键应该为%v，实际为%v", i, expectedKeys[i], key)
+			t.Errorf("位置 %d 的键应该为 %v，实际为 %v", i, expectedKeys[i], key)
 		}
 	}
 }
