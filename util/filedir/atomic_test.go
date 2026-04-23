@@ -2,7 +2,6 @@ package filedir
 
 import (
 	"bytes"
-	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -25,15 +24,5 @@ func TestFSyncWriteReader(t *testing.T) {
 
 	if string(got) != string(data) {
 		t.Fatalf("unexpected file content: %q", string(got))
-	}
-}
-
-func TestFSyncWriteReaderNil(t *testing.T) {
-	dir := t.TempDir()
-	path := filepath.Join(dir, "atomic.txt")
-
-	err := FSyncWriteReader(path, nil, 0o664)
-	if !errors.Is(err, os.ErrInvalid) {
-		t.Fatalf("unexpected error: %v", err)
 	}
 }

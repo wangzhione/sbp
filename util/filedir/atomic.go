@@ -51,12 +51,6 @@ func FSyncWriteReader(path string, reader io.Reader, perm ...os.FileMode) error 
 		}
 	}
 
-	// 统一返回 error，避免 io.Copy(nil reader) 直接 panic
-	if reader == nil {
-		temp.Close()
-		return os.ErrInvalid
-	}
-
 	// 流式写入，避免大文件一次性进入内存
 	if _, err := io.Copy(temp, reader); err != nil {
 		temp.Close()
