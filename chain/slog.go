@@ -23,7 +23,7 @@ func InitSLog() {
 func InitSLogRotatingFile(iscloserotateloop ...bool) error {
 	// 默认是 start day logger;
 	// 如果需要 hour logger, Please DefaultGetFile = GetfileByHour 随后 Call InitSLogRotatingFile()
-	return Startlogger(len(iscloserotateloop) > 0 && iscloserotateloop[0])
+	return Startlogger(len(iscloserotateloop) > 0 && iscloserotateloop[0], "")
 }
 
 type TraceHandler struct {

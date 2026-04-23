@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/wangzhione/sbp/chain"
+	"github.com/wangzhione/sbp/system"
 )
 
 // 单机简单版本 redis lock
@@ -22,7 +22,7 @@ type RedisLock struct {
 // TryLock 尝试加锁
 // return *RedisLock is not nil, 表示获取到了锁资源
 func (r *Client) TryLock(ctx context.Context, key string, ttl time.Duration) (*RedisLock, error) {
-	value := chain.UUID()
+	value := system.UUID()
 
 	// 加入 0 ~ 10ms 的随机抖动，缓解锁同时过期
 	ttl += time.Duration(rand.Int63n(int64(10 * time.Millisecond)))

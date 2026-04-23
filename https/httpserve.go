@@ -11,6 +11,8 @@ import (
 	"runtime/debug"
 	"syscall"
 	"time"
+
+	"github.com/wangzhione/sbp/system"
 )
 
 // BeginTime 系统启动时间
@@ -24,8 +26,8 @@ func End(ctx context.Context) {
 			slog.Any("error", cover),
 			slog.Time("SystemBeginTime", BeginTime),
 			slog.String("GOOS", runtime.GOOS),
-			slog.String("BuildVersion", BuildVersion),
-			slog.String("GitVersion", GitVersion),
+			slog.String("BuildVersion", system.BuildVersion),
+			slog.String("GitVersion", system.GitVersion),
 			slog.String("stack", string(debug.Stack())), // 记录详细的堆栈信息
 		)
 	}
@@ -36,8 +38,8 @@ func End(ctx context.Context) {
 		slog.Float64("elapsed_hours", end.Sub(BeginTime).Hours()),
 		slog.Time("EndTime", end),
 		slog.String("GOOS", runtime.GOOS),
-		slog.String("BuildVersion", BuildVersion),
-		slog.String("GitVersion", GitVersion),
+		slog.String("BuildVersion", system.BuildVersion),
+		slog.String("GitVersion", system.GitVersion),
 	)
 }
 

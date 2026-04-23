@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/wangzhione/sbp/system"
 )
 
 var DefaultGetFile = GetfileByDay // 默认按天切割日志
@@ -18,8 +20,8 @@ func GetfileByDay(logsDir string) (now time.Time, filename string) {
 
 	days := now.Format("20060102") // e.g. 20250522
 	// {exe path dir}/logs/{20250522}-{exe name}-{hostname}.log
-	filename = filepath.Join(logsDir, days+"-"+ExeName+"-"+Hostname+".log")
-	println("GetfileByDay day init log", Hostname, filename)
+	filename = filepath.Join(logsDir, days+"-"+system.ExeName+"-"+system.Hostname+".log")
+	println("GetfileByDay day init log", system.Hostname, filename)
 	return
 }
 
@@ -28,15 +30,20 @@ func GetfileByHour(logsDir string) (now time.Time, filename string) {
 
 	hours := now.Format("2006010215") // e.g. 2025032815
 	// {exe path dir}/logs/{2025032815}-{exe name}-{hostname}.log
-	filename = filepath.Join(logsDir, hours+"-"+ExeName+"-"+Hostname+".log")
-	println("GetfileByHour init log", Hostname, filename)
+	filename = filepath.Join(logsDir, hours+"-"+system.ExeName+"-"+system.Hostname+".log")
+	println("GetfileByHour init log", system.Hostname, filename)
 	return
 }
 
 // Startlogger 启动一个 slog 实例, DefaultGetFile 默认是 GetfileByDay; 或者重新设置 DefaultGetFile
-func Startlogger(iscloserotateloop bool) error {
+func Startlogger(iscloserotateloop bool, logsDir string) error {
+	// LogsDir 默认日志目录 {exe dir}/logs
+	if logsDir == "" {
+		logsDir = filepath.Join(system.ExeDir, "logs")
+	}
+
 	our := &hourordaylogger{ // our 类似跨函数闭包
-		LogsDir:   LogsDir,
+		LogsDir:   logsDir,
 		getfilefn: DefaultGetFile,
 	}
 
@@ -69,7 +76,7 @@ func (our *hourordaylogger) rotate() error {
 	now, filename := our.getfilefn(our.LogsDir)
 
 	if our.File != nil && our.Name() == filename {
-		found, err := Exist(filename)
+		found, err := system.Exist(filename)
 		if found || err != nil {
 			return err
 		}

@@ -107,3 +107,7 @@ __debug_bin
 # 前端工具链 #
 .sass-cache/*
 node_modules/
+
+aa/
+bb/
+cc/

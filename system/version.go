@@ -9,19 +9,19 @@ import (
 const Linux bool = runtime.GOOS == "linux"
 
 /*
- runtime.GOOS 是 Go 语言中的一个常量，用于获取当前操作系统的名称。它的枚举值包括但不限于：
+	runtime.GOOS 是 Go 语言中的一个常量，用于获取当前操作系统的名称。它的枚举值包括但不限于：
 
- windows
- linux
- darwin (macOS)
- freebsd
- openbsd
- netbsd
- android
- ios
- js (用于 Go 编译为 JavaScript)
- plan9
- solaris
+	windows
+	linux
+	darwin (macOS)
+	freebsd
+	openbsd
+	netbsd
+	android
+	ios
+	js (用于 Go 编译为 JavaScript)
+	plan9
+	solaris
 */
 
 const Windows bool = runtime.GOOS == "windows"

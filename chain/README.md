@@ -1,79 +1,186 @@
-# slog
+# chain
 
-采用 Go 官方的 `slog` 轮子直接实例化, 让业务开发人类的心智学习成本更小.
+`chain` 主要提供两类能力:
 
-## uuid
+- 基于 `context.Context` / `http.Request` 的 trace 透传
+- 基于 Go 官方 `log/slog` 的默认日志初始化, 并自动补充 `X-Request-Id` 与调用位置
 
-`chain.UUID()` 是 uuid version 4 random 算法, 默认返回不带 '`-`' 风格的小写串
+## 1. trace
 
-## trace
+核心常量:
 
-```Go
-import "github.com/wangzhione/sbp/chain"
+```go
+const XRquestID = "X-Request-Id"
+```
 
+常用函数:
 
-// step 1: First 注入 trace id
+```go
+func Context() context.Context
+func WithContext(ctx context.Context, traceID string) context.Context
+func GetTraceID(ctx context.Context) string
+func TraceID(ctx context.Context) string
+func CopyTrace(ctx context.Context) context.Context
+func CopyContext(ctx context.Context, keys ...any) context.Context
+func Request(r *http.Request, headers ...string) (*http.Request, string)
+```
 
-// WithContext add trace id to context
-func WithContext(ctx context.Context, traceID string) context.Context {
-	return context.WithValue(ctx, xRquestID, traceID)
-}
+说明:
 
-// or 
+- `Context()` 返回一个带随机 trace id 的基础 context
+- `WithContext()` 手动注入 trace id
+- `GetTraceID()` 只取值, 没有就返回空串
+- `TraceID()` 保证返回非空 trace id, 取不到时会新生成
+- `CopyTrace()` / `CopyContext()` 会脱离原 context 的 timeout / cancel, 适合异步任务继续携带 trace
+- `Request()` 优先从传入的 header 列表里取 trace id, 否则再读 `X-Request-Id`, 最后兜底生成新的 id
 
-// Request init http.Request and return request id
-func Request(r *http.Request) (req *http.Request, requestID string) {
-	// 获取或生成 requestID
-	requestID = r.Header.Get(XRquestID)
-	if requestID == "" {
-		requestID = UUID()
-	}
-	// 注入 requestID 到 Context
-	ctx := WithContext(r.Context(), requestID)
+### 示例: 手动注入 trace
 
-	req = r.WithContext(ctx)
+```go
+package main
 
-	return
-}
+import (
+	"context"
+	"log/slog"
 
+	"github.com/wangzhione/sbp/chain"
+	"github.com/wangzhione/sbp/system"
+)
 
-// step 2:  Second 获取 trace id
+func main() {
+	chain.InitSLog()
 
-// GetTraceID context 中 get trace id
-func GetTraceID(ctx context.Context) (traceID string) {
-	traceID, _ = ctx.Value(xRquestID).(string)
-	return
+	ctx := chain.WithContext(context.Background(), system.UUID())
+
+	slog.InfoContext(ctx, "hello chain")
 }
 ```
 
-## slog 用法 Ⅴ
+### 示例: 从 HTTP 请求中接入 trace
 
-```Go
-import "github.com/wangzhione/sbp/chain"
+```go
+package main
 
+import (
+	"log/slog"
+	"net/http"
+
+	"github.com/wangzhione/sbp/chain"
+)
+
+func handler(w http.ResponseWriter, r *http.Request) {
+	req, traceID := chain.Request(r)
+
+	slog.InfoContext(req.Context(), "request in", "traceID", traceID)
+	w.WriteHeader(http.StatusOK)
+}
+```
+
+### 示例: 异步任务复制 trace
+
+```go
+go func(ctx context.Context) {
+	ctx = chain.CopyTrace(ctx)
+	slog.InfoContext(ctx, "async worker start")
+}(ctx)
+```
+
+## 2. slog
+
+### `InitSLog`
+
+初始化默认 `slog` 到标准输出:
+
+```go
 chain.InitSLog()
-
 ```
 
-or 也可以使用 `chain.InitSlogRotatingFile()` 进行日维度日志文件收集
+输出时会自动补两类字段:
 
-```Go
-if err = chain.InitSlogRotatingFile(); err != nil {
-	// 如果 文件 日志有问题, 需要打印相关信息
-	slog.ErrorContext(context.Context, "chain.InitSlogRotatingFile error", "error", err) // 退化成控制台输出
+- `X-Request-Id`: 从 `ctx` 里提取 trace id
+- `code`: 调用位置, 格式类似 `slog_test.go:26:TestInitSLogRotatingFile`
 
+日志等级默认来自:
+
+```go
+var EnableLevel slog.Level = slog.LevelDebug
+```
+
+如果业务有配置中心或命令行参数, 可以先改 `chain.EnableLevel`, 再初始化日志。
+
+### `InitSLogRotatingFile`
+
+初始化按时间切分的文件日志, 默认行为:
+
+- 输出到标准输出 + 日志文件
+- 默认日志目录: `{exe dir}/logs`
+- 默认按天切割
+- 默认清理 15 天前日志
+
+```go
+if err := chain.InitSLogRotatingFile(); err != nil {
+	slog.Error("chain.InitSLogRotatingFile error", "error", err)
 	chain.InitSLog()
 }
 ```
 
-import 后 可以无缝使用 slog 进行 InfoContext or WarnContext or ErrorContext. 也可以参照其内部代码, 在 main func 初始化, 用业务自己的自定义 slog. 其中 chain.XRquestID 各个环节交互唯一 trace key 串
+相关变量:
 
-***
+```go
+var LogsDir = filepath.Join(system.ExeDir, "logs")
+var DefaultGetFile = GetfileByDay
+var DefaultCleanTime = -15 * 24 * time.Hour
+var DefaultCheckTime = 7 * time.Hour
+```
 
-## Go env 配置
+如果想按小时切割:
 
-```Go
-go env -w GOFLAGS="-trimpath -buildvcs=true"
+```go
+chain.DefaultGetFile = chain.GetfileByHour
+err := chain.InitSLogRotatingFile()
+```
 
-go env GOFLAGS
+如果不想启动后台轮转协程:
+
+```go
+err := chain.InitSLogRotatingFile(true)
+```
+
+## 3. 关于 trace id
+
+`chain` 包本身不提供 `chain.UUID()`。
+
+当前 trace id 默认来自:
+
+```go
+system.UUID()
+```
+
+它返回的是不带 `-` 的 32 位小写 uuid v4 风格字符串, 例如:
+
+```text
+22ba3cffc8de4a2d9dc8a95d09ed03e1
+```
+
+## 4. 推荐初始化方式
+
+```go
+package main
+
+import (
+	"context"
+	"log/slog"
+
+	"github.com/wangzhione/sbp/chain"
+)
+
+func main() {
+	if err := chain.InitSLogRotatingFile(); err != nil {
+		chain.InitSLog()
+		slog.ErrorContext(context.Background(), "InitSLogRotatingFile error", "error", err)
+	}
+
+	ctx := chain.Context()
+	slog.InfoContext(ctx, "service start")
+}
 ```

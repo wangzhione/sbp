@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/wangzhione/sbp/chain"
 	"github.com/wangzhione/sbp/structs"
+	"github.com/wangzhione/sbp/system"
 )
 
 // stream 模拟 分布式 queue
@@ -25,7 +25,7 @@ type Queue struct {
 func (q *Queue) Init(ctx context.Context) (err error) {
 	if q.Consumer == "" {
 		// 内部定义启动这个 队列 随后 Queue.Consume 发给 redis 的消费者名称
-		q.Consumer = chain.Hostname + "." + chain.UUID()[:6]
+		q.Consumer = system.Hostname + "." + system.UUID()[:6]
 	}
 
 	if q.Group == "" {

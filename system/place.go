@@ -1,4 +1,4 @@
-package chain
+package system
 
 import (
 	"os"
@@ -13,9 +13,6 @@ var (
 	ExeExt           = filepath.Ext(ExeName)               // ExeExt 获取可执行文件名的扩展名
 	ExeNameSuffixExt = strings.TrimSuffix(ExeName, ExeExt) // ExeNameSuffixExt 获取可执行文件名, 不包含扩展名
 )
-
-// LogsDir 默认日志目录 {exe dir}/logs
-var LogsDir = filepath.Join(ExeDir, "logs")
 
 // Hostname 获取主机名 or 容器短 ID
 var Hostname = func() string {

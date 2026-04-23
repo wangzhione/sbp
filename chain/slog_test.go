@@ -4,6 +4,8 @@ import (
 	"log/slog"
 	"os"
 	"testing"
+
+	"github.com/wangzhione/sbp/system"
 )
 
 var ctx = Context()
@@ -17,7 +19,7 @@ func TestInitSLog(t *testing.T) {
 }
 
 func TestInitSLogRotatingFile(t *testing.T) {
-	t.Log(ExeNameSuffixExt)
+	t.Log(system.ExeNameSuffixExt)
 
 	InitSLogRotatingFile()
 

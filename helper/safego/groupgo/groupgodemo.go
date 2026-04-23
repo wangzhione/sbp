@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/wangzhione/sbp/https/httpip"
 	"github.com/wangzhione/sbp/util/filedir"
-	"github.com/wangzhione/sbp/util/httpip"
 )
 
 // groupgodemo.go :: DownloadTask 适合自行 Ctrl + C -> Ctrl + V 用于实际并发下载业务中.
