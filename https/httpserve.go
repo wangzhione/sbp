@@ -1,5 +1,5 @@
-// Package system provides HTTP server startup, graceful shutdown, and TLS support utilities.
-package system
+// Package https provides HTTP server startup, graceful shutdown, and TLS support utilities.
+package https
 
 import (
 	"context"
