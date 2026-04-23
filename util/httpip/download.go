@@ -2,11 +2,8 @@ package httpip
 
 import (
 	"context"
-	"io"
 	"log/slog"
 	"net/http"
-	"os"
-	"path/filepath"
 
 	"github.com/wangzhione/sbp/chain"
 	"github.com/wangzhione/sbp/util/filedir"
@@ -47,32 +44,12 @@ func Download(ctx context.Context, uri, outputpath string, headerargs ...map[str
 		return err
 	}
 
-	// 创建文件所在目录（如果不存在）
-	if err = os.MkdirAll(filepath.Dir(outputpath), os.ModePerm); err != nil {
-		slog.ErrorContext(ctx, "os.MkdirAll error", "error", err, "outputpath", outputpath, "uri", uri)
-		return err
-	}
-
-	outfile, err := os.Create(outputpath)
+	// 下载内容直接流式写入临时文件，避免大文件占满内存
+	err = filedir.FSyncWriteReader(outputpath, resp.Body, 0o664)
 	if err != nil {
-		slog.ErrorContext(ctx, "os.Create error", "error", err, "outputpath", outputpath, "uri", uri)
-		return err
+		slog.ErrorContext(ctx, "FSyncWriteReader error", "error", err, "outputpath", outputpath, "uri", uri)
 	}
-	defer outfile.Close()
-
-	_, err = io.Copy(outfile, resp.Body)
-	if err != nil {
-		slog.ErrorContext(ctx, "io.Copy error", "error", err, "outputpath", outputpath, "uri", uri)
-
-		// Download 默认不支持断点续下载, 下载失败则会尝试删除输出文件, 方便后续 二次重试
-		if rmErr := os.Remove(outputpath); rmErr != nil && !os.IsNotExist(rmErr) {
-			slog.WarnContext(ctx, "failed to remove output file", "path", outputpath, "error", rmErr)
-		}
-
-		return err
-	}
-
-	return nil
+	return err
 }
 
 // DownloadIfNotExists 下载文件（如果文件已存在则跳过），失败时清理临时文件

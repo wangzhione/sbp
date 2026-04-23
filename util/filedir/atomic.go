@@ -1,12 +1,19 @@
 package filedir
 
 import (
+	"bytes"
+	"io"
 	"os"
 	"path/filepath"
 )
 
 // FSyncWriteFile 原子性地将 data 写入指定路径的文件中。
 func FSyncWriteFile(path string, data []byte, perm ...os.FileMode) error {
+	return FSyncWriteReader(path, bytes.NewReader(data), perm...)
+}
+
+// FSyncWriteReader 原子性地将 reader 的内容写入指定路径的文件中。
+func FSyncWriteReader(path string, reader io.Reader, perm ...os.FileMode) error {
 	dir := filepath.Dir(path)
 	base := filepath.Base(path)
 
@@ -44,15 +51,16 @@ func FSyncWriteFile(path string, data []byte, perm ...os.FileMode) error {
 		}
 	}
 
-	// 写入循环，避免短写
-	written := 0
-	for written < len(data) {
-		n, err := temp.Write(data[written:])
-		if err != nil {
-			temp.Close()
-			return err
-		}
-		written += n
+	// 统一返回 error，避免 io.Copy(nil reader) 直接 panic
+	if reader == nil {
+		temp.Close()
+		return os.ErrInvalid
+	}
+
+	// 流式写入，避免大文件一次性进入内存
+	if _, err := io.Copy(temp, reader); err != nil {
+		temp.Close()
+		return err
 	}
 
 	// fsync 文件内容
