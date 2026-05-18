@@ -22,14 +22,14 @@ func InitSLog() {
 
 func InitSLogRotatingFile(iscloserotateloop ...bool) error {
 	// 默认是 start day logger;
-	// 如果需要 hour logger, Please DefaultGetFile = GetfileByHour 随后 Call InitSLogRotatingFile()
-	return Startlogger(len(iscloserotateloop) > 0 && iscloserotateloop[0], "")
+	return Startlogger(len(iscloserotateloop) > 0 && iscloserotateloop[0], "", GetfileByDay)
 }
 
 type TraceHandler struct {
 	slog.Handler
 }
 
+// CodeKey slog record 中 code 的 key, 格式为 {file}:{line}:{func}
 var CodeKey = "code"
 
 // Handle add trace

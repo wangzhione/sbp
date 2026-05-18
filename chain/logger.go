@@ -10,8 +10,6 @@ import (
 	"github.com/wangzhione/sbp/system"
 )
 
-var DefaultGetFile = GetfileByDay // 默认按天切割日志
-
 // GetfileByDay 按天切割日志
 // 生成的日志文件名格式: {exe path dir}/logs/{20250522}-{exe name}-{hostname}.log
 // 例如: /home/user/myapp/logs/20250522-myapp-myhost.log
@@ -35,16 +33,19 @@ func GetfileByHour(logsDir string) (now time.Time, filename string) {
 	return
 }
 
-// Startlogger 启动一个 slog 实例, DefaultGetFile 默认是 GetfileByDay; 或者重新设置 DefaultGetFile
-func Startlogger(iscloserotateloop bool, logsDir string) error {
-	// LogsDir 默认日志目录 {exe dir}/logs
+// Startlogger 启动一个 slog 实例
+func Startlogger(iscloserotateloop bool, logsDir string, getfilefn func(logsDir string) (now time.Time, filename string)) error {
 	if logsDir == "" {
-		logsDir = filepath.Join(system.ExeDir, "logs")
+		logsDir = filepath.Join(system.ExeDir, "logs") // LogsDir 默认日志目录 {exe dir}/logs
+	}
+
+	if getfilefn == nil {
+		getfilefn = GetfileByDay // 默认按天切割日志
 	}
 
 	our := &hourordaylogger{ // our 类似跨函数闭包
 		LogsDir:   logsDir,
-		getfilefn: DefaultGetFile,
+		getfilefn: getfilefn,
 	}
 
 	err := os.MkdirAll(our.LogsDir, os.ModePerm)

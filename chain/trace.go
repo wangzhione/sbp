@@ -39,12 +39,8 @@ func TraceID(ctx context.Context) (traceID string) {
 	return
 }
 
-func CopyTrace(ctx context.Context) context.Context {
-	// 处理 context 存在 timeout or cancel
-	return WithContext(context.Background(), TraceID(ctx))
-}
-
-func CopyContext(ctx context.Context, keys ...any) context.Context {
+// CopyTrace 处理 context 存在 timeout or cancel，生成新的 context，并且携带 trace id
+func CopyTrace(ctx context.Context, keys ...any) context.Context {
 	// 处理 context 存在 timeout or cancel
 	newctx := context.Background()
 	for _, key := range keys {
