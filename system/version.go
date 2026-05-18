@@ -1,3 +1,5 @@
+// Package system provides helpers for runtime environment, process metadata,
+// platform detection, and system-level identifiers.
 package system
 
 import (
@@ -5,39 +7,37 @@ import (
 	"runtime/debug"
 )
 
-// Linux 默认是服务部署的最终服务器, 方便利用 system.Linux 默认做一些特殊处理逻辑
-const Linux bool = runtime.GOOS == "linux"
+const (
+	Aix       bool = runtime.GOOS == "aix"       // IBM AIX Unix 服务器平台
+	Android   bool = runtime.GOOS == "android"   // Android 移动端或嵌入式平台
+	Darwin    bool = runtime.GOOS == "darwin"    // macOS 桌面或服务器平台
+	Dragonfly bool = runtime.GOOS == "dragonfly" // DragonFly BSD 系统平台
+	Freebsd   bool = runtime.GOOS == "freebsd"   // FreeBSD 系统平台
+	Hurd      bool = runtime.GOOS == "hurd"      // GNU Hurd 系统平台
+	Illumos   bool = runtime.GOOS == "illumos"   // illumos/Solaris 衍生系统平台
+	Ios       bool = runtime.GOOS == "ios"       // iOS 移动端平台
+	Js        bool = runtime.GOOS == "js"        // JavaScript/WebAssembly 运行平台
+	Linux     bool = runtime.GOOS == "linux"     // Linux 服务器或桌面平台
+	Nacl      bool = runtime.GOOS == "nacl"      // Native Client 沙箱运行平台
+	Netbsd    bool = runtime.GOOS == "netbsd"    // NetBSD 系统平台
+	Openbsd   bool = runtime.GOOS == "openbsd"   // OpenBSD 系统平台
+	Plan9     bool = runtime.GOOS == "plan9"     // Plan 9 系统平台
+	Solaris   bool = runtime.GOOS == "solaris"   // Oracle Solaris 系统平台
+	Wasip1    bool = runtime.GOOS == "wasip1"    // WASI Preview 1 WebAssembly 平台
+	Windows   bool = runtime.GOOS == "windows"   // Windows 桌面或服务器平台
+	Zos       bool = runtime.GOOS == "zos"       // IBM z/OS 大型机平台
+)
 
-/*
-	runtime.GOOS 是 Go 语言中的一个常量，用于获取当前操作系统的名称。它的枚举值包括但不限于：
-
-	windows
-	linux
-	darwin (macOS)
-	freebsd
-	openbsd
-	netbsd
-	android
-	ios
-	js (用于 Go 编译为 JavaScript)
-	plan9
-	solaris
-*/
-
-const Windows bool = runtime.GOOS == "windows"
-
-const Darwin bool = runtime.GOOS == "darwin"
-
-// BuildVersion 完整编译版本
-var BuildVersion string = runtime.Version()
+// BuildGoVersion Go 编译器完整版本
+var BuildGoVersion string = runtime.Version()
 
 // GitVersion 项目发布时候代码 git 版本信息 | git rev-parse HEAD
 // 依赖下面类型的 build 编译方式
 // $env:CGO_ENABLED="0"; $env:GOOS="linux"; $env:GOARCH="amd64"; go build -trimpath -buildvcs=true -o {target} .
 var GitVersion string
 
-// GitCommitTime 最近一次提交时间（来自 vcs.time）
-var GitCommitTime string
+// GitLastCommitTime 最近一次提交时间（来自 vcs.time）
+var GitLastCommitTime string
 
 func init() {
 	info, ok := debug.ReadBuildInfo()
@@ -52,7 +52,7 @@ func init() {
 		case "vcs.revision":
 			GitVersion = setting.Value
 		case "vcs.time":
-			GitCommitTime = setting.Value
+			GitLastCommitTime = setting.Value
 		}
 	}
 }

@@ -3,7 +3,7 @@ package system
 import "testing"
 
 func TestVersion(t *testing.T) {
-	t.Log("BuildVersion", BuildVersion)
+	t.Log("BuildGoVersion", BuildGoVersion)
 	t.Log("GitVersion", GitVersion)
-	t.Log("GitCommitTime", GitCommitTime)
+	t.Log("GitLastCommitTime", GitLastCommitTime)
 }
