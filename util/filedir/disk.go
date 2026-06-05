@@ -11,9 +11,9 @@ import (
 
 // GetDiskUsage 返回 path 目录所在分区的已使用百分比（如 68.32）
 func GetDiskUsage(ctx context.Context, path string) (usedPercent float64, err error) {
-	usageStat, err := disk.Usage(path)
+	usageStat, err := disk.UsageWithContext(ctx, path)
 	if err != nil {
-		slog.ErrorContext(ctx, "disk.Usage error", "path", path, "error", err)
+		slog.ErrorContext(ctx, "disk.UsageWithContext error", "path", path, "error", err)
 		return 0, err
 	}
 	return usageStat.UsedPercent, nil
