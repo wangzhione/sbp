@@ -50,7 +50,7 @@ import (
 func main() {
 	chain.InitSLog()
 
-	ctx := chain.WithContext(context.Background(), system.UUID())
+	ctx := chain.Context()
 
 	slog.InfoContext(ctx, "hello chain")
 }
@@ -151,12 +151,12 @@ if err := chain.InitSLogRotatingFile(); err != nil {
 如果想按小时切割:
 
 ```go
-err := chain.Startlogger(false, "", chain.GetfileByHour)
+err := chain.Startlogger("", nil, false)
 ```
 
 按小时切割适合日志量较大的服务，文件名格式为 `{yyyyMMddHH}-{exe name}-{hostname}.log`。
 
-如果不想启动后台轮转协程:
+如果不想启动后台切割日志的轮转协程:
 
 ```go
 err := chain.InitSLogRotatingFile(true)
@@ -199,9 +199,11 @@ import (
 )
 
 func main() {
+	ctx := chain.Context()
+
 	if err := chain.InitSLogRotatingFile(); err != nil {
 		chain.InitSLog()
-		slog.ErrorContext(context.Background(), "InitSLogRotatingFile error", "error", err)
+		slog.ErrorContext(ctx, "InitSLogRotatingFile error", "error", err)
 	}
 
 	ctx := chain.Context()

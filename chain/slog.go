@@ -20,9 +20,8 @@ func InitSLog() {
 	}))
 }
 
-func InitSLogRotatingFile(iscloserotateloop ...bool) error {
-	// 默认是 start day logger;
-	return Startlogger(len(iscloserotateloop) > 0 && iscloserotateloop[0], "", GetfileByDay)
+func InitSLogRotatingFile(closecutoff ...bool) error {
+	return Startlogger("", nil, len(closecutoff) > 0 && closecutoff[0])
 }
 
 type TraceHandler struct {

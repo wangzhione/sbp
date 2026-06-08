@@ -33,7 +33,7 @@ var BuildGoVersion string = runtime.Version()
 
 // GitVersion 项目发布时候代码 git 版本信息 | git rev-parse HEAD
 // 依赖下面类型的 build 编译方式
-// $env:CGO_ENABLED="0"; $env:GOOS="linux"; $env:GOARCH="amd64"; go build -trimpath -buildvcs=true -o {target} .
+// $env:CGO_ENABLED="0"; $env:GOOS="linux"; $env:GOARCH="amd64"; go build -buildvcs=true -o {target} .
 var GitVersion string
 
 // GitLastCommitTime 最近一次提交时间（来自 vcs.time）
@@ -41,12 +41,10 @@ var GitLastCommitTime string
 
 func init() {
 	info, ok := debug.ReadBuildInfo()
-
 	if !ok {
 		println("debug.ReadBuildInfo() return no ok")
 		return
 	}
-
 	for _, setting := range info.Settings {
 		switch setting.Key {
 		case "vcs.revision":

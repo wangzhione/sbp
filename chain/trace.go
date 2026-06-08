@@ -9,7 +9,7 @@ import (
 )
 
 // BC British Columbia context commemorate
-var BC = Context()
+var BC = context.WithValue(context.Background(), xRquestID, "00000000000000000000000000000SBP")
 
 // XRquestID 默认所有链条 trace id 的 key
 // any("X-Request-Id") == any(XRquestID)

@@ -10,47 +10,48 @@ import (
 	"github.com/wangzhione/sbp/system"
 )
 
-// GetfileByDay 按天切割日志
-// 生成的日志文件名格式: {exe path dir}/logs/{20250522}-{exe name}-{hostname}.log
-// 例如: /home/user/myapp/logs/20250522-myapp-myhost.log
-func GetfileByDay(logsDir string) (now time.Time, filename string) {
-	now = time.Now()
+type GetfileFn func(logdir string) (now time.Time, filename string)
 
-	days := now.Format("20060102") // e.g. 20250522
+// GetfileByDay 按天切割日志
+// 生成的日志文件名: {exe path dir}/logs/{20250522}-{exe name}-{hostname}.log
+func GetfileByDay(logdir string) (now time.Time, filename string) {
+	now = time.Now()
+	times := now.Format("20060102")
 	// {exe path dir}/logs/{20250522}-{exe name}-{hostname}.log
-	filename = filepath.Join(logsDir, days+"-"+system.ExeName+"-"+system.Hostname+".log")
-	println("GetfileByDay day init log", system.Hostname, filename)
+	filename = filepath.Join(logdir, times+"-"+system.ExeName+"-"+system.Hostname+".log")
+	println("GetfileByDay day init log", filename)
 	return
 }
 
-func GetfileByHour(logsDir string) (now time.Time, filename string) {
+func GetfileByHour(logdir string) (now time.Time, filename string) {
 	now = time.Now()
-
-	hours := now.Format("2006010215") // e.g. 2025032815
+	times := now.Format("2006010215")
 	// {exe path dir}/logs/{2025032815}-{exe name}-{hostname}.log
-	filename = filepath.Join(logsDir, hours+"-"+system.ExeName+"-"+system.Hostname+".log")
-	println("GetfileByHour init log", system.Hostname, filename)
+	filename = filepath.Join(logdir, times+"-"+system.ExeName+"-"+system.Hostname+".log")
+	println("GetfileByHour init log", filename)
 	return
 }
 
 // Startlogger 启动一个 slog 实例
-func Startlogger(iscloserotateloop bool, logsDir string, getfilefn func(logsDir string) (now time.Time, filename string)) error {
-	if logsDir == "" {
-		logsDir = filepath.Join(system.ExeDir, "logs") // LogsDir 默认日志目录 {exe dir}/logs
+func Startlogger(logdir string, getfilefn GetfileFn, closecutoff bool) error {
+	if logdir == "" {
+		// Log Dir 默认日志目录 {exe dir}/logs
+		logdir = filepath.Join(system.ExeDir, "logs")
 	}
-
 	if getfilefn == nil {
-		getfilefn = GetfileByDay // 默认按天切割日志
+		// 默认按天切割日志
+		getfilefn = GetfileByDay
 	}
 
-	our := &hourordaylogger{ // our 类似跨函数闭包
-		LogsDir:   logsDir,
+	// our 类似跨函数闭包
+	our := &timelogger{
+		LogDir:    logdir,
 		getfilefn: getfilefn,
 	}
 
-	err := os.MkdirAll(our.LogsDir, os.ModePerm)
+	err := os.MkdirAll(our.LogDir, os.ModePerm)
 	if err != nil {
-		println("os.MkdirAll error", our.LogsDir)
+		println("os.MkdirAll error", our.LogDir)
 		return err
 	}
 
@@ -58,23 +59,24 @@ func Startlogger(iscloserotateloop bool, logsDir string, getfilefn func(logsDir 
 		return err
 	}
 
-	if !iscloserotateloop {
+	if !closecutoff {
+		// 启动日志切割循环, 固定时间检查一次是否需要切割日志
 		go our.rotateloop()
 	}
 
 	return nil
 }
 
-type hourordaylogger struct {
+type timelogger struct {
 	*os.File
 	lasttime time.Time
 
-	LogsDir   string // ★ 默认 log dir 在 {exe dir}/logs
-	getfilefn func(logsDir string) (now time.Time, filename string)
+	getfilefn GetfileFn
+	LogDir    string // ★ 默认 log dir 在 {exe dir}/logs
 }
 
-func (our *hourordaylogger) rotate() error {
-	now, filename := our.getfilefn(our.LogsDir)
+func (our *timelogger) rotate() error {
+	now, filename := our.getfilefn(our.LogDir)
 
 	if our.File != nil && our.Name() == filename {
 		found, err := system.Exist(filename)
@@ -89,15 +91,13 @@ func (our *hourordaylogger) rotate() error {
 		return err
 	}
 
-	stdoutandfile := io.MultiWriter(os.Stdout, file)
-
 	slog.SetDefault(slog.New(&TraceHandler{
-		slog.NewJSONHandler(stdoutandfile, &slog.HandlerOptions{
+		slog.NewJSONHandler(io.MultiWriter(os.Stdout, file), &slog.HandlerOptions{
 			Level: EnableLevel,
 		}),
 	}))
 
-	_ = our.Close() // os.OpenFile 有兜底 runtime.SetFinalizer(f.file, (*file).close) 😂
+	_ = our.File.Close() // os.OpenFile 有兜底 runtime.SetFinalizer(f.file, (*file).close) 😂
 	our.File = file
 
 	// 历史日志清理
@@ -106,22 +106,23 @@ func (our *hourordaylogger) rotate() error {
 	return nil
 }
 
-func (our *hourordaylogger) rotateloop() {
+func (our *timelogger) rotateloop() {
 	for {
 		now := time.Now()
 		// 下一个整点, 计算需要 sleep 时间
 		next := now.Truncate(time.Hour).Add(time.Hour)
 		time.Sleep(next.Sub(now))
-
-		_ = our.rotate() // 业务 println 打印 error 日志兜底
+		_ = our.rotate()
 	}
 }
 
-var DefaultCleanTime = -15 * 24 * time.Hour // 默认 15 天前, 有时候过 7 天假期, 回来 7 天日志没了 ...
+// DefaultCleanTime 默认 15 天前, 有时候过 7 天假期, 回来 7 天日志没了 ...
+var DefaultCleanTime = -15 * 24 * time.Hour
 
-var DefaultCheckTime = 7 * time.Hour // sevenday 每次检查是否要清理历史日志时间间隔
+// DefaultCheckTime sevenday 每次检查是否要清理历史日志时间间隔
+var DefaultCheckTime = 7 * time.Hour
 
-func (our *hourordaylogger) sevenday(now time.Time) {
+func (our *timelogger) sevenday(now time.Time) {
 	if now.Sub(our.lasttime) < DefaultCheckTime {
 		// 时间间隔太小直接返回
 		return
@@ -132,7 +133,7 @@ func (our *hourordaylogger) sevenday(now time.Time) {
 	// 尝试清理历史文件
 	var files []string
 	err := filepath.WalkDir(
-		our.LogsDir,
+		our.LogDir,
 		func(path string, dir os.DirEntry, direrr error) error {
 			if direrr != nil {
 				return direrr
@@ -178,16 +179,15 @@ func (our *hourordaylogger) sevenday(now time.Time) {
 		},
 	)
 	if err != nil {
-		println("sevenday filepath.WalkDir error", err.Error(), our.LogsDir)
-		return
+		println("sevenday filepath.WalkDir error", err.Error(), our.LogDir)
 	}
 
-	for _, file := range files {
+	for i, file := range files {
 		err = os.Remove(file)
 		if err != nil {
-			println("sevenday os.Remove error", err.Error(), file)
-		} else {
-			println("sevenday os.Remove success", file)
+			println("sevenday os.Remove error", i, file, err.Error())
+			continue
 		}
+		println("sevenday os.Remove success", file)
 	}
 }

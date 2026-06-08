@@ -40,13 +40,3 @@ func TestFileList(t *testing.T) {
 
 	jsou.DEBUG(files)
 }
-
-func TestCreateDir(t *testing.T) {
-	path := `E:\github.com\wangzhione\sbp\util\filedir\aa\bb\cc\filedir_test.go`
-
-	err := CreateDir(ctx, path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log("Succes")
-}

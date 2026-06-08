@@ -16,21 +16,27 @@ var (
 
 // Hostname 获取主机名 or 容器短 ID
 var Hostname = func() string {
-	hostname, err := os.Hostname() // 获取容器的 hostname（通常是容器的短 ID）
-	if err == nil {
-		return hostname
+	// 获取容器的 hostname（通常是容器的短 ID）
+	hostname, err := os.Hostname()
+	if err != nil {
+		println("os.Hostname error", err.Error())
+		// 失败时候用 UUID 作为主机标识
+		return UUID()
 	}
-	return UUID()
+	return hostname
 }()
 
 // Exist 判断路径（文件或目录）是否存在
 func Exist(path string) (exists bool, err error) {
 	_, err = os.Stat(path)
 	if err == nil {
-		return true, nil // 路径存在（无论是文件还是目录）
+		// 路径存在（无论是文件还是目录）
+		return true, nil
 	}
 	if os.IsNotExist(err) {
-		return false, nil // 路径不存在
+		// 路径不存在
+		return false, nil
 	}
-	return false, err // 其他错误（如权限问题）, 但对当前用户而言是不存在
+	// 其他错误（如权限问题）, 但对当前用户而言是不存在
+	return false, err
 }
