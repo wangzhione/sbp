@@ -3,7 +3,6 @@ package system
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"io"
 	"time"
 )
 
@@ -27,10 +26,7 @@ func UUID() string {
 	var od [32]byte
 
 	// 先填满随机数，后面会覆盖 timestamp/version/variant 对应 bit
-	if _, err := io.ReadFull(rand.Reader, id[:]); err != nil {
-		println("UUID v7 generation error:", err)
-		return UUIDv4()
-	}
+	_, _ = rand.Read(id[:])
 
 	// UUIDv7 前 48 bit 是 Unix Epoch milliseconds，big-endian
 	ms := uint64(time.Now().UnixMilli())
@@ -48,18 +44,6 @@ func UUID() string {
 	// Variant: byte 8 的高 2 bit 设置为 10
 	id[8] = (id[8] & 0x3f) | 0x80
 
-	hex.Encode(od[:], id[:])
-	return string(od[:])
-}
-
-// UUIDv4 的全称是 Universally Unique Identifier, "通用唯一标识符" or "全球唯一标识符"
-func UUIDv4() string {
-	var id [16]byte // A UUID is a 128 bit (16 byte) Universal Unique IDentifier as defined in RFC9562.
-	var od [32]byte // "00000000 0000 0000 0000 000000000000" {8}{4}{4}{4}{12}
-
-	_, _ = rand.Read(id[:])       // random function ; 细节 @see go/src/crypto/rand/rand.go
-	id[6] = (id[6] & 0x0f) | 0x40 // Version 4
-	id[8] = (id[8] & 0x3f) | 0x80 // Variant is 10
 	hex.Encode(od[:], id[:])
 	return string(od[:])
 }

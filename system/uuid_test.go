@@ -41,18 +41,6 @@ func TestUUIDUnique(t *testing.T) {
 	}
 }
 
-func TestUUIDv4(t *testing.T) {
-	id := UUIDv4()
-	raw := mustDecodeUUIDHex(t, id)
-
-	if raw[6]>>4 != 0x4 {
-		t.Fatalf("UUIDv4() version = %x, want 4, id = %s", raw[6]>>4, id)
-	}
-	if raw[8]>>6 != 0x2 {
-		t.Fatalf("UUIDv4() variant = %b, want 10, id = %s", raw[8]>>6, id)
-	}
-}
-
 func mustDecodeUUIDHex(t *testing.T, id string) []byte {
 	t.Helper()
 
