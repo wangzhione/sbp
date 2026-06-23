@@ -38,12 +38,6 @@ func TestID_Concurrent(t *testing.T) {
 }
 
 func TestRun(t *testing.T) {
-	type abc struct {
-		a int
-		b string
-		c struct{}
-	}
-
 	panicfunc := func() {
 		defer func() {
 			if cover := recover(); cover != nil {
@@ -51,7 +45,7 @@ func TestRun(t *testing.T) {
 			}
 		}()
 
-		panic(abc{})
+		panic("test panic")
 	}
 
 	panicfunc()
