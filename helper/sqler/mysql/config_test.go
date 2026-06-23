@@ -2,7 +2,10 @@ package mysql
 
 import (
 	"fmt"
+	"strings"
 	"testing"
+
+	mysqlDriver "github.com/go-sql-driver/mysql"
 )
 
 func TestParseCommand(t *testing.T) {
@@ -40,4 +43,38 @@ func TestConvertDSNToCommand(t *testing.T) {
 	}
 
 	fmt.Printf("\n%s\n\n", command)
+}
+
+func TestDataSourceNameEscape(t *testing.T) {
+	config := &MySQLConfig{
+		Username: "root",
+		Password: "123456",
+		Host:     "127.0.0.1",
+		Port:     3306,
+		Database: "a/b",
+		Location: "Asia/Shanghai",
+	}
+
+	dsn := config.DataSourceName()
+	parsed, err := mysqlDriver.ParseDSN(dsn)
+	if err != nil {
+		t.Fatalf("DataSourceName should build valid DSN, dsn=%s, err=%v", dsn, err)
+	}
+	if parsed.DBName != config.Database {
+		t.Fatalf("database = %q, want %q, dsn=%s", parsed.DBName, config.Database, dsn)
+	}
+	if parsed.Loc == nil || parsed.Loc.String() != config.Location {
+		t.Fatalf("loc = %v, want %q, dsn=%s", parsed.Loc, config.Location, dsn)
+	}
+}
+
+func TestConvertDSNToCommandIPv6(t *testing.T) {
+	command, err := ConvertDSNToCommand("root:123456@tcp([de:ad:be:ef::ca:fe]:80)/test_db?charset=utf8mb4")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !strings.Contains(command, "-h de:ad:be:ef::ca:fe -P 80") {
+		t.Fatalf("command should keep IPv6 host and port, got %q", command)
+	}
 }

@@ -2,9 +2,11 @@ package mysql
 
 import (
 	"fmt"
-	"net/url"
+	"net"
+	"strconv"
 	"strings"
 
+	mysqlDriver "github.com/go-sql-driver/mysql"
 	"github.com/wangzhione/sbp/util/casu"
 )
 
@@ -50,14 +52,19 @@ func (config *MySQLConfig) DataSourceName() string {
 		config.Host = "127.0.0.1"
 	}
 
-	// 构建 DSN（Data Source Name）
-	return fmt.Sprintf(
-		"%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=true&loc=%s",
-		config.Username, config.Password,
-		config.Host, config.Port,
-		config.Database,
-		config.Location,
-	)
+	cfg := mysqlDriver.NewConfig()
+	cfg.User = config.Username
+	cfg.Passwd = config.Password
+	cfg.Net = "tcp"
+	cfg.Addr = net.JoinHostPort(config.Host, strconv.Itoa(int(config.Port)))
+	cfg.DBName = config.Database
+	cfg.ParseTime = true
+	cfg.Params = map[string]string{
+		"charset": "utf8mb4",
+		"loc":     config.Location,
+	}
+
+	return cfg.FormatDSN()
 }
 
 func (config *MySQLConfig) Command() string {
@@ -154,67 +161,26 @@ func ParseCommand(command string) (*MySQLConfig, error) {
 
 // ConvertDSNToCommand 将 DataSourceName 转换为 mysql 命令行格式
 func ConvertDSNToCommand(dsn string) (string, error) {
-	// 分割 DSN 为主连接部分和查询参数部分
-	parts := strings.SplitN(dsn, "?", 2)
-	connPart := parts[0]
-
-	// 校验格式是否包含 "@"
-	userInfoAndAddr := strings.SplitN(connPart, "@", 2)
-	if len(userInfoAndAddr) < 2 {
-		return "", fmt.Errorf("invalid DSN: missing '@' separator")
+	cfg, err := mysqlDriver.ParseDSN(dsn)
+	if err != nil {
+		return "", err
 	}
 
-	// 提取用户信息
-	userInfo := userInfoAndAddr[0]
-	protocolAndAddr := userInfoAndAddr[1]
-
-	// 分割用户名和密码
-	userAndPass := strings.SplitN(userInfo, ":", 2)
-	username := userAndPass[0]
-	password := ""
-	if len(userAndPass) > 1 {
-		password = userAndPass[1]
-	}
-
-	// 解析地址
-	if !strings.HasPrefix(protocolAndAddr, "tcp(") {
-		return "", fmt.Errorf("invalid DSN: expected tcp() wrapper around address")
-	}
-	addressAndDB := strings.TrimPrefix(protocolAndAddr, "tcp(")
-	addressAndDB = strings.TrimSuffix(addressAndDB, ")")
-
-	// 提取地址和数据库名
-	addressDBParts := strings.SplitN(addressAndDB, ")/", 2)
-	if len(addressDBParts) < 2 {
-		return "", fmt.Errorf("invalid DSN: missing database name")
-	}
-	address := addressDBParts[0]
-	dbName := addressDBParts[1]
-
-	// 分割地址为主机名和端口
-	hostAndPort := strings.SplitN(address, ":", 2)
-	host := hostAndPort[0]
-	port := "3306" // 默认端口
-	if len(hostAndPort) > 1 {
-		port = hostAndPort[1]
-	}
-
-	// 解析查询参数（如 charset）
 	charset := "utf8mb4"
-	if len(parts) > 1 {
-		queryParams, err := url.ParseQuery(parts[1])
-		if err != nil {
-			return "", fmt.Errorf("failed to parse DSN query parameters: %v", err)
-		}
-		if cs := queryParams.Get("charset"); cs != "" {
-			charset = cs
-		}
+	if cfg.Params != nil && cfg.Params["charset"] != "" {
+		charset = cfg.Params["charset"]
+	}
+	host := cfg.Addr
+	port := "3306"
+	if h, p, err := net.SplitHostPort(cfg.Addr); err == nil {
+		host = h
+		port = p
 	}
 
 	// 构造 mysql 命令（不直接拼接密码，防止泄露）
 	command := fmt.Sprintf(
 		"mysql -u %s -p%s -h %s -P %s %s --default-character-set=%s",
-		username, password, host, port, dbName, charset,
+		cfg.User, cfg.Passwd, host, port, cfg.DBName, charset,
 	)
 
 	return command, nil
