@@ -28,7 +28,7 @@ func ReadFile[R any](patha string) (obj R, err error) {
 func WriteFile(patha string, obj any) error {
 	data, err := toml.Marshal(obj)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	// 所有者 (owner)	6 → rw-	可读可写
