@@ -7,6 +7,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/wangzhione/sbp/chain"
 )
@@ -74,6 +75,33 @@ func TestPoolPanic(t *testing.T) {
 	p.Go(ctx, testPanicFunc)
 
 	slog.InfoContext(ctx, "Success")
+}
+
+func TestPoolWorkerExitRace(t *testing.T) {
+	p := NewPool(1)
+	done := make(chan struct{})
+
+	// 模拟 worker Pop() 看到空队列准备退出，但 worker 计数尚未扣减。
+	// 旧逻辑会在这个窗口里让 Go() 误判 worker 已满，导致新任务没有 worker 继续处理。
+	p.worker.Store(1)
+	p.Push(&task{
+		ctx: ctx,
+		fn: func(context.Context) {
+			close(done)
+		},
+	})
+
+	if !p.keepRunning() {
+		t.Fatalf("fix failed: worker stopped with pending task: Len=%d, Worker=%d", p.Len(), p.Worker())
+	}
+
+	go p.running()
+
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatalf("fix failed: task stuck after worker exit race: Len=%d, Worker=%d", p.Len(), p.Worker())
+	}
 }
 
 const benchmarkTimes = 10000
@@ -209,41 +237,61 @@ func TestSucccessCompareInc(t *testing.T) {
 	var capacity int32 = 2
 	var worker int32
 
+	var wg sync.WaitGroup
+	var workerWG sync.WaitGroup
+	wg.Add(20000)
 	for range 20000 {
 		go func() {
+			defer wg.Done()
+
 			old := atomic.LoadInt32(&worker)
 			if old < capacity {
 				if atomic.CompareAndSwapInt32(&worker, old, old+1) {
-					if worker > capacity {
-						t.Logf("worker=%d, capacity=%d", worker, capacity)
+					current := atomic.LoadInt32(&worker)
+					if current > capacity {
+						t.Logf("worker=%d, capacity=%d", current, capacity)
 					}
 
+					workerWG.Add(1)
 					go func() {
+						defer workerWG.Done()
 						defer atomic.AddInt32(&worker, -1)
 					}()
 				}
 			}
 		}()
 	}
+	wg.Wait()
+	workerWG.Wait()
 }
 
 func TestErrorCompareInc(t *testing.T) {
 	var capacity int32 = 2
 	var worker int32
 
+	var wg sync.WaitGroup
+	var workerWG sync.WaitGroup
+	wg.Add(400)
 	for range 400 {
 		go func() {
+			defer wg.Done()
+
 			if atomic.LoadInt32(&worker) < capacity {
 				atomic.AddInt32(&worker, 1)
 
-				if worker > capacity {
-					t.Logf("worker=%d, capacity=%d", worker, capacity)
+				current := atomic.LoadInt32(&worker)
+				if current > capacity {
+					t.Logf("worker=%d, capacity=%d", current, capacity)
 				}
 
+				workerWG.Add(1)
 				go func() {
+					defer workerWG.Done()
 					defer atomic.AddInt32(&worker, -1)
 				}()
 			}
 		}()
 	}
+	wg.Wait()
+	workerWG.Wait()
 }

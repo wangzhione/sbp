@@ -95,6 +95,16 @@ func (p *Pool) running() {
 		// pop head after run task
 		head := p.Pop()
 		if head == nil {
+			// Fix worker 退出竞态：
+			// 1. worker Pop() 看到空队列，准备退出；
+			// 2. 新任务在 worker 扣减前 Push() 进来；
+			// 3. Go() 仍看到 worker 已满，不会再启动新 worker；
+			// 4. 旧 worker 直接退出后，队列里的任务会一直卡住。
+			//
+			// 所以空队列退出前必须先扣减 worker，再复查队列。
+			if p.keepRunning() {
+				continue
+			}
 			break
 		}
 
@@ -112,8 +122,17 @@ func (p *Pool) running() {
 			head.fn(head.ctx)
 		}()
 	}
+}
 
-	p.worker.Add(-1)
+func (p *Pool) keepRunning() bool {
+	// 先让出 worker 名额，关闭 “Push 后 Go 看到 worker 已满” 的窗口。
+	// 如果扣减后还有其它 worker 存活，当前 worker 可以安全退出；
+	// 最后一个 worker 退出前需要复查队列，发现仍有任务时通过 CAS 抢回名额继续处理。
+	if p.worker.Add(-1) != 0 {
+		return false
+	}
+
+	return p.Len() > 0 && p.Capacity.Load() > 0 && p.worker.CompareAndSwap(0, 1)
 }
 
 // p.Capacity p.Worker() p.Len() 属于运行时内部监控
