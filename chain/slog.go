@@ -37,12 +37,15 @@ func (h TraceHandler) Handle(ctx context.Context, r slog.Record) error {
 	frames := runtime.CallersFrames([]uintptr{r.PC})
 	frame, _ := frames.Next()
 
-	// {path}/{short package name}.{short func name} -> {short func name}
-	i := len(frame.Function) - 2
-	for i >= 0 && frame.Function[i] != '/' && frame.Function[i] != '.' {
-		i--
+	funcName := "unknown"
+	if frame.Function != "" {
+		// {path}/{short package name}.{short func name} -> {short func name}
+		i := len(frame.Function) - 2
+		for i >= 0 && frame.Function[i] != '/' && frame.Function[i] != '.' {
+			i--
+		}
+		funcName = frame.Function[i+1:]
 	}
-	funcName := frame.Function[i+1:]
 
 	// go run test   : e:\github.com\wangzhione\sbp\chain\slog_test.go:26:TestInitSLogRotatingFile
 	// go debug test : slog_test.go:27:TestInitSLogRotatingFile
