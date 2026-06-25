@@ -65,7 +65,7 @@ func ID() (goroutineid string) {
 	// uintptr int64 10 进制最长 20 位; 9 + 1 + 20 + 1 = 31 位最长
 	var buf [32]byte
 
-	// If all is false, Stack formats the stack trace for the calling goroutine."
+	// If all is false, Stack formats the stack trace for the calling goroutine.
 	n := runtime.Stack(buf[:], false)
 	// 把 buf[:n] 里的内容按空白字符（空格、换行、制表符）拆分成多个字段（token）
 

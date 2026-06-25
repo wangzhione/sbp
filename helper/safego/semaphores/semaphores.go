@@ -53,5 +53,6 @@ func (p *Semaphores) UnLock() {
 		// 释放成功
 	default:
 		// 到这里比较危险, 依赖使用方自己保证最终结果
+		println("semaphores: unlock warning, semaphore is empty")
 	}
 }

@@ -26,8 +26,8 @@ type Pool struct {
 	Capacity atomic.Int32
 	// Record the number of running workers
 	worker atomic.Int32
-
-	length atomic.Int32 // 当前任务数
+	// 当前任务数
+	length atomic.Int32
 }
 
 // task list
