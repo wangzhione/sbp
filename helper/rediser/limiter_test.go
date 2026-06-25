@@ -10,7 +10,7 @@ func TestLimiter_Allow(t *testing.T) {
 
 	key := "mykey"
 	ttl := 3 * time.Second
-	rate := NewLimiter(r, key, ttl)
+	rate := NewLimiter(r, key, ttl, 1)
 
 	t.Log(rate.Allow(ctx)) // true
 	t.Log(rate.Allow(ctx)) // false

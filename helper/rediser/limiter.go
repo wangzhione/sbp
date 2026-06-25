@@ -5,25 +5,23 @@ import (
 	"context"
 	"log/slog"
 	"time"
-
-	"github.com/wangzhione/sbp/structs"
 )
 
 // Limiter 限制固定时间内最多请求 N 次
 type Limiter struct {
-	R   *Client
+	R   *Client       // .R.Del(ctx, .Key) Clear 清理当前限流计数, 用于主动解除限流状态, Low API
 	Key string        // 限流 Key
 	TTL time.Duration // 限制时长, 如 10*time.Minute
 	N   int64         // 最大允许的请求次数
 }
 
-// NewLimiter 创建限流器
-func NewLimiter(r *Client, key string, ttl time.Duration, limit ...int64) (rate *Limiter) {
+// NewLimiter 创建限流器, limit 表示在 ttl 时间内, 最多允许请求 limit 次
+func NewLimiter(r *Client, key string, ttl time.Duration, limit int64) (rate *Limiter) {
 	rate = &Limiter{
 		R:   r,
 		Key: key,
 		TTL: ttl,
-		N:   structs.Max(1, structs.Max(limit...)), // 默认 ttl 时间内, 只能有一次请求
+		N:   limit,
 	}
 	return
 }
