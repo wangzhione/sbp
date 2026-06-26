@@ -68,7 +68,7 @@ IDE 开发 Golang 基础配置在全局 settings.json 加入和 go env 有关配
         },
         "editor.formatOnSave": true // 可选：启用自动格式化
     },
-    "go.testTimeout": "120s",
+    "go.testTimeout": "300s",
 }
 ```
 
@@ -98,11 +98,11 @@ IDE 开发 Golang 基础配置在全局 settings.json 加入和 go env 有关配
 
 # One Package 
 
-long long ago 在公司用 gopkg 项目, 有一股啰嗦妈宝氛围扑面而来. 为了方便自己用起来舒服, 构造 one package 项目用于 Go 软件工程使用.
+long long ago 在公司用 gopkg 项目, 有一股啰嗦妈宝氛围扑面而来. 为了方便自己用起来舒服, 构造 simple beautiful package 项目用于 Go 软件工程使用.
 
 ## How To Use
 
-You can use go get -u github.com/wangzhione/sbp@latest to get or update onepkg
+You can use go get -u github.com/wangzhione/sbp@latest commit
 
 ## 后记
 

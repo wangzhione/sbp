@@ -6,6 +6,11 @@ import (
 	"path/filepath"
 )
 
+// - filepath.Dir(path)  	-> 目录
+// - filepath.Base(path) 	-> 文件名
+// - filepath.Ext(filename) -> 扩展名
+// - strings.TrimSuffix(文件名, 扩展名) -> 不带扩展名的文件名
+
 // RelPath 根据 basepath 计算 targpath 的相对路径, 并统一转换为 slash 分隔符.
 //
 // 参数:
@@ -52,8 +57,3 @@ func AbsPath(ctx context.Context, path string) (abspath string, err error) {
 	}
 	return
 }
-
-// - filepath.Dir(path)  	-> 目录
-// - filepath.Base(path) 	-> 文件名
-// - filepath.Ext(filename) -> 扩展名
-// - strings.TrimSuffix(文件名, 扩展名) -> 不带扩展名的文件名
