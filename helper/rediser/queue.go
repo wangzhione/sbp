@@ -152,7 +152,7 @@ func (q *Queue) Consume(ctx context.Context, block time.Duration, consume func(v
 	}()
 
 	// 默认 return err != nil, 消费失败, 不 XAck + XDel
-	if err := consume(msg.Values); err != nil {
+	if err = consume(msg.Values); err != nil {
 		slog.ErrorContext(ctx, "Consume consume handler end error",
 			"Stream", q.Stream, "Group", q.Group, "Consumer", q.Consumer, "msgID", msg.ID, "values", msg.Values, "err", err)
 		return err
