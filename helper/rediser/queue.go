@@ -132,10 +132,18 @@ func (q *Queue) Consume(ctx context.Context, block time.Duration, consume func(v
 	// BLOCK 0 就是 无限阻塞
 	// BLOCK 5000 表示最多阻塞 5 秒（超时返回 nil）
 
-	msg, err := q.R.XReadGroup(ctx, xreadgroupargs)
+	streams, err := q.R.XReadGroup(ctx, xreadgroupargs)
 	if err != nil {
 		return
 	}
+
+	if len(streams) == 0 || len(streams[0].Messages) == 0 {
+		slog.WarnContext(ctx, "r.UniversalClient.XReadGroup returned no message",
+			"Streams", xreadgroupargs.Streams, "Group", xreadgroupargs.Group, "Consumer", xreadgroupargs.Consumer, "Block", block)
+		return
+	}
+
+	msg := streams[0].Messages[0]
 
 	// msg.ID = Queue.Produce msgID
 	slog.InfoContext(ctx, "Consume handler begin", "msgID", msg.ID, "values", msg.Values)
