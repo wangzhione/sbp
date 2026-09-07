@@ -22,10 +22,10 @@ type Queue struct {
 	MaxLen   int64 // 默认 0, 无限
 }
 
-func (q *Queue) Init(ctx context.Context) (err error) {
+func (q *Queue) Init(ctx context.Context) error {
 	if q.Consumer == "" {
 		// 内部定义启动这个 队列 随后 Queue.Consume 发给 redis 的消费者名称
-		q.Consumer = system.Hostname + "." + system.UUID()[:6]
+		q.Consumer = system.Hostname + "." + system.UUID()
 	}
 
 	if q.Group == "" {
@@ -40,11 +40,10 @@ func (q *Queue) Init(ctx context.Context) (err error) {
 		} else {
 			slog.ErrorContext(ctx, "XGroupCreateMkStream stream group error",
 				"Stream", q.Stream, "Group", q.Group, "MaxLen", q.MaxLen, "result", result)
-			return
 		}
 	}
 
-	return
+	return err
 }
 
 // NewQueue initializes the {name} stream queue, ensuring stream & group exist.
