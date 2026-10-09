@@ -235,7 +235,7 @@ func TestGoroutines(t *testing.T) {
 
 func TestSucccessCompareInc(t *testing.T) {
 	var capacity int32 = 2
-	var worker int32
+	var worker atomic.Int32
 
 	var wg sync.WaitGroup
 	var workerWG sync.WaitGroup
@@ -244,19 +244,17 @@ func TestSucccessCompareInc(t *testing.T) {
 		go func() {
 			defer wg.Done()
 
-			old := atomic.LoadInt32(&worker)
+			old := worker.Load()
 			if old < capacity {
-				if atomic.CompareAndSwapInt32(&worker, old, old+1) {
-					current := atomic.LoadInt32(&worker)
+				if worker.CompareAndSwap(old, old+1) {
+					current := worker.Load()
 					if current > capacity {
 						t.Logf("worker=%d, capacity=%d", current, capacity)
 					}
 
-					workerWG.Add(1)
-					go func() {
-						defer workerWG.Done()
-						defer atomic.AddInt32(&worker, -1)
-					}()
+					workerWG.Go(func() {
+						defer worker.Add(-1)
+					})
 				}
 			}
 		}()
@@ -267,7 +265,7 @@ func TestSucccessCompareInc(t *testing.T) {
 
 func TestErrorCompareInc(t *testing.T) {
 	var capacity int32 = 2
-	var worker int32
+	var worker atomic.Int32
 
 	var wg sync.WaitGroup
 	var workerWG sync.WaitGroup
@@ -276,19 +274,17 @@ func TestErrorCompareInc(t *testing.T) {
 		go func() {
 			defer wg.Done()
 
-			if atomic.LoadInt32(&worker) < capacity {
-				atomic.AddInt32(&worker, 1)
+			if worker.Load() < capacity {
+				worker.Add(1)
 
-				current := atomic.LoadInt32(&worker)
+				current := worker.Load()
 				if current > capacity {
 					t.Logf("worker=%d, capacity=%d", current, capacity)
 				}
 
-				workerWG.Add(1)
-				go func() {
-					defer workerWG.Done()
-					defer atomic.AddInt32(&worker, -1)
-				}()
+				workerWG.Go(func() {
+					defer worker.Add(-1)
+				})
 			}
 		}()
 	}

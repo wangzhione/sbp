@@ -1,6 +1,7 @@
 package structs
 
 import (
+	"slices"
 	"testing"
 )
 
@@ -49,13 +50,13 @@ func verifyListStructure[T comparable](t *testing.T, list *List[T], expected []T
 
 	// 验证反向遍历
 	current = list.Tail
-	for i := len(expected) - 1; i >= 0; i-- {
+	for i, e := range slices.Backward(expected) {
 		if current == nil {
 			t.Errorf("反向遍历位置 %d 的节点不应该为 nil", i)
 			break
 		}
-		if current.V != expected[i] {
-			t.Errorf("反向遍历位置 %d 的值应该为 %v，实际为 %v", i, expected[i], current.V)
+		if current.V != e {
+			t.Errorf("反向遍历位置 %d 的值应该为 %v，实际为 %v", i, e, current.V)
 		}
 		current = current.Prev
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"time"
+	"uuid"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/wangzhione/sbp/structs"
@@ -25,7 +26,7 @@ type Queue struct {
 func (q *Queue) Init(ctx context.Context) error {
 	if q.Consumer == "" {
 		// 内部定义启动这个 队列 随后 Queue.Consume 发给 redis 的消费者名称
-		q.Consumer = system.Hostname + "." + system.UUID()
+		q.Consumer = system.Hostname + "." + uuid.New().String()
 	}
 
 	if q.Group == "" {

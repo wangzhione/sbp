@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"uuid"
 )
 
 var (
@@ -21,7 +22,7 @@ var Hostname = func() string {
 	if err != nil {
 		println("os.Hostname error", err.Error())
 		// 失败时候用 UUID 作为主机标识
-		return UUID()
+		return uuid.New().String()
 	}
 	return hostname
 }()

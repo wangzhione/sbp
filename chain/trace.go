@@ -4,8 +4,7 @@ package chain
 import (
 	"context"
 	"net/http"
-
-	"github.com/wangzhione/sbp/system"
+	"uuid"
 )
 
 // BC British Columbia context commemorate
@@ -18,7 +17,7 @@ const XRquestID = "X-Request-Id"
 var xRquestID = any(XRquestID)
 
 func Context() context.Context {
-	return context.WithValue(context.Background(), xRquestID, system.UUID())
+	return context.WithValue(context.Background(), xRquestID, uuid.New().String())
 }
 
 // WithContext add trace id to context
@@ -34,7 +33,7 @@ func GetTraceID(ctx context.Context) (traceID string) {
 
 func TraceID(ctx context.Context) (traceID string) {
 	if traceID = GetTraceID(ctx); traceID == "" {
-		traceID = system.UUID()
+		traceID = uuid.New().String()
 	}
 	return
 }
@@ -62,7 +61,7 @@ func Request(r *http.Request, headers ...string) (req *http.Request, requestID s
 
 	// 获取或生成 requestID
 	if requestID = r.Header.Get(XRquestID); requestID == "" {
-		requestID = system.UUID()
+		requestID = uuid.New().String()
 	}
 
 	// 注入 requestID 到 Context
